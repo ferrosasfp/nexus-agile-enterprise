@@ -40,7 +40,7 @@ HU (cualquier formato)
 [ F1: Discovery ] ------- Analyst+Architect+UX: Work Item + ACs EARS + scope
     |
     v
-[ GATE 1 ] -------------- Humano aprueba Work Item
+[ GATE 1: HU_APPROVED ] -- Humano escribe texto exacto HU_APPROVED
     |
     v
 [ F2: Spec/SDD ] -------- Architect+Adversary: Context Map + SDD + Constraints
@@ -49,7 +49,7 @@ HU (cualquier formato)
 [ Readiness Check ] ----- Architect verifica: SDD listo para implementar?
     |
     v
-[ GATE 2 ] -------------- Humano aprueba SDD
+[ GATE 2: SPEC_APPROVED ] Humano escribe texto exacto SPEC_APPROVED
     |
     v
 [ F2.5: Story File ] ---- Architect genera contrato autocontenido para Dev
@@ -104,6 +104,11 @@ Los roles no son subagentes independientes. Son **instrucciones que Claude asume
 - Dependencias nuevas vs aprobadas
 - Archivos fuera de scope (debe ser 0)
 
+**QA con evidencia archivo:linea** — QA no puede marcar un AC como cumplido sin citar donde en el codigo se cumple:
+- CUMPLE — `src/components/X.tsx:42`
+- NO CUMPLE — no encontrado en codebase
+- PARCIAL — `src/components/X.tsx:42` (implementado pero sin test)
+
 ### Stack-Agnostic
 
 NexusAgil no asume ningun stack. Cada proyecto define su Golden Path en un archivo `project-context.md` que incluye: stack, arquitectura, comandos, reglas de codigo, guardrails, y exemplars. Se incluye un template en `references/project_context_template.md`.
@@ -119,6 +124,21 @@ NexusAgil no asume ningun stack. Cada proyecto define su Golden Path en un archi
 ### Quick Flow
 
 Para cambios triviales (1-2 archivos, <30 lineas, sin BD, sin logica nueva), Triage ejecuta un pipeline abreviado de 4 pasos sin SDD ni Adversarial Review.
+
+### Hotfix Pipeline
+
+Para bugs en produccion donde la causa raiz es desconocida. A diferencia de Quick Flow, requiere investigacion profunda y AR condicional.
+
+| Criterio | Quick Flow | Hotfix |
+|----------|------------|--------|
+| Causa | Cambio trivial conocido | Bug en produccion |
+| Causa raiz | Obvia | Desconocida, requiere investigacion |
+| Riesgo | Sin riesgo | Puede tocar auth, datos, pagos |
+| AR | No | Obligatorio si toca auth/datos/pagos |
+
+Pipeline: Investigacion de causa raiz → Decidir tipo de fix → Implementar → AR condicional → QA → Push.
+
+**Band-aid consciente**: Cuando produccion esta rota y el fix definitivo requiere mas tiempo, se aplica un fix temporal marcado con `// HOTFIX-BANDAID #NNN` y se crea un ticket obligatorio para el fix definitivo. Un band-aid sin ticket es deuda tecnica invisible.
 
 ---
 
@@ -158,6 +178,7 @@ Decile a Claude cualquiera de estas frases:
 - `"Sprint planning"`
 - `"Inicia fase 0 para: [HU]"`
 - `"Quick flow: [cambio trivial]"`
+- `"Hotfix: [bug en produccion]"`
 
 ### Ejemplo basico
 
@@ -168,12 +189,12 @@ Tu: NexusAgil, procesa esta HU: Como usuario quiero filtrar productos por catego
 Claude (como Analyst): Genera Work Item #001 con ACs EARS, scope, sizing...
        Presenta para aprobacion (GATE 1).
 
-Tu: DISCOVERY_APPROVED: yes
+Tu: HU_APPROVED
 
 Claude (como Architect): Lee codebase, genera Context Map, SDD con Exemplars
        y Constraint Directives. Readiness Check. Presenta para aprobacion (GATE 2).
 
-Tu: SPEC_APPROVED: yes
+Tu: SPEC_APPROVED
 
 Claude (como Architect): Genera Story File autocontenido para Dev.
 Claude (como Dev): Implementa por Waves siguiendo Story File.
@@ -226,9 +247,9 @@ doc/sdd/
 | **sdd_template.md** | Templates FULL (features), BUGFIX (bugs), MINI (tech-tasks) + Implementation Readiness Check |
 | **story_file_template.md** | Goal, ACs, Files, Exemplars, Constraints, Waves, Out of Scope, Escalation |
 | **adversarial_review_checklist.md** | AuthZ, Inputs, Inyeccion, Secretos, Race Conditions, Data Exposure, Mock Data, BD Security |
-| **validation_report_template.md** | Drift Check, AC Verification, Quality Gates, AR Summary, CR Summary, Veredicto |
+| **validation_report_template.md** | Drift Check, AC Verification con archivo:linea, Quality Gates, AR/CR Summary, Veredicto |
 | **sprint_cadence.md** | Scripts para Lunes (Planning), Miercoles (Status), Viernes (Retro) |
-| **quick_flow.md** | Qualification check, pipeline de 4 pasos, regla de upgrade |
+| **quick_flow.md** | Quick Flow (4 pasos) + Hotfix Pipeline (5 pasos) + band-aid consciente |
 | **project_context_template.md** | Stack, arquitectura, comandos, reglas, guardrails, exemplars |
 
 ---
@@ -260,6 +281,7 @@ Antes de cada Wave (excepto W0), Dev re-lee los archivos modificados en el Wave 
 | **full** | Feature/improvement con logica |
 | **bugfix** | Bug confirmado con repro steps |
 | **mini** | Tech-task, refactor |
+| **hotfix** | Bug en produccion, causa raiz desconocida → Hotfix Pipeline |
 | **patch** | Trivial → Quick Flow |
 
 ### Auto-Blindaje
@@ -280,7 +302,7 @@ Los errores que aplican a todo el proyecto se promueven a `project-context.md`.
 ## Reglas globales (resumen)
 
 1. 1 HU = 1 ejecucion
-2. Gates bloqueantes — no avanzar sin aprobacion humana
+2. Gates estrictos — solo texto exacto (`HU_APPROVED`, `SPEC_APPROVED`), variaciones informales no cuentan
 3. Codebase Grounding obligatorio — leer antes de generar
 4. Exemplar Pattern — referenciar archivos existentes
 5. Constraint Directives — OBLIGATORIO/PROHIBIDO en cada SDD
