@@ -35,9 +35,9 @@ Agents are roles Claude assumes depending on the phase. They are not separate pe
 | **UX** | Microcopy, user flows, accessibility | F1 (when UI is involved) |
 | **Adversary** | Attacks the solution looking for security and logic flaws | AR, CR |
 | **Dev** | Implements ONLY from the Story File — waves, anti-hallucination | F3 |
-| **SM** | Sprint Planning, Status, Retrospective | Weekly cadence |
+| **SM** | Sprint Planning, Status, Retrospective — Sprint Closure Checklist | Weekly cadence |
 | **QA** | Validates ACs with file:line evidence, Drift Detection | F4 |
-| **Docs** | Documents final artifacts, updates `_INDEX.md` | DONE |
+| **Docs** | Documents final artifacts, updates `_INDEX.md`, closes issue in tracker | DONE |
 
 **Role separation rules:**
 - Who **specifies** (Architect) does NOT implement (Dev)
@@ -57,8 +57,8 @@ Agents are roles Claude assumes depending on the phase. They are not separate pe
 | Adversarial Review | Adversary (AR) | Attacks the solution: BLOCKER / MINOR / OK |
 | Code Review | Adversary + QA (CR) | Pattern compliance vs Story File exemplars |
 | Validation Report | QA (F4) | Drift Detection + AC evidence file:line |
-| `sprint-status.yaml` | SM | Live sprint state |
-| `_INDEX.md` | Docs | Historical record of closed HUs |
+| `sprint-status.yaml` | SM | Live sprint state — updated at sprint closure |
+| `_INDEX.md` | Docs | Historical record of closed HUs — DONE/CARRY-OVER/CANCELLED/ABORTED |
 
 ### The Story File — Why It Matters
 
@@ -147,7 +147,7 @@ Does NOT have: full SDD, Adversarial Review, formal Code Review, evidence-based 
 [Adversary] Adversarial Review → BLOCKER / MINOR / OK
 [Adversary + QA] Code Review → MUST FIX / SUGGESTION
 [QA] F4: Drift Detection + AC evidence file:line + build clean
-[Docs] DONE → _INDEX.md
+[Docs] DONE → _INDEX.md + close issue in tracker
 Push
 ```
 
@@ -216,7 +216,7 @@ Claude discovers on its own: language, framework, architecture, commands, patter
     ├── validation_report_template.md    # QA: drift + ACs + quality gates
     ├── launch_flow.md                   # Detailed LAUNCH mode pipeline
     ├── quick_flow.md                    # Detailed FAST mode pipeline
-    ├── sprint_cadence.md                # SM Planning / Status / Retro
+    ├── sprint_cadence.md                # SM Planning / Status / Retro / Sprint Closure Checklist
     └── project_context_template.md      # Stack-agnostic project-context template
 ```
 
