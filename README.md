@@ -173,12 +173,17 @@ Push
 
 ---
 
-## The 2 Gates (QUALITY mode)
+## Gates
 
-| Gate | Exact text | What does NOT activate it |
-|---|---|---|
-| **GATE 1** | `HU_APPROVED` | "ok", "sure", "yes", "go", "sounds good" |
-| **GATE 2** | `SPEC_APPROVED` | "implement it", "start", "go ahead", anything else |
+| Gate | Exact text | Context | Effect |
+|---|---|---|---|
+| `HU_APPROVED` | `HU_APPROVED` | After F1 Work Item | Architect starts F2 SDD |
+| `SPEC_APPROVED` | `SPEC_APPROVED` | After F2 SDD | Architect generates Story File (F2.5) |
+| `SPRINT_APPROVED` | `SPRINT_APPROVED` | After Sprint Planning | SM commits artifacts, Architect starts F0 |
+| `REVIEW_APPROVED` | `REVIEW_APPROVED` | After Status Meeting | SM commits status, pipeline continues |
+| `RETRO_APPROVED` | `RETRO_APPROVED` | After Retrospective | SM runs Closure Checklist, sprint marked CLOSED |
+
+**Universal rule:** Only the exact text activates the gate. "yes", "ok", "go", "sounds good", "start" → do NOT activate any gate.
 
 Gates exist to ensure the human has **actually read** the artifact — not for the AI to assume they did.
 
