@@ -132,20 +132,57 @@ Does NOT have: full SDD, Adversarial Review, formal Code Review, evidence-based 
 **Always use when:** going to real users, has DB / auth / payments / sensitive data, a bug has real cost.
 
 ```
-[Analyst + Architect] F0: Codebase Grounding + project-context.md
-[Analyst + Architect + UX] F1: Work Items + EARS ACs + Scope IN/OUT
-                              + dependency analysis + parallelism proposal
+[Analyst + Architect] F0
+  Bootstrap: read codebase, generate project-context.md (once per project)
+  Smart Sizing: classify HU as patch / bugfix / mini / full
+  If patch → redirect to FAST. Otherwise continue.
+
+[Analyst + Architect + UX] F1
+  Work Item: normalize HU, write EARS ACs, define Scope IN/OUT
+  Dependency analysis + parallelism proposal (when multiple HUs)
+  Branch: feat/NNN-title
+
 ⛔ GATE 1: HU_APPROVED  ← approves Work Items AND execution order
-[Architect + Adversary] F2: SDD + Constraint Directives + Readiness Check
+
+[Architect + Adversary] F2
+  Codebase Grounding: read real files, build Context Map, identify Exemplars
+  SDD: technical spec, routes, schema, Constraint Directives
+  Readiness Check: every AC has a file, every file has an Exemplar
+  Adversary reviews SDD: resolve all [NEEDS CLARIFICATION] before gate
+
 ⛔ GATE 2: SPEC_APPROVED
-[Architect] F2.5: Story File (autocontained, Integration Contract if components talk)
-    ⚠️  NO STORY FILE = NO CODING
-[Dev] F3: Anti-Hallucination Protocol + Waves + Auto-Blindaje
-[Adversary] Adversarial Review → BLOCKER / MINOR / OK
-[Adversary + QA] Code Review → MUST FIX / SUGGESTION
-[QA] F4: Drift Detection + AC evidence file:line + build clean
-[Docs] DONE → _INDEX.md + close issue in tracker
-Push
+
+[Architect] F2.5: Story File
+  Autocontained contract for Dev. Includes: goal, ACs, files + exemplars,
+  Integration Contract (if components communicate), Constraint Directives,
+  Waves, Out of Scope, Escalation Rule.
+  ⚠️  NO STORY FILE = NO CODING. NO EXCEPTIONS.
+
+[Dev] F3: Implementation
+  Anti-Hallucination Protocol: read exemplar before each task
+  Re-mapping before each wave: verify imports/exports from previous wave
+  Waves: W0 serial (foundation) → W1+ parallel
+  Incremental verification: typecheck passes after every wave
+  Auto-Blindaje: document errors immediately when they occur
+
+[Adversary] Adversarial Review (automatic, no gate)
+  8 attack categories: AuthZ, inputs, injection, secrets, race conditions,
+  data exposure, mock data, DB security
+  BLOCKER → Dev fixes before continuing
+  MINOR → document and fix if quick
+
+[Adversary + QA] Code Review (automatic)
+  Pattern compliance vs Story File exemplars
+  Naming, complexity, duplication, imports, scope
+
+[QA] F4: Validation
+  Drift Detection: files created/modified vs plan
+  AC verification: every AC with file:line evidence. No evidence = not done.
+  Quality gates: typecheck + lint + build clean
+
+[Docs] DONE
+  report.md + _INDEX.md updated + issue closed in tracker
+  Push
 ```
 
 
