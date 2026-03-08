@@ -6,7 +6,7 @@ You describe a feature to Claude. It writes code confidently, imports a module t
 
 That's not a Claude problem. That's a structure problem.
 
-**NexusAgile is a software development methodology designed for AI agents.** It gives Claude Code the pipeline, roles, and contracts it needs to plan, implement, review, and close features without hallucinating, drifting from spec, or breaking things outside scope.
+**Nexus Agile is a software development methodology designed for AI agents.** It gives Claude Code the pipeline, roles, and contracts it needs to plan, implement, review, and close features without hallucinating, drifting from spec, or breaking things outside scope.
 
 Stack-agnostic. Installs in minutes as a Claude Code skill.
 
