@@ -1,4 +1,4 @@
-# NexusAgil
+# Nexus Agile
 
 **Stack-agnostic methodology for AI-assisted software development — anti-hallucination by design.**
 
