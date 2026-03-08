@@ -8,6 +8,8 @@ That's not a Claude problem. That's a structure problem.
 
 **NexusAgile is a software development methodology designed for AI agents.** It covers the full software development lifecycle: sprint planning, feature implementation, adversarial review, QA, retrospectives, and sprint closure. All with specialized agents, strict gates, and zero tolerance for hallucination.
 
+Inspired by Scrum, NexusAgile organizes work in sprints with planning, status, and retrospective ceremonies. Each sprint contains one or more User Stories that move through a structured pipeline until they ship. The difference is that the agents execute the process, not the team.
+
 Stack-agnostic. Installs in minutes as a Claude Code skill.
 
 
