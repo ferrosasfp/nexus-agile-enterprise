@@ -149,23 +149,15 @@ Push
 ```
 
 
-## Mode Comparison
+## When to Use Each Mode
 
 | | FAST | LAUNCH | QUALITY |
 |---|---|---|---|
-| **For** | Trivial fix | MVP / prototype | Production |
-| **Codebase Grounding** | minimal | complete | deep |
-| **Formal Work Item** | ❌ | ❌ | ✅ |
-| **Full SDD** | ❌ | ❌ | ✅ |
-| **Story File** | ❌ | simplified | autocontained |
-| **Integration Contract** | ❌ | if needed | ✅ BLOCKING |
-| **Gate HU_APPROVED** | ❌ | ❌ | ✅ |
-| **Gate LAUNCH_APPROVED** | ❌ | ✅ | ❌ |
-| **Gate SPEC_APPROVED** | ❌ | ❌ | ✅ |
-| **Adversarial Review** | ❌ | ❌ | ✅ |
-| **QA with evidence** | ❌ | ❌ | ✅ |
+| **Best for** | Fix a bug, update a text, tweak a style | Build an MVP, prototype or new app from scratch | Ship a feature to real users |
+| **You get** | Working code in minutes | A structured codebase with anti-hallucination from day one | Full audit trail: spec, review, QA evidence |
+| **Human decisions** | None. Just describe the change. | One gate: approve the HU list before Dev starts | Two gates: approve the work item, approve the spec |
 | **Speed** | ⚡⚡⚡ | ⚡⚡ | ⚡ |
-| **Safety** | basic | medium | high |
+| **When in doubt** | | | Use this one |
 
 
 ## Gates
