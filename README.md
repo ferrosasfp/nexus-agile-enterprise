@@ -184,24 +184,28 @@ doc/sdd/_INDEX.md         ← history of every closed HU
 
 ## The 9 Agents
 
-Agents are roles Claude assumes depending on the phase. They are not separate people, it's Claude switching hats. Who specifies does not implement. Who implements does not validate.
+Agents are roles Claude assumes depending on the phase. They are not separate people, it's Claude switching hats.
 
-| Agent | Role | Active in |
-|---|---|---|
-| **Triage** | Evaluates if a change qualifies as FAST or escalates to LAUNCH/QUALITY | Quick Flow |
-| **Analyst** | Extracts requirements, normalizes User Stories, defines EARS Acceptance Criteria | F0, F1 |
-| **Architect** | Codebase Grounding, SDD, Story File, Code Review, dependency analysis | F0, F1, F2, F2.5, CR |
-| **UX** | Microcopy, user flows, accessibility | F1 (when UI is involved) |
-| **Adversary** | Attacks the solution looking for security and logic flaws | AR, CR, F2 review |
-| **Dev** | Implements ONLY from the Story File, waves, anti-hallucination | F3 |
-| **SM** | Sprint Planning, Status Meeting, Retrospective, Sprint Closure Checklist | Sprint cadence |
-| **QA** | Validates ACs with file:line evidence, Drift Detection | F4 |
-| **Docs** | Documents artifacts, updates `_INDEX.md`, closes issues in tracker | DONE |
+| Agent | Personality | Responsibilities | Active in |
+|---|---|---|---|
+| **Analyst** | Pragmatic, business-oriented. Asks the right questions. | Interprets human input (text, bullets, images), normalizes into Work Item, writes EARS ACs, defines Scope IN/OUT, identifies missing inputs. Max 3 questions to complete DoR. | F0, F1 |
+| **Architect** | Meticulous, pattern-driven. Reads before proposing. Never invents. | Codebase Grounding, Context Map, Exemplars, SDD with Constraint Directives, Readiness Check, Story File, Code Review. Resolves TBDs by exploring the codebase. | F0, F1, F2, F2.5, CR |
+| **UX** | Empathetic with the end user. Focused on clarity and accessibility. | Microcopy for interactive elements, user flows (happy path + error), basic accessibility (aria-labels, contrast, keyboard nav). Only when the HU has a UI component. | F1 (UI only) |
+| **Adversary** | Skeptical, paranoid in the good sense. Assumes everything can fail. | Reviews SDD for security issues (F2). Attacks implementation across 8 categories in AR. Code Review in CR. Classifies findings as BLOCKER / MINOR / OK. Re-reviews after fixes. Never implements. | F2, AR, CR |
+| **Dev** | Disciplined, methodical. Follows instructions exactly. Does not improvise. | Reads ONLY the Story File. Implements in Waves (W0 serial, W1+ parallel). Anti-Hallucination Protocol before each task. Re-mapping between waves. Incremental verification. Auto-Blindaje when errors occur. If something is not in the Story File: stops and escalates to Architect. | F3, post-AR fixes |
+| **SM** | Organized, focused on keeping the team unblocked. | Sprint Planning: backlog prioritization, HU selection, capacity estimation. Status Meeting: progress review, blockers, plan adjustment. Retrospective: what worked, what didn't, improvement actions, Auto-Blindaje consolidation. | Sprint cadence |
+| **QA** | Detail-oriented. Takes nothing for granted. No evidence = not done. | Drift Detection (plan vs implementation). AC verification with file:line evidence. Quality gates: typecheck, tests, lint, build. Generates Validation Report. | F4, CR |
+| **Triage** | Pragmatic and efficient. Knows not everything needs ceremony, but knows when to escalate. | Evaluates if a change qualifies for FAST. Runs the abbreviated pipeline. Escalates to full pipeline if the change grows beyond 2 files or touches DB/logic. | FAST flow |
+| **Docs** | Orderly, completeness-driven. Nothing goes undocumented. | Compiles final report with AC status, AR/CR summary, Auto-Blindaje log. Updates `_INDEX.md`. Verifies all artifacts are persisted. Closes issue in tracker. | DONE |
 
 **Separation rules:**
-- Architect specifies, Dev implements, QA validates. Never the same agent.
-- Adversary reviews code it did NOT write.
-- SM runs ceremonies. SM does not implement.
+```
+Analyst (defines requirements)  ≠  Architect (specifies solution)
+Architect (specifies)           ≠  Dev (implements)
+Dev (implements)                ≠  Adversary (attacks)
+Adversary (attacks)             ≠  QA (validates)
+```
+No exceptions. If an agent needs to do something outside its role, it escalates to the right agent.
 
 
 ## The Artifacts
