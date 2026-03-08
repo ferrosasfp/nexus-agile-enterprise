@@ -10,7 +10,6 @@ That's not a Claude problem. That's a structure problem.
 
 Stack-agnostic. Installs in minutes as a Claude Code skill.
 
----
 
 ## The Problem It Solves
 
@@ -24,7 +23,6 @@ Stack-agnostic. Installs in minutes as a Claude Code skill.
 | Unstructured implementation | **Waves** — W0 serial, W1+ parallel with re-mapping between waves |
 | Components talking in incompatible formats | **Integration Contract** — exact request/response format between components, blocking |
 
----
 
 ## The 9 Agents
 
@@ -47,7 +45,6 @@ Agents are roles Claude assumes depending on the phase. They are not separate pe
 - Who **implements** (Dev) does NOT validate (QA)
 - Who **reviews adversarially** (Adversary) did NOT write the code
 
----
 
 ## The Artifacts
 
@@ -78,7 +75,6 @@ The Story File is the **contract between Architect and Dev**. Dev reads ONLY thi
 
 **⚠️ No Story File = No coding. No exceptions.**
 
----
 
 ## 3 Modes
 
@@ -90,7 +86,6 @@ At the start of each session, Claude evaluates what you are building:
 3. QUALITY — Production feature (DB, auth, payments, real users)
 ```
 
----
 
 ## FAST — Trivial change
 
@@ -111,7 +106,6 @@ If any condition fails → automatically escalates to LAUNCH or QUALITY.
 
 No formal gates. No story file. No AR or formal QA.
 
----
 
 ## LAUNCH — MVP / Prototype
 
@@ -130,7 +124,6 @@ No formal gates. No story file. No AR or formal QA.
 Has: Codebase Grounding, Story Files, human gate, anti-hallucination, waves.
 Does NOT have: full SDD, Adversarial Review, formal Code Review, evidence-based QA.
 
----
 
 ## QUALITY — Production
 
@@ -155,7 +148,6 @@ Does NOT have: full SDD, Adversarial Review, formal Code Review, evidence-based 
 Push
 ```
 
----
 
 ## Mode Comparison
 
@@ -175,7 +167,6 @@ Push
 | **Speed** | ⚡⚡⚡ | ⚡⚡ | ⚡ |
 | **Safety** | basic | medium | high |
 
----
 
 ## Gates
 
@@ -193,7 +184,6 @@ Push
 
 Gates exist to ensure the human has **actually read** the artifact — not for the AI to assume they did.
 
----
 
 ## Installation
 
@@ -212,7 +202,6 @@ NexusAgil, this is a new project. Read the codebase and generate project-context
 
 Claude discovers on its own: language, framework, architecture, commands, patterns. No manual editing needed.
 
----
 
 ## Skill Structure
 
@@ -231,7 +220,6 @@ Claude discovers on its own: language, framework, architecture, commands, patter
     └── project_context_template.md      # Stack-agnostic project-context template
 ```
 
----
 
 ## Relationship with NexusFactory
 
@@ -251,7 +239,6 @@ NexusFactory includes NexusAgile by default.
 
 → [NexusFactory repo](https://github.com/ferrosasfp/NexusFactory)
 
----
 
 ## Credits
 
