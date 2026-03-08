@@ -87,48 +87,62 @@ Gate: `RETRO_APPROVED`
 
 ## The Feature Pipeline (per HU)
 
-Each HU in the sprint goes through this pipeline. The two human gates are `HU_APPROVED` and `SPEC_APPROVED`. The rest runs automatically.
+Each HU goes through this pipeline inside the sprint. The two human gates are `HU_APPROVED` and `SPEC_APPROVED`. Everything else runs automatically.
 
 ### F0: Bootstrap + Smart Sizing
 
-The Architect reads the real codebase and generates `project-context.md` (once per project, reused in every session). Then classifies the HU:
+The Architect checks if `project-context.md` exists. If not, it reads the codebase from scratch (dependencies, folder structure, representative files, commands, DB, auth) and generates it. This file is created once and reused across every session.
 
-| Signal | Mode |
-|--------|------|
-| Max 2 files, no DB, no logic | FAST |
-| New project, MVP, prototype | LAUNCH |
-| Real users, DB, auth, payments | QUALITY |
-| Any doubt | QUALITY |
+Then it classifies the HU by SDD_MODE:
 
-### F1: Work Item
+| Signal | SDD_MODE | What happens |
+|--------|----------|--------------|
+| Max 2 files, no DB, no new logic | patch | Redirects to FAST pipeline |
+| Bug with reproduction steps | bugfix | Lightweight SDD |
+| Refactor, tech task, no visible change | mini | Minimal SDD |
+| Feature or improvement with logic | full | Full pipeline |
 
-The Analyst normalizes the HU into a structured Work Item with EARS Acceptance Criteria, Scope IN/OUT, and identifies missing inputs. The Architect analyzes dependencies with other HUs in the sprint and proposes parallelism where there are no file conflicts.
+### F1: Discovery
+
+The Analyst normalizes the HU into a Work Item: objective, EARS Acceptance Criteria, Scope IN/OUT, and missing inputs. The UX agent contributes microcopy and user flows when UI is involved.
+
+The Architect analyzes dependencies with other HUs in the sprint and proposes execution order: parallel where there are no file conflicts, sequential where there are.
+
+Output: `work-item.md` saved to `doc/sdd/NNN-title/`.
 
 Gate: `HU_APPROVED` (approves the Work Item and the execution order)
 
 ### F2: SDD
 
-The Architect does deep Codebase Grounding: reads real files, extracts patterns, identifies Exemplars for every file that will be created or modified, and builds the Context Map. Then writes the SDD with routes, schema, Constraint Directives, and a Readiness Check.
+The Architect does deep Codebase Grounding: reads at least 2-3 real files related to the HU, extracts patterns (imports, naming, structure), identifies an Exemplar for every file that will be created or modified, and documents everything in a Context Map.
 
-The Adversary reviews the SDD before it goes to the human. Any `[NEEDS CLARIFICATION]` must be resolved before the gate.
+Then writes the SDD using the template that matches the SDD_MODE (FULL / BUGFIX / MINI), including routes, schema, Constraint Directives (REQUIRED / FORBIDDEN), and a Readiness Check that verifies every AC has a file and every file has a valid Exemplar.
+
+The Adversary reviews the SDD before it reaches the human. Any `[NEEDS CLARIFICATION]` must be resolved before the gate.
+
+Output: `sdd.md` saved to `doc/sdd/NNN-title/`.
 
 Gate: `SPEC_APPROVED`
 
 ### F2.5: Story File
 
-The Architect generates the autocontained contract for Dev. Dev reads ONLY this document, nothing else. It contains: goal, ACs, files to touch with real Exemplars, Integration Contract (if components communicate), Constraint Directives, Waves, Out of Scope, and an Escalation Rule.
+The Architect generates the autocontained contract for Dev. Dev reads ONLY this document, nothing else — no SDD, no original HU. It contains: goal in 1-2 sentences, ACs copied from the SDD, a table of files to create/modify each with a real Exemplar, Integration Contract when components communicate (blocking: Dev cannot start without it), Constraint Directives, Waves, Out of Scope, and an Escalation Rule.
 
 **No Story File = No coding. No exceptions.**
 
+Output: `story-file.md` saved to `doc/sdd/NNN-title/`.
+
 ### F3: Implementation
 
-Dev implements using the Anti-Hallucination Protocol: reads the assigned Exemplar before each task, verifies imports exist, follows the project's patterns. Work is organized in Waves: W0 is always serial (the foundation), W1+ can run in parallel. Dev re-maps before each wave by reading files modified in the previous one. Every error is documented immediately in Auto-Blindaje.
+Dev follows the Anti-Hallucination Protocol before each task: reads the assigned Exemplar, verifies that imports exist, follows the project's patterns. No adding dependencies not approved in the SDD. No touching files outside Scope IN.
 
-Incremental verification: typecheck passes after every wave.
+Work is organized in Waves. W0 is always serial (the foundation). W1+ can run in parallel. Before each wave Dev re-maps: reads the files created or modified in the previous wave to verify that what the current wave needs actually exists. Every error found is documented immediately in Auto-Blindaje: what failed, how it was fixed, where else it applies.
+
+Incremental verification: typecheck passes after every wave. If it fails, Dev fixes before continuing.
 
 ### Adversarial Review
 
-A separate agent attacks the implementation across 8 categories: authorization, input validation, injection, secret exposure, race conditions, data exposure, mock data in production, and DB security. BLOCKER findings must be fixed before the pipeline continues. The Adversary re-reviews after each fix.
+A separate agent attacks the full implementation across 8 categories: authorization, input validation, injection, secret exposure, race conditions, data exposure, mock data in production, and DB security. BLOCKER findings must be fixed before the pipeline continues. The Adversary re-reviews after each fix. MINOR findings are documented and fixed if quick.
 
 ### Code Review
 
@@ -136,11 +150,24 @@ Pattern compliance vs Story File Exemplars: naming consistency, function complex
 
 ### F4: QA
 
-Drift Detection compares what was built against the plan. Every AC is verified with `file:line` evidence. No evidence = not done. Quality gates: typecheck + lint + build clean.
+Drift Detection compares what was built against the plan: files created, files modified, new dependencies, files outside scope. Every AC is verified with `file:line` evidence. No evidence = not done. Quality gates: typecheck + lint + build clean.
+
+Output: `validation.md` saved to `doc/sdd/NNN-title/`.
 
 ### DONE
 
-The Docs agent writes `report.md`, updates `_INDEX.md`, and closes the issue in the tracker. The HU is done.
+The Docs agent writes `report.md` with the summary, AC status, AR/CR findings, and the Auto-Blindaje log. Updates `_INDEX.md` and closes the issue in the tracker.
+
+```
+doc/sdd/
+└── NNN-title/
+    ├── work-item.md      ← F1
+    ├── sdd.md            ← F2
+    ├── story-file.md     ← F2.5
+    ├── validation.md     ← F4
+    └── report.md         ← DONE
+doc/sdd/_INDEX.md         ← history of every closed HU
+```
 
 
 ## 3 Modes
