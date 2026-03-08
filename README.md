@@ -181,7 +181,7 @@ Gates exist to ensure the human has **actually read** the artifact, not for the 
 
 ```bash
 git clone https://github.com/ferrosasfp/nexus-agile.git /tmp/nexus-agile
-cp -r /tmp/nexus-agile/.claude/skills/nexus-agil/ your-project/.claude/skills/nexus-agil/
+cp -r /tmp/nexus-agile/.claude/skills/nexus-agile/ your-project/.claude/skills/nexus-agile/
 rm -rf /tmp/nexus-agile
 ```
 
@@ -198,7 +198,7 @@ Claude discovers on its own: language, framework, architecture, commands, patter
 ## Skill Structure
 
 ```
-.claude/skills/nexus-agil/
+.claude/skills/nexus-agile/
 ├── SKILL.md                             # Full pipeline, 3 modes, global rules
 └── references/
     ├── agents_roster.md                 # 9 agents with personality and responsibilities
