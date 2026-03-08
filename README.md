@@ -1,17 +1,20 @@
-# Nexus Agile
+# NexusAgile
 
-**Stack-agnostic methodology for AI-assisted software development — anti-hallucination by design.**
+> *"The human decides WHAT. The agents execute HOW."*
 
-Works with any stack: Next.js, Rails, Django, Laravel, FastAPI, Go, or anything else.
-Installs in minutes and integrates with Claude Code as a skill.
+You describe a feature to Claude. It writes code confidently — and imports a module that doesn't exist, follows patterns inconsistent with your project, and modifies files it wasn't supposed to touch. You spend 40 minutes fixing what should have taken 10.
+
+That's not a Claude problem. That's a structure problem.
+
+**NexusAgile is a software development methodology designed for AI agents.** It gives Claude Code the pipeline, roles, and contracts it needs to plan, implement, review, and close features — without hallucinating, drifting from spec, or breaking things outside scope.
+
+Stack-agnostic. Installs in minutes as a Claude Code skill.
 
 ---
 
 ## The Problem It Solves
 
-AI coding assistants tend to **hallucinate**: they invent imports that don't exist, create patterns inconsistent with the project, and assume APIs that aren't available.
-
-| Problem | NexusAgil Solution |
+| Problem | NexusAgile Solution |
 |---|---|
 | AI invents imports/modules | **Codebase Grounding** — read real files before generating anything |
 | AI creates inconsistent patterns | **Exemplar Pattern** — reference existing files in the codebase |
@@ -195,9 +198,9 @@ Gates exist to ensure the human has **actually read** the artifact — not for t
 ## Installation
 
 ```bash
-git clone https://github.com/ferrosasfp/NexusAgile.git /tmp/NexusAgile
-cp -r /tmp/NexusAgile/.claude/skills/nexus-agil/ your-project/.claude/skills/nexus-agil/
-rm -rf /tmp/NexusAgile
+git clone https://github.com/ferrosasfp/nexus-agile.git /tmp/nexus-agile
+cp -r /tmp/nexus-agile/.claude/skills/nexus-agil/ your-project/.claude/skills/nexus-agil/
+rm -rf /tmp/nexus-agile
 ```
 
 Restart Claude Code. Skills load automatically at startup.
@@ -234,17 +237,17 @@ Claude discovers on its own: language, framework, architecture, commands, patter
 
 ```
 NexusFactory  =  opinionated project template (stack + structure)
-             +   NexusAgil preinstalled (stack-aware version)
+             +   NexusAgile preinstalled (stack-aware version)
 
-NexusAgil     =  standalone methodology (any stack)
+NexusAgile    =  standalone methodology (any stack)
 ```
 
 **Key difference:**
-- **NexusAgil standalone** (this repo) is fully stack-agnostic. It discovers and studies the project stack at the beginning of each session to generate `project-context.md`.
-- **NexusAgil inside NexusFactory** comes pre-configured for the NexusFactory Golden Path (Next.js + Supabase + Viem + Foundry). The `project-context.md` is already provided — no bootstrap needed.
+- **NexusAgile standalone** (this repo) is fully stack-agnostic. It discovers and studies the project stack at the beginning of each session to generate `project-context.md`.
+- **NexusAgile inside NexusFactory** comes pre-configured for the NexusFactory Golden Path (Next.js + Supabase + Viem + Foundry). The `project-context.md` is already provided — no bootstrap needed.
 
-NexusAgil works without NexusFactory.
-NexusFactory includes NexusAgil by default.
+NexusAgile works without NexusFactory.
+NexusFactory includes NexusAgile by default.
 
 → [NexusFactory repo](https://github.com/ferrosasfp/NexusFactory)
 
