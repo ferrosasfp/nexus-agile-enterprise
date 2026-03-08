@@ -1,4 +1,4 @@
-# NexusAgile
+# Nexus Agile
 
 > *"The human decides WHAT. The agents execute HOW."*
 
