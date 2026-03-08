@@ -213,23 +213,23 @@ Claude discovers on its own: language, framework, architecture, commands, patter
 ```
 
 
-## Relationship with NexusFactory
+## Relationship with Nexus Factory
 
 ```
 NexusFactory  =  opinionated project template (stack + structure)
              +   NexusAgile preinstalled (stack-aware version)
 
-NexusAgile    =  standalone methodology (any stack)
+Nexus Agile    =  standalone methodology (any stack)
 ```
 
 **Key difference:**
-- **NexusAgile standalone** (this repo) is fully stack-agnostic. It discovers and studies the project stack at the beginning of each session to generate `project-context.md`.
-- **NexusAgile inside NexusFactory** comes pre-configured for the NexusFactory Golden Path (Next.js + Supabase + Viem + Foundry). The `project-context.md` is already provided, no bootstrap needed.
+- **Nexus Agile standalone** (this repo) is fully stack-agnostic. It discovers and studies the project stack at the beginning of each session to generate `project-context.md`.
+- **Nexus Agile inside Nexus Factory** comes pre-configured for the NexusFactory Golden Path (Next.js + Supabase + Viem + Foundry). The `project-context.md` is already provided, no bootstrap needed.
 
 NexusAgile works without NexusFactory.
 NexusFactory includes NexusAgile by default.
 
-[NexusFactory repo](https://github.com/ferrosasfp/NexusFactory)
+[NexusFactory repo](https://github.com/ferrosasfp/nexus-factory)
 
 
 ## Credits
