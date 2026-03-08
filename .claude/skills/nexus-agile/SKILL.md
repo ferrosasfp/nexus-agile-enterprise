@@ -1,5 +1,5 @@
 ---
-name: nexus-agil
+name: nexus-agile
 description: >
   Metodologia stack-agnostic para procesar Historias de Usuario (HU) a traves de un pipeline
   con agentes especializados, gates estrictos, adversarial review y anti-alucinacion.
