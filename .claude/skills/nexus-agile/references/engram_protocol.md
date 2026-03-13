@@ -1,8 +1,10 @@
-# Engram Protocol — NexusAgil
+# Engram Protocol — NexusAgil (Implementación de referencia)
 
-> Protocolo de memoria persistente integrado al pipeline.
-> Engram resuelve la amnesia entre sesiones: el sistema aprende con cada HU procesada.
+> **Opcional.** NexusAgil es agnóstico de herramientas de memoria.
+> Este documento es la implementación de referencia usando Engram (Go binary + SQLite + MCP).
+> Alternativas válidas: MEMORY.md manual, cualquier sistema MCP de memoria, claude-mem, etc.
 > Requiere: engram instalado y MCP configurado (`engram mcp` en mcpServers).
+> Repo: https://github.com/Gentleman-Programming/engram
 
 ---
 
