@@ -29,6 +29,7 @@ description: >
 7. **Auto-Blindaje** — Cada error refuerza el proceso. Se documenta cuando ocurre, no al final.
 8. **Memoria Persistente** — Al iniciar cada sesion, cargar contexto de sesiones anteriores. Al cerrar, guardar resumen estructurado. El sistema mejora con cada HU procesada. Implementacion: cualquier sistema de memoria disponible (Engram, MEMORY.md, o equivalente).
 9. **Skills Router** — Cargar solo las skills relevantes para cada HU. Maximo 2 skills de dominio adicionales a la metodologia base. Contexto limpio = respuestas mas precisas y menor riesgo de alucinacion.
+10. **Orquestacion por Sub-Agentes** — En modo QUALITY, cada fase del pipeline corre en un sub-agente con contexto fresco. El orquestador NUNCA hace trabajo real — solo coordina, recibe artefactos y maneja gates. Elimina context overload en HUs complejas. Ver `references/subagent_protocol.md`.
 
 ---
 
@@ -204,6 +205,7 @@ Cuando ejecutas una HU en modo QUALITY, lee `references/quality_pipeline.md` par
 | DONE | `references/quality_pipeline.md` | Reporte final, _INDEX.md, cierre issue tracker, resumen de sesion |
 
 > **Memoria persistente (opcional pero recomendado):** Si el proyecto usa un sistema de memoria, ver `references/engram_protocol.md` como implementacion de referencia con Engram.
+> **Orquestacion por sub-agentes (QUALITY):** Cada fase puede correr en sub-agente con contexto fresco. Ver `references/subagent_protocol.md`. Si el IDE no soporta sub-agentes, usar sesion unica con Skills Router activo.
 
 ### Skills Router — F0 adicional
 Despues del Smart Sizing en F0, el Architect ejecuta el Skills Router:
@@ -318,6 +320,8 @@ El clarify es informativo, no bloqueante. El humano decide.
 28. **Auto-Blindaje → Memoria**: Cada error documentado en F3 se persiste tambien en el sistema de memoria del proyecto.
 29. **Skills Router en F0**: Despues del Smart Sizing, cargar 1-2 skills de dominio relevantes. Max 2. Ver `references/skills_router.md`.
 30. **Skills max 200 lineas**: Cada skill de dominio no supera 200 lineas. Si crece, dividir en 2 skills mas especificas.
+31. **Orquestador sin trabajo real**: Si el orquestador empieza a generar codigo, SDDs o analisis → error de proceso. Solo coordina y maneja gates.
+32. **Artefactos como canal**: Los archivos en `doc/sdd/NNN-titulo/` son el canal de comunicacion entre sub-agentes. Cada sub-agente lee el artefacto de la fase anterior, no el historial de chat.
 
 ---
 
