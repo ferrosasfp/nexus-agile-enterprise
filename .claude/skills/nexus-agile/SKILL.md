@@ -27,6 +27,8 @@ description: >
    **Entre gates, el pipeline corre solo.** El agente NO pide permiso para pasar de F0→F1, F2→F2.5, F3→AR, AR→CR, CR→QA, QA→Docs. Solo se detiene en los gates formales. Preguntar "¿continuo?" entre fases es un error de proceso.
 6. **Adversarial Review** — Despues de implementar, un agente adversario ataca la solucion antes de aprobarla.
 7. **Auto-Blindaje** — Cada error refuerza el proceso. Se documenta cuando ocurre, no al final.
+8. **Memoria Persistente (Engram)** — Cada sesion carga contexto anterior y guarda aprendizajes. El sistema mejora con cada HU procesada. Ver `references/engram_protocol.md`.
+9. **Skills Router** — Cargar solo las skills relevantes para cada HU. Maximo 2 skills de dominio adicionales. Contexto limpio = respuestas mas precisas. Ver `references/skills_router.md`.
 
 ---
 
@@ -191,15 +193,22 @@ Cuando ejecutas una HU en modo QUALITY, lee `references/quality_pipeline.md` par
 
 | Fase | Referencia | Que contiene |
 |------|-----------|--------------|
-| F0: Contexto | `references/quality_pipeline.md` | Bootstrap, Smart Sizing, Codebase Grounding |
-| F1: Discovery | `references/quality_pipeline.md` | Work Item, EARS ACs, DoR, Branch, Paralelismo |
+| F0: Contexto | `references/quality_pipeline.md` + `references/engram_protocol.md` | Bootstrap, Smart Sizing, Skills Router, mem_context |
+| F1: Discovery | `references/quality_pipeline.md` | Work Item, EARS ACs, DoR, Branch, Paralelismo, mem_search |
 | F2: SDD | `references/quality_pipeline.md` + `references/sdd_template.md` | Context Map, SDD, Constraint Directives, Readiness Check |
 | F2.5: Story File | `references/quality_pipeline.md` + `references/story_file_template.md` | Contrato autocontenido Architect→Dev |
-| F3: Implementacion | `references/quality_pipeline.md` | Waves, Anti-Hallucination Protocol, Re-mapeo, Auto-Blindaje |
-| AR | `references/quality_pipeline.md` + `references/adversarial_review_checklist.md` | 8 categorias de ataque, BLOQUEANTE/MENOR/OK |
+| F3: Implementacion | `references/quality_pipeline.md` | Waves, Anti-Hallucination Protocol, Re-mapeo, Auto-Blindaje → mem_save |
+| AR | `references/quality_pipeline.md` + `references/adversarial_review_checklist.md` | 8 categorias de ataque, BLOQUEANTE/MENOR/OK → mem_save hallazgos |
 | CR | `references/quality_pipeline.md` | 6 checks de calidad de codigo |
 | F4: QA | `references/quality_pipeline.md` + `references/validation_report_template.md` | Drift Detection, AC Verification, Quality Gates |
-| DONE | `references/quality_pipeline.md` | Reporte final, _INDEX.md, cierre issue tracker |
+| DONE | `references/quality_pipeline.md` + `references/engram_protocol.md` | Reporte final, _INDEX.md, cierre issue tracker, mem_session_summary |
+
+### Skills Router — F0 adicional
+Despues del Smart Sizing en F0, el Architect ejecuta el Skills Router:
+- Lee las señales de la HU (dominio, archivos, keywords)
+- Selecciona 1-2 skills de dominio del proyecto (maximo)
+- Declara explicitamente cuales skills carga
+- Ver `references/skills_router.md` para senales de deteccion y estructura
 
 ---
 
@@ -302,6 +311,11 @@ El clarify es informativo, no bloqueante. El humano decide.
 23. **Story File como contrato**: Dev SOLO lee el Story File, nada mas.
 24. **Adversarial Review bloqueante**: Hallazgos BLOQUEANTE se corrigen antes de avanzar.
 25. **Modelo capaz para fases criticas**: Usar el modelo mas capaz disponible para analisis, implementacion y AR.
+26. **mem_context al inicio**: Cargar contexto Engram al iniciar TODA sesion NexusAgil. Ver `references/engram_protocol.md`.
+27. **mem_session_summary al cierre**: OBLIGATORIO al terminar. Sin esto, la proxima sesion empieza ciega.
+28. **Auto-Blindaje → Engram**: Cada error documentado en F3 se guarda tambien en Engram como tipo `bug`.
+29. **Skills Router en F0**: Despues del Smart Sizing, cargar 1-2 skills de dominio relevantes. Max 2. Ver `references/skills_router.md`.
+30. **Skills max 200 lineas**: Cada skill de dominio no supera 200 lineas. Si crece, dividir en 2 skills.
 
 ---
 
