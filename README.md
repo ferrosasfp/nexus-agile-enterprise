@@ -115,7 +115,7 @@ With the Skills Router, the Architect runs a lightweight detection at F0 and loa
 
 Max 2 domain skills per HU. More than 2 is a signal the HU is too large — split it.
 
-Skills can come from [clawhub.com](https://clawhub.com), from a local `skills.sh` registry, or from your own project-specific skills. The router is agnostic.
+Skills can come from your own project-specific skill files or from a shared `skills/` directory in your monorepo. The router is agnostic to the source.
 
 
 ## The Feature Pipeline (per HU)
