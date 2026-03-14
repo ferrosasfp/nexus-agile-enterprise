@@ -2,301 +2,298 @@
 
 > *"The human decides WHAT. The agents execute HOW."*
 
-You describe a feature to Claude. It writes code confidently, imports a module that doesn't exist, follows patterns inconsistent with your project, and modifies files it wasn't supposed to touch. You spend 40 minutes fixing what should have taken 10.
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Works with Claude Code](https://img.shields.io/badge/Claude%20Code-ready-blue)](https://claude.ai/code)
+[![Stack agnostic](https://img.shields.io/badge/stack-agnostic-orange)](https://github.com/ferrosasfp/NexusAgile)
 
-That's not a Claude problem. That's a structure problem.
+---
 
-**NexusAgile is a software development methodology designed for AI agents.** It covers the full software development lifecycle: sprint planning, feature implementation, adversarial review, QA, retrospectives, and sprint closure. All with specialized agents, strict gates, and zero tolerance for hallucination.
+You describe a feature to Claude. It writes confident code that imports a module that doesn't exist, follows patterns inconsistent with your project, and touches files it wasn't supposed to. You spend 40 minutes fixing what should have taken 10.
 
-Inspired by Scrum, NexusAgile organizes work in sprints with planning, status, and retrospective ceremonies. Each sprint contains one or more User Stories that move through a structured pipeline until they ship. The difference is that the agents execute the process, not the team.
+That's not a Claude problem. That's a **structure problem**.
 
-Stack-agnostic. Installs in minutes as a Claude Code skill.
+**NexusAgile is a software development methodology built for AI agents.** It covers the full lifecycle — sprint planning, feature implementation, adversarial review, QA, retrospectives — with specialized agents, strict human gates, and zero tolerance for hallucination.
 
+No fluff. No long prompts that get ignored. Just a structured process that ships code you trust.
 
-## The Problem It Solves
+---
 
-| Problem | NexusAgile Solution |
+## Why NexusAgile
+
+| Without it | With NexusAgile |
 |---|---|
-| AI invents imports/modules | **Codebase Grounding:** read real files before generating anything |
-| AI creates inconsistent patterns | **Exemplar Pattern:** reference existing files in the codebase |
-| AI ignores restrictions | **Constraint Directives:** explicit REQUIRED/FORBIDDEN per task |
-| Implementation drifted from the plan | **Drift Detection:** plan vs implementation verified in QA |
-| Errors repeat across sessions | **Auto-Blindaje:** document errors immediately when they occur |
-| Unstructured implementation | **Waves:** W0 serial, W1+ parallel with re-mapping between waves |
-| Components talking in incompatible formats | **Integration Contract:** exact request/response format between components, blocking |
-| No visibility on sprint progress | **Sprint Cadence:** Planning, Status and Retrospective ceremonies built in |
-
-
-## How a Sprint Works
-
-NexusAgile manages the full sprint lifecycle. Every sprint starts with a planning ceremony and ends with a retrospective. Between those two points, features move through the implementation pipeline one by one.
-
-```
-⛔ SPRINT_APPROVED     ← Sprint Planning: HU list, estimates, order, branch strategy
-
-  For each HU in the sprint:
-  ┌─────────────────────────────────────────────────────┐
-  │  F0: Bootstrap + Smart Sizing                       │
-  │  F1: Work Item + EARS ACs + Scope + Dependencies    │
-  │  ⛔ HU_APPROVED                                     │
-  │  F2: Codebase Grounding + SDD + Adversary Review    │
-  │  ⛔ SPEC_APPROVED                                   │
-  │  F2.5: Story File (the only thing Dev reads)        │
-  │  F3: Implementation — Waves + Anti-Hallucination    │
-  │  AR: Adversarial Review — BLOCKER / MINOR / OK      │
-  │  CR: Code Review — pattern compliance               │
-  │  F4: QA — AC evidence file:line + quality gates     │
-  │  DONE: report + _INDEX.md + issue closed            │
-  └─────────────────────────────────────────────────────┘
-
-⛔ REVIEW_APPROVED     ← Mid-sprint Status Meeting (optional)
-⛔ RETRO_APPROVED      ← Sprint Retrospective + Closure Checklist
-```
-
-The human makes decisions at the gates. Everything else runs automatically.
-
-
-## The Sprint Ceremonies
-
-### Sprint Planning
-
-**Activate:** `"NexusAgil, sprint planning"`
-
-The SM agent runs the ceremony: reviews the backlog, proposes the HU list for the sprint, estimates effort, identifies dependencies between HUs, and proposes execution order (parallel where safe, sequential where needed). The Architect validates the technical feasibility.
-
-Output: `sprint-status.yaml` with the HU list, order, and branch strategy.
-
-Gate: `SPRINT_APPROVED`
-
-### Status Meeting
-
-**Activate:** `"NexusAgil, status"`
-
-Mid-sprint check. The SM reviews what's done, what's in progress, and what's blocked. If a HU is behind, the SM proposes adjustments (reduce scope, carry over, or escalate).
-
-Gate: `REVIEW_APPROVED`
-
-### Retrospective
-
-**Activate:** `"NexusAgil, retro"`
-
-End of sprint. The SM runs the retrospective: what went well, what didn't, what to improve. Then executes the Sprint Closure Checklist: all HUs closed in the tracker, `_INDEX.md` updated, `sprint-status.yaml` marked CLOSED, lessons documented.
-
-Gate: `RETRO_APPROVED`
-
-
-## The Feature Pipeline (per HU)
-
-Each HU goes through this pipeline inside the sprint. The two human gates are `HU_APPROVED` and `SPEC_APPROVED`. Everything else runs automatically.
-
-### F0: Bootstrap + Smart Sizing
-
-The Architect checks if `project-context.md` exists. If not, it reads the codebase from scratch (dependencies, folder structure, representative files, commands, DB, auth) and generates it. This file is created once and reused across every session.
-
-Then it classifies the HU by SDD_MODE:
-
-| Signal | SDD_MODE | What happens |
-|--------|----------|--------------|
-| Max 2 files, no DB, no new logic | patch | Redirects to FAST pipeline |
-| Bug with reproduction steps | bugfix | Lightweight SDD |
-| Refactor, tech task, no visible change | mini | Minimal SDD |
-| Feature or improvement with logic | full | Full pipeline |
-
-### F1: Discovery
-
-The Analyst normalizes the HU into a Work Item: objective, EARS Acceptance Criteria, Scope IN/OUT, and missing inputs. The UX agent contributes microcopy and user flows when UI is involved.
-
-The Architect analyzes dependencies with other HUs in the sprint and proposes execution order: parallel where there are no file conflicts, sequential where there are.
-
-Output: `work-item.md` saved to `doc/sdd/NNN-title/`.
-
-Gate: `HU_APPROVED` (approves the Work Item and the execution order)
-
-### F2: SDD
-
-The Architect does deep Codebase Grounding: reads at least 2-3 real files related to the HU, extracts patterns (imports, naming, structure), identifies an Exemplar for every file that will be created or modified, and documents everything in a Context Map.
-
-Then writes the SDD using the template that matches the SDD_MODE (FULL / BUGFIX / MINI), including routes, schema, Constraint Directives (REQUIRED / FORBIDDEN), and a Readiness Check that verifies every AC has a file and every file has a valid Exemplar.
-
-The Adversary reviews the SDD before it reaches the human. Any `[NEEDS CLARIFICATION]` must be resolved before the gate.
-
-Output: `sdd.md` saved to `doc/sdd/NNN-title/`.
-
-Gate: `SPEC_APPROVED`
-
-### F2.5: Story File
-
-The Architect generates the autocontained contract for Dev. Dev reads ONLY this document, nothing else — no SDD, no original HU. It contains: goal in 1-2 sentences, ACs copied from the SDD, a table of files to create/modify each with a real Exemplar, Integration Contract when components communicate (blocking: Dev cannot start without it), Constraint Directives, Waves, Out of Scope, and an Escalation Rule.
-
-**No Story File = No coding. No exceptions.**
-
-Output: `story-file.md` saved to `doc/sdd/NNN-title/`.
-
-### F3: Implementation
-
-Dev follows the Anti-Hallucination Protocol before each task: reads the assigned Exemplar, verifies that imports exist, follows the project's patterns. No adding dependencies not approved in the SDD. No touching files outside Scope IN.
-
-Work is organized in Waves. W0 is always serial (the foundation). W1+ can run in parallel. Before each wave Dev re-maps: reads the files created or modified in the previous wave to verify that what the current wave needs actually exists. Every error found is documented immediately in Auto-Blindaje: what failed, how it was fixed, where else it applies.
-
-Incremental verification: typecheck passes after every wave. If it fails, Dev fixes before continuing.
-
-### Adversarial Review
-
-A separate agent attacks the full implementation across 8 categories: authorization, input validation, injection, secret exposure, race conditions, data exposure, mock data in production, and DB security. BLOCKER findings must be fixed before the pipeline continues. The Adversary re-reviews after each fix. MINOR findings are documented and fixed if quick.
-
-### Code Review
-
-Pattern compliance vs Story File Exemplars: naming consistency, function complexity, duplication, approved imports, and scope boundaries.
-
-### F4: QA
-
-Drift Detection compares what was built against the plan: files created, files modified, new dependencies, files outside scope. Every AC is verified with `file:line` evidence. No evidence = not done. Quality gates: typecheck + lint + build clean.
-
-Output: `validation.md` saved to `doc/sdd/NNN-title/`.
-
-### DONE
-
-The Docs agent writes `report.md` with the summary, AC status, AR/CR findings, and the Auto-Blindaje log. Updates `_INDEX.md` and closes the issue in the tracker.
-
-```
-doc/sdd/
-└── NNN-title/
-    ├── work-item.md      ← F1
-    ├── sdd.md            ← F2
-    ├── story-file.md     ← F2.5
-    ├── validation.md     ← F4
-    └── report.md         ← DONE
-doc/sdd/_INDEX.md         ← history of every closed HU
-```
-
-
-## 3 Modes
-
-| | FAST | LAUNCH | QUALITY |
-|---|---|---|---|
-| **Best for** | Fix a bug, update a text, tweak a style | Build an MVP or prototype from scratch | Ship a feature to real users |
-| **You get** | Working code in minutes | A structured codebase with anti-hallucination from day one | Full audit trail: spec, adversarial review, QA evidence |
-| **Human decisions** | None. Just describe the change. | One gate: approve the HU list before Dev starts | Two gates per HU + three sprint ceremony gates |
-| **Sprint ceremonies** | No | No | Yes |
-| **Speed** | ⚡⚡⚡ | ⚡⚡ | ⚡ |
-| **When in doubt** | | | Use this one |
-
-
-## The 9 Agents
-
-Agents are roles Claude assumes depending on the phase. They are not separate people, it's Claude switching hats.
-
-| Agent | Personality | Responsibilities | Active in |
-|---|---|---|---|
-| **Analyst** | Pragmatic, business-oriented. Asks the right questions. | Interprets human input (text, bullets, images), normalizes into Work Item, writes EARS ACs, defines Scope IN/OUT, identifies missing inputs. Max 3 questions to complete DoR. | F0, F1 |
-| **Architect** | Meticulous, pattern-driven. Reads before proposing. Never invents. | Codebase Grounding, Context Map, Exemplars, SDD with Constraint Directives, Readiness Check, Story File, Code Review. Resolves TBDs by exploring the codebase. | F0, F1, F2, F2.5, CR |
-| **UX** | Empathetic with the end user. Focused on clarity and accessibility. | Microcopy for interactive elements, user flows (happy path + error), basic accessibility (aria-labels, contrast, keyboard nav). Only when the HU has a UI component. | F1 (UI only) |
-| **Adversary** | Skeptical, paranoid in the good sense. Assumes everything can fail. | Reviews SDD for security issues (F2). Attacks implementation across 8 categories in AR. Code Review in CR. Classifies findings as BLOCKER / MINOR / OK. Re-reviews after fixes. Never implements. | F2, AR, CR |
-| **Dev** | Disciplined, methodical. Follows instructions exactly. Does not improvise. | Reads ONLY the Story File. Implements in Waves (W0 serial, W1+ parallel). Anti-Hallucination Protocol before each task. Re-mapping between waves. Incremental verification. Auto-Blindaje when errors occur. If something is not in the Story File: stops and escalates to Architect. | F3, post-AR fixes |
-| **SM** | Organized, focused on keeping the team unblocked. | Sprint Planning: backlog prioritization, HU selection, capacity estimation. Status Meeting: progress review, blockers, plan adjustment. Retrospective: what worked, what didn't, improvement actions, Auto-Blindaje consolidation. | Sprint cadence |
-| **QA** | Detail-oriented. Takes nothing for granted. No evidence = not done. | Drift Detection (plan vs implementation). AC verification with file:line evidence. Quality gates: typecheck, tests, lint, build. Generates Validation Report. | F4, CR |
-| **Triage** | Pragmatic and efficient. Knows not everything needs ceremony, but knows when to escalate. | Evaluates if a change qualifies for FAST. Runs the abbreviated pipeline. Escalates to full pipeline if the change grows beyond 2 files or touches DB/logic. | FAST flow |
-| **Docs** | Orderly, completeness-driven. Nothing goes undocumented. | Compiles final report with AC status, AR/CR summary, Auto-Blindaje log. Updates `_INDEX.md`. Verifies all artifacts are persisted. Closes issue in tracker. | DONE |
-
-**Separation rules:**
-```
-Analyst (defines requirements)  ≠  Architect (specifies solution)
-Architect (specifies)           ≠  Dev (implements)
-Dev (implements)                ≠  Adversary (attacks)
-Adversary (attacks)             ≠  QA (validates)
-```
-No exceptions. If an agent needs to do something outside its role, it escalates to the right agent.
-
-
-## The Artifacts
-
-| Artifact | Author | Purpose |
-|---|---|---|
-| `project-context.md` | Architect (F0, once) | Real stack, patterns, absolute rules. Every agent reads this. |
-| `sprint-status.yaml` | SM | Live sprint state, updated at every ceremony |
-| Work Item | Analyst + Architect (F1) | Normalized HU with EARS ACs, Scope IN/OUT, dependencies |
-| SDD | Architect + Adversary (F2) | Technical spec: routes, schema, UI, Constraint Directives |
-| Story File | Architect (F2.5) | The only document Dev reads. Autocontained contract. |
-| Adversarial Review | Adversary (AR) | Attack report: BLOCKER / MINOR / OK |
-| Code Review | Adversary + QA (CR) | Pattern compliance vs Exemplars |
-| Validation Report | QA (F4) | Drift Detection + AC evidence file:line |
-| `report.md` | Docs (DONE) | Final summary + Auto-Blindaje log |
-| `_INDEX.md` | Docs | Historical record of all closed HUs |
-
-
-## Gates
-
-| Gate | Exact text | When |
-|---|---|---|
-| `SPRINT_APPROVED` | `SPRINT_APPROVED` | After Sprint Planning |
-| `HU_APPROVED` | `HU_APPROVED` | After F1 Work Item + execution order |
-| `SPEC_APPROVED` | `SPEC_APPROVED` | After F2 SDD |
-| `REVIEW_APPROVED` | `REVIEW_APPROVED` | After Status Meeting |
-| `RETRO_APPROVED` | `RETRO_APPROVED` | After Retrospective |
-
-Only the exact text activates the gate. "yes", "ok", "go", "sounds good" do NOT activate any gate.
-
-Between gates, the pipeline runs automatically. The agent never asks "shall I continue?" between phases. That is a process error.
-
-
-## Installation
+| AI invents imports that don't exist | **Codebase Grounding** — reads real files before generating anything |
+| AI creates inconsistent patterns | **Exemplar Pattern** — references existing code in every task |
+| AI ignores restrictions | **Constraint Directives** — explicit REQUIRED / FORBIDDEN per task |
+| Implementation drifted from the spec | **Drift Detection** — QA verifies plan vs actual, file by file |
+| Same errors appear every session | **Auto-Blindaje** — errors documented immediately when they occur |
+| Context window saturates mid-sprint | **Sub-agent Protocol** — each phase starts fresh, no context overload |
+| Loading irrelevant instructions | **Skills Router** — loads only the skills relevant to the current task |
+| Components talk in incompatible formats | **Integration Contract** — exact request/response format, blocking |
+| No visibility on sprint progress | **Sprint Cadence** — Planning, Status, Retrospective built in |
+
+---
+
+## Quick Start
 
 ```bash
+# Clone into your project
 git clone https://github.com/ferrosasfp/nexus-agile.git /tmp/nexus-agile
 cp -r /tmp/nexus-agile/.claude/skills/nexus-agile/ your-project/.claude/skills/nexus-agile/
 rm -rf /tmp/nexus-agile
 ```
 
-Restart Claude Code. Skills load automatically at startup.
+Restart Claude Code. Then bootstrap:
 
-**First session, automatic bootstrap:**
 ```
 NexusAgile, this is a new project. Read the codebase and generate project-context.md
 ```
 
-Claude discovers on its own: language, framework, architecture, commands, patterns. No manual editing needed.
+Claude discovers your stack automatically: language, framework, folder structure, commands, DB, auth. No manual editing needed. From the next feature, just say:
 
+```
+NexusAgile, implement [your feature description]
+```
+
+---
+
+## 3 Modes
+
+Pick based on what you're building:
+
+| | FAST | LAUNCH | QUALITY |
+|---|---|---|---|
+| **Use when** | Bug fix, text change, style tweak | MVP, prototype, new app | Feature for real users (DB, auth, payments) |
+| **Pipeline** | Triage → Patch | Simplified story → Dev → Light QA | Full pipeline below |
+| **Human gates** | None | One: approve HU list | Two per HU + sprint ceremonies |
+| **Sprint ceremonies** | No | No | Yes |
+| **Speed** | ⚡⚡⚡ | ⚡⚡ | ⚡ |
+
+When in doubt: **QUALITY**.
+
+---
+
+## The Pipeline
+
+Every feature in QUALITY mode moves through this pipeline. You only make decisions at the two gates — everything else runs automatically.
+
+```
+⛔ SPRINT_APPROVED     ← Sprint Planning: HU list, estimates, order
+
+  For each HU in the sprint:
+  ┌─────────────────────────────────────────────────────┐
+  │  F0:   Bootstrap + Smart Sizing + Skills Router     │
+  │  F1:   Work Item + EARS ACs + Scope + Dependencies  │
+  │  ⛔   HU_APPROVED                                   │
+  │  F2:   Codebase Grounding + SDD + Adversary Review  │
+  │  ⛔   SPEC_APPROVED                                 │
+  │  F2.5: Story File — the only document Dev reads     │
+  │  F3:   Implementation — Waves + Anti-Hallucination  │
+  │  AR:   Adversarial Review — BLOCKER / MINOR / OK    │
+  │  CR:   Code Review — pattern compliance             │
+  │  F4:   QA — AC evidence file:line + quality gates   │
+  │  DONE: report + _INDEX.md updated                   │
+  └─────────────────────────────────────────────────────┘
+
+⛔ RETRO_APPROVED      ← Sprint Retrospective + Closure Checklist
+```
+
+The human makes decisions at the gates. Between gates, the pipeline runs automatically — Claude never asks "shall I continue?". That is a process error.
+
+---
+
+## What's New
+
+### Skills Router *(added March 2026)*
+
+Loads only the skills relevant to the current task. No more 1000-line AGENTS.md loaded on every turn.
+
+```
+HU about React component → loads skill-frontend only
+HU about DB migration    → loads skill-database only
+HU about a Solidity fix  → loads skill-web3 only
+```
+
+Maximum 2 domain skills per HU. More than 2 is a signal the HU is too large.
+
+The Architect declares which skills it loaded in F0, before any code is written.
+
+→ Full reference: [`references/skills_router.md`](.claude/skills/nexus-agile/references/skills_router.md)
+
+---
+
+### Sub-agent Protocol *(added March 2026)*
+
+Each phase of the pipeline runs in a fresh sub-agent with clean context. The orchestrator only coordinates — it never reads files, writes code, or generates specs.
+
+```
+Without sub-agents:
+F0 → F1 → F2 → ... → DONE   (one session, context saturates, hallucinations spike)
+
+With sub-agents:
+Orchestrator
+  ├─► [sub-agent F0] → project-context.md
+  ├─► [sub-agent F1] → work-item.md
+  ├─► [sub-agent F2] → sdd.md
+  ├─► [sub-agent F2.5] → story-file.md
+  ├─► [sub-agent F3]   → code
+  ├─► [sub-agent AR]   → adversarial report
+  ├─► [sub-agent F4]   → validation.md
+  └─► [sub-agent DONE] → report.md + _INDEX.md
+```
+
+Works with Claude Code (Task tool), OpenCode, or any agent with sub-agent support. Falls back gracefully to single-session with Skills Router when sub-agents aren't available.
+
+→ Full reference: [`references/subagent_protocol.md`](.claude/skills/nexus-agile/references/subagent_protocol.md)
+
+---
+
+## The Story File
+
+The single most important concept in NexusAgile.
+
+After the SDD is approved, the Architect generates a **Story File** — a self-contained contract that Dev reads and executes. It contains:
+
+- Goal in 1-2 sentences
+- Acceptance Criteria copied from the SDD
+- Every file to create/modify, each with a real Exemplar from the codebase
+- Integration Contract: exact input/output format between components (blocking)
+- Constraint Directives: REQUIRED / FORBIDDEN per task
+- Waves: W0 serial (foundation), W1+ parallel
+- Out of Scope: explicit list of what Dev cannot touch
+
+**No Story File = No coding. No exceptions.**
+
+Dev reads only the Story File. Not the SDD, not the original HU, not the conversation history. This is what eliminates hallucination at the implementation phase.
+
+---
+
+## The 9 Agents
+
+Roles Claude assumes depending on the phase. Not separate people — Claude switching hats.
+
+| Agent | Active in | Does |
+|---|---|---|
+| **Analyst** | F0, F1 | Normalizes HU into Work Item, writes EARS ACs, defines Scope IN/OUT |
+| **Architect** | F0, F1, F2, F2.5, CR | Codebase Grounding, SDD, Exemplars, Story File, Code Review |
+| **UX** | F1 (UI only) | Microcopy, user flows, accessibility |
+| **Adversary** | F2, AR, CR | Attacks SDD and implementation across 8 security categories |
+| **Dev** | F3 | Reads only the Story File. Implements in Waves. Never improvises. |
+| **SM** | Sprint cadence | Planning, Status, Retrospective, Closure Checklist |
+| **QA** | F4, CR | Drift Detection + AC evidence file:line + quality gates |
+| **Triage** | FAST flow | Evaluates if FAST applies. Escalates when it doesn't. |
+| **Docs** | DONE | Final report + `_INDEX.md` + issue closed |
+
+**Separation rules (non-negotiable):**
+```
+Analyst (defines)     ≠  Architect (specifies)
+Architect (specifies) ≠  Dev (implements)
+Dev (implements)      ≠  Adversary (attacks)
+Adversary (attacks)   ≠  QA (validates)
+```
+
+---
+
+## The Artifacts
+
+```
+doc/sdd/
+└── NNN-feature-title/
+    ├── work-item.md       ← F1: normalized HU + EARS ACs
+    ├── sdd.md             ← F2: routes, schema, Constraint Directives
+    ├── story-file.md      ← F2.5: the only document Dev reads
+    ├── validation.md      ← F4: Drift Detection + AC evidence
+    └── report.md          ← DONE: summary + Auto-Blindaje log
+doc/sdd/_INDEX.md          ← history of every closed HU
+sprint-status.yaml         ← live sprint state
+project-context.md         ← real stack + patterns (generated once, reused forever)
+```
+
+---
+
+## The Gates
+
+| Gate | Exact text | Activates |
+|---|---|---|
+| `SPRINT_APPROVED` | `SPRINT_APPROVED` | Dev starts the sprint |
+| `HU_APPROVED` | `HU_APPROVED` | Architect starts the SDD |
+| `SPEC_APPROVED` | `SPEC_APPROVED` | Architect generates Story File, Dev starts |
+| `REVIEW_APPROVED` | `REVIEW_APPROVED` | Pipeline continues after Status Meeting |
+| `RETRO_APPROVED` | `RETRO_APPROVED` | Sprint closed |
+
+"yes", "ok", "go", "sounds good", "dale" do **NOT** activate any gate. Only the exact text.
+
+---
 
 ## Skill Structure
 
 ```
 .claude/skills/nexus-agile/
-├── SKILL.md                             # Full pipeline, 3 modes, global rules
+├── SKILL.md                             # Full pipeline — all phases, all rules
 └── references/
-    ├── agents_roster.md                 # 9 agents with personality and responsibilities
+    ├── agents_roster.md                 # 9 agents with personalities and responsibilities
     ├── sdd_template.md                  # SDD templates (FULL / BUGFIX / MINI)
-    ├── story_file_template.md           # Architect-Dev contract (incl. Integration Contract)
+    ├── story_file_template.md           # Architect-Dev contract template
     ├── adversarial_review_checklist.md  # 8 attack categories for the Adversary
-    ├── validation_report_template.md    # QA: drift + ACs + quality gates
-    ├── launch_flow.md                   # Detailed LAUNCH mode pipeline
-    ├── quick_flow.md                    # Detailed FAST mode pipeline
-    ├── sprint_cadence.md                # SM Planning / Status / Retro / Sprint Closure Checklist
+    ├── validation_report_template.md    # QA: Drift Detection + ACs + quality gates
+    ├── skills_router.md                 # ✨ Selective context loading per task
+    ├── subagent_protocol.md             # ✨ Per-phase sub-agent orchestration
+    ├── launch_flow.md                   # LAUNCH mode detailed pipeline
+    ├── quick_flow.md                    # FAST mode detailed pipeline
+    ├── sprint_cadence.md                # SM Planning / Status / Retro / Closure Checklist
     └── project_context_template.md      # Stack-agnostic project-context template
 ```
 
+---
 
 ## Relationship with NexusFactory
 
 ```
-NexusFactory  =  opinionated project template (stack + structure)
-             +   NexusAgile preinstalled (stack-aware version)
+NexusFactory  =  opinionated project template (Next.js + Supabase + Viem + Foundry)
+             +   NexusAgile preinstalled (stack-aware, project-context.md preconfigured)
 
-NexusAgile    =  standalone methodology (any stack)
+NexusAgile    =  standalone methodology (any stack, any framework)
 ```
 
-**Key difference:**
-- **NexusAgile standalone** (this repo) is fully stack-agnostic. It discovers the project stack at the beginning of each session and generates `project-context.md`.
-- **NexusAgile inside NexusFactory** comes pre-configured for the NexusFactory Golden Path (Next.js + Supabase + Viem + Foundry). The `project-context.md` is already provided, no bootstrap needed.
+NexusAgile works without NexusFactory. NexusFactory includes NexusAgile by default.
 
-NexusAgile works without NexusFactory.
-NexusFactory includes NexusAgile by default.
+→ [NexusFactory repo](https://github.com/ferrosasfp/NexusFactory)
 
-[NexusFactory repo](https://github.com/ferrosasfp/NexusFactory)
+---
 
+## What Teams Are Shipping With It
+
+NexusAgile is actively used in production across:
+
+- **[WasiAI](https://app.wasiai.io)** — AI agent marketplace on Avalanche mainnet. Full sprint cadence with 6+ sprints closed, 180+ tests passing.
+- **[Troker](https://troker-ap.vercel.app)** — barter platform. Complex features (dashboard, proposals, real-time chat) shipped in QUALITY mode.
+
+Both projects use the full QUALITY pipeline with NexusFactory as the base stack.
+
+---
+
+## FAQ
+
+**Does it work with stacks other than Next.js?**
+Yes. NexusAgile is fully stack-agnostic. F0 discovers your stack and generates `project-context.md` from scratch. It has been used with Next.js, Vite, plain Node.js, and Foundry (Solidity).
+
+**What if I'm mid-project and don't have project-context.md?**
+Run: `NexusAgile, read the codebase and generate project-context.md`. Done in one session.
+
+**Can I use it without sub-agent support?**
+Yes. Falls back to single-session with Skills Router. Context stays manageable. Sub-agents are an optimization, not a requirement.
+
+**How is this different from just prompting Claude well?**
+Good prompts get you one good response. NexusAgile gets you a whole sprint's worth of consistent, auditable, reviewable work — with human control at the two moments that matter.
+
+**What if Claude doesn't follow the process?**
+That's a training signal. Document it in Auto-Blindaje, adjust the SKILL.md, and the process improves over time.
+
+---
 
 ## Credits
 
 Methodology created by [Fernando Rosas](https://github.com/ferrosasfp).
-Merges Nexus SDD Workflow and agile practices with specialized AI roles.
+Combines Nexus SDD Workflow, Scrum ceremonies, and specialized AI agent roles.
 
 MIT License
