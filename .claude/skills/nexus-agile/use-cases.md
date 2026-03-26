@@ -11,7 +11,7 @@
 |---|-----------|------|------|--------|
 | 1 | [Solo dev — Feature de pagos](#caso-1-solo-dev--feature-quality) | 1 persona | QUALITY | Este doc |
 | 2 | [Solo dev — Fix trivial](#caso-2-solo-dev--fix-trivial-fast) | 1 persona | FAST | Este doc |
-| 3 | Solo dev — MVP desde cero | 1 persona | LAUNCH | Pendiente |
+| 3 | [Equipo de 2 — Feature + Fix](#caso-3-equipo-de-2--feature-quality-con-peer-review) | 2 personas | QUALITY + FAST | Este doc |
 | 4 | Small team — Sprint con dependencias | 3 personas | QUALITY | Pendiente |
 | 5 | Small team — Primer sprint (onboarding) | 3 personas | QUALITY | Pendiente |
 | 6 | Small team — Hotfix mid-sprint | 4 personas | QUALITY + HOTFIX | Pendiente |
@@ -424,3 +424,630 @@ El AI escala solo. Diego no decide. Triage califica, Triage escala.
 | **FAST** | 1-2 min (confirmar) | 2-5 min | Solo _INDEX.md |
 | **LAUNCH** | 5-10 min (aprobar HU list) | 15-30 min por HU | Story Files simplificados |
 | **QUALITY** | 10-15 min (2 gates) | 30-60 min | work-item + sdd + story-file + validation + report |
+
+---
+
+## Caso 3: Equipo de 2 — Feature QUALITY con Peer Review
+
+### Contexto
+
+| Dato | Valor |
+|------|-------|
+| **Proyecto** | "RecetaFit" — App web de recetas saludables con filtros nutricionales |
+| **Stack** | Next.js 14 + Prisma + PostgreSQL + Tailwind |
+| **Equipo** | 2 personas |
+| **HU** | "Como usuario, quiero guardar recetas como favoritas para acceder rapido desde mi perfil" |
+| **Modo** | QUALITY (toca DB + auth + UI + API) |
+
+### Distribucion de Roles (2 personas)
+
+| Persona | Roles que asume | Responsabilidad clave |
+|---------|----------------|----------------------|
+| **Lucia** (Senior Dev) | TL + Dev + QA Lead | Arquitectura, implementacion, validacion final, aprueba SPEC_APPROVED |
+| **Martin** (Product Manager) | PO + SM | Define features, prioriza, facilita ceremonias, aprueba HU_APPROVED |
+
+> Segun `roles_matrix.md` seccion "Equipo chico (2-4 personas)":
+> PO = 1 persona (puede ser part-time). TL + QA = 1 persona (Dev senior asume ambos).
+> SM = rotativo o el TL facilita. En este caso Martin facilita como SM.
+
+### Diferencias clave vs Solo Dev
+
+| Aspecto | Solo Dev | Equipo de 2 |
+|---------|----------|-------------|
+| Gates | Auto-aprobados | **PO aprueba HU_APPROVED**, **TL aprueba SPEC_APPROVED** — personas distintas |
+| Code Review | Solo AI (AR + CR) | AI (AR + CR) + **peer review humano** (imposible: Lucia se auto-reviewea, ver nota) |
+| PR workflow | Opcional (puede commitear a main) | **Obligatorio** — PR contra main, review requerido |
+| Comunicacion | Notas para uno mismo | Canal #sprint-001, async o sync |
+| Sprint Planning | El dev prioriza solo | Martin trae prioridades, Lucia estima, acuerdan |
+
+> **Nota sobre peer review en equipo de 2**: Con solo 1 dev, no hay peer review humano posible.
+> Lucia es la unica dev y TL. El protocol indica: "Equipo chico: 1 approval (TL o peer)".
+> Lucia aprueba como TL. La revision de peer la cubre el AR + CR del AI.
+> Si esto es insuficiente para el CTO, se puede agregar: Martin revisa UX/funcionalidad del PR aunque no sea tecnico.
+
+---
+
+### Timeline Completo
+
+#### Dia 1 — Sprint Planning (30 min, sync)
+
+**Participantes**: Martin (PO+SM) + Lucia (TL+Dev+QA)
+
+Martin dice:
+> "Las prioridades de esta semana son: (1) Favoritos — los usuarios lo piden mucho, (2) Mejora de filtros — performance lenta, (3) Fix del bug de login en Safari."
+
+Lucia responde:
+> "Favoritos es QUALITY — toca DB, API y UI. Filtros tambien QUALITY. El bug de Safari suena FAST si ya sabemos la causa. Puedo hacer Favoritos esta semana y el fix de Safari como FAST rapido."
+
+**Resultado del planning**:
+
+| HU | Owner | Modo | Branch | Dependencia | Status |
+|----|-------|------|--------|-------------|--------|
+| 001 — Guardar favoritos | @lucia | QUALITY | feat/001-favoritos | ninguna | pending |
+| 002 — Fix Safari login | @lucia | FAST | hotfix/002-safari-fix | ninguna | pending (post-001) |
+| 003 — Mejora filtros | @lucia | QUALITY | — | ninguna | backlog (semana prox) |
+
+Martin escribe:
+> SPRINT_APPROVED
+
+---
+
+#### Dia 1 — F0: Bootstrap + Smart Sizing (AI, 2 min)
+
+Lucia dice:
+> "NexusAgile, procesa esta HU: Como usuario, quiero guardar recetas como favoritas para acceder rapido desde mi perfil"
+
+**AI ejecuta Triage Agent**:
+- Lee project-context.md — Next.js 14, Prisma, PostgreSQL, /src/app structure
+- Evalua: toca DB (nueva tabla), API (nuevos endpoints), UI (componente favorito + pagina perfil), Auth (user context)
+- **Resultado**: QUALITY (4 areas impactadas, DB migration, requiere spec)
+
+```
+TRIAGE RESULT:
+Mode: QUALITY
+Reasoning: Feature touches database schema (new table), API layer (2+ endpoints),
+UI (multiple components), and requires auth context. Estimated 8-12 files affected.
+Confidence: HIGH
+```
+
+---
+
+#### Dia 1 — F1: Discovery + Work Item (AI, 8 min)
+
+**AI ejecuta Analyst Agent**:
+- Escanea: `prisma/schema.prisma` (modelos existentes: User, Recipe, Category)
+- Escanea: `src/app/api/` (endpoints existentes: /recipes, /auth, /categories)
+- Escanea: `src/components/` (RecipeCard.tsx, RecipeGrid.tsx, ProfilePage.tsx)
+- Escanea: `src/lib/auth.ts` (getServerSession, getCurrentUser)
+
+**Work Item generado**:
+
+```markdown
+# HU-001: Guardar Recetas como Favoritas
+
+## Descripcion
+El usuario autenticado puede marcar/desmarcar recetas como favoritas.
+Las recetas favoritas se listan en una seccion dedicada en su perfil.
+
+## Acceptance Criteria
+
+AC1: El usuario ve un icono de corazon en cada RecipeCard
+AC2: Al hacer click en el corazon, la receta se guarda como favorita (toggle)
+AC3: El estado del corazon persiste entre sesiones (DB)
+AC4: En /profile, hay una seccion "Mis Favoritos" con las recetas guardadas
+AC5: Solo usuarios autenticados pueden guardar favoritos (redirigir a login si no)
+AC6: Si el usuario no tiene favoritos, muestra mensaje "No tenes favoritos aun"
+
+## Out of Scope
+- Ordenar favoritos
+- Compartir lista de favoritos
+- Notificaciones de cambios en recetas favoritas
+```
+
+---
+
+#### Dia 1 — Gate: HU_APPROVED (Martin, 5 min)
+
+Martin recibe el Work Item. Revisa:
+
+| Check | Resultado |
+|-------|-----------|
+| Captura lo que quiero? | Si — favoritos con toggle y vista en perfil |
+| Faltan casos? | No. Out of scope bien definido |
+| ACs verificables? | Si — cada AC es observable |
+| Scope razonable para 1 semana? | Si |
+
+Martin escribe:
+> HU_APPROVED
+
+**Gate activado**. Pipeline avanza a F2.
+
+---
+
+#### Dia 1 — F2: SDD + Codebase Grounding (AI, 15 min)
+
+**AI ejecuta Architect Agent** con Codebase Grounding:
+
+1. **Lee codigo real primero** (anti-alucinacion):
+   - `prisma/schema.prisma` linea 12-45: modelos User, Recipe con sus relaciones
+   - `src/app/api/recipes/route.ts`: patron existente de API route (GET handler con prisma.recipe.findMany)
+   - `src/components/RecipeCard.tsx`: props actuales { recipe: Recipe, className?: string }
+   - `src/app/profile/page.tsx`: layout actual del perfil
+   - `src/lib/auth.ts`: getCurrentUser() devuelve User | null
+
+2. **Genera SDD con Exemplar Pattern** — cada decision referencia codigo real:
+
+```markdown
+# SDD-001: Guardar Recetas como Favoritas
+
+## Arquitectura
+- Nueva tabla Favorite (userId, recipeId, createdAt) — relacion many-to-many
+- 2 API routes: POST /api/favorites (toggle), GET /api/favorites (listar)
+- Componente FavoriteButton embebido en RecipeCard
+- Seccion FavoritesList en ProfilePage
+
+## Archivos a Crear
+| Archivo | Proposito |
+|---------|-----------|
+| prisma/migrations/xxx_add_favorites/migration.sql | Schema migration |
+| src/app/api/favorites/route.ts | API endpoints |
+| src/components/FavoriteButton.tsx | Toggle button |
+| src/components/FavoritesList.tsx | Lista en perfil |
+
+## Archivos a Modificar
+| Archivo | Cambio | Linea ref |
+|---------|--------|-----------|
+| prisma/schema.prisma | Agregar modelo Favorite + relaciones | Despues de linea 45 |
+| src/components/RecipeCard.tsx | Agregar FavoriteButton como child | Props existentes linea 8 |
+| src/app/profile/page.tsx | Agregar seccion FavoritesList | Despues de seccion "Mis Recetas" linea 32 |
+
+## Exemplars (codigo real referenciado)
+| Patron | Archivo:Linea | Usar como |
+|--------|--------------|-----------|
+| API route handler | src/app/api/recipes/route.ts:5-25 | Template para favorites/route.ts |
+| Prisma query | src/app/api/recipes/route.ts:12 | prisma.recipe.findMany pattern |
+| Component props | src/components/RecipeCard.tsx:8 | Extender interface |
+| Auth check | src/lib/auth.ts:15 | getCurrentUser() en API |
+| Profile layout | src/app/profile/page.tsx:32 | Insertar FavoritesList |
+
+## Constraints
+REQUIRED: Usar getCurrentUser() de src/lib/auth.ts — no crear auth propio
+REQUIRED: Seguir patron de API route de recipes/route.ts
+REQUIRED: Prisma migrate dev para migration
+FORBIDDEN: No usar localStorage para persistir favoritos
+FORBIDDEN: No crear tabla intermedia manual — usar relacion Prisma
+FORBIDDEN: No modificar el modelo User existente (agregar relacion en Favorite)
+```
+
+**AI ejecuta Adversarial Review del SDD**:
+
+```
+AR-SDD RESULT:
+- INFORMATIVO: Considerar indice en (userId, recipeId) para performance
+- INFORMATIVO: Definir comportamiento si la receta se borra — cascade delete?
+- No BLOQUEANTEs encontrados
+```
+
+---
+
+#### Dia 1 — Gate: SPEC_APPROVED (Lucia como TL, 10 min)
+
+Lucia revisa el SDD con ojo tecnico:
+
+| Check | Resultado |
+|-------|-----------|
+| Exemplars referencian archivos reales? | Si — verifique las lineas |
+| Patron de API consistente con existente? | Si — misma estructura que recipes/ |
+| Migration strategy correcta? | Si — Prisma migrate dev |
+| Constraints hacen sentido? | Si — evita anti-patrones |
+| Falta algo? | Agrego: cascade delete en Favorite cuando se borra Recipe |
+
+Lucia escribe:
+> SPEC_APPROVED
+> Nota: agregar onDelete: Cascade en la relacion Favorite -> Recipe
+
+**Gate activado**. Pipeline avanza a F2.5.
+
+---
+
+#### Dia 1 — F2.5: Story File (AI, 5 min)
+
+**AI genera el Story File** — el unico documento que Lucia necesita para implementar:
+
+```markdown
+# Story File: HU-001 — Guardar Recetas como Favoritas
+
+## Goal
+Usuarios autenticados pueden toggle favoritos en recetas y verlos en su perfil.
+
+## Acceptance Criteria
+AC1: Icono corazon en RecipeCard
+AC2: Toggle guarda/quita favorito
+AC3: Estado persiste en DB
+AC4: /profile muestra "Mis Favoritos"
+AC5: Requiere auth — redirect a /login si no
+AC6: Empty state "No tenes favoritos aun"
+
+## Wave 1 — DB + API (backend first)
+### Crear: prisma/schema.prisma (modificar)
+Agregar despues de modelo Recipe:
+- model Favorite { id visitorId recipeId createdAt }
+- Relacion: User hasMany Favorite, Recipe hasMany Favorite
+- onDelete: Cascade en Recipe relation
+- @@unique([userId, recipeId])
+EXEMPLAR: modelo Recipe lineas 20-35 como referencia de estructura
+
+### Crear: src/app/api/favorites/route.ts
+- POST: toggle favorito (crear si no existe, borrar si existe)
+- GET: listar favoritos del usuario actual
+- Auth check con getCurrentUser()
+EXEMPLAR: src/app/api/recipes/route.ts completo como template
+REQUIRED: Retornar 401 si no auth
+REQUIRED: Retornar { isFavorite: boolean } en POST
+
+### Ejecutar: npx prisma migrate dev --name add-favorites
+
+## Wave 2 — Componentes UI
+### Crear: src/components/FavoriteButton.tsx
+- Props: { recipeId: string, initialIsFavorite: boolean }
+- Heart icon (lleno si favorito, outline si no)
+- onClick: fetch POST /api/favorites con recipeId
+- Optimistic update (cambiar icono antes de respuesta)
+- Mostrar solo si usuario autenticado
+EXEMPLAR: src/components/RecipeCard.tsx para patron de componente
+FORBIDDEN: No usar estado global — estado local + fetch
+
+### Crear: src/components/FavoritesList.tsx
+- Fetch GET /api/favorites
+- Renderear RecipeGrid con las recetas favoritas
+- Empty state: "No tenes favoritos aun" con icono
+EXEMPLAR: src/app/profile/page.tsx seccion "Mis Recetas" para layout
+
+## Wave 3 — Integracion
+### Modificar: src/components/RecipeCard.tsx
+- Agregar FavoriteButton al card
+- Pasar recipeId y estado inicial de favorito
+REQUIRED: No romper props existentes — agregar isFavorite?: boolean opcional
+
+### Modificar: src/app/profile/page.tsx
+- Importar FavoritesList
+- Agregar seccion despues de "Mis Recetas"
+- Titulo: "Mis Favoritos"
+EXEMPLAR: seccion "Mis Recetas" existente como template de layout
+```
+
+---
+
+#### Dia 1-2 — F3: Implementacion (Lucia + AI, 2-3 horas)
+
+Lucia crea el branch:
+```bash
+git checkout main && git pull
+git checkout -b feat/001-favoritos
+```
+
+Lucia implementa siguiendo las Waves del Story File:
+
+**Wave 1 — Backend** (~45 min)
+- Modifica `prisma/schema.prisma`: agrega modelo Favorite con relaciones
+- Corre `npx prisma migrate dev --name add-favorites`
+- Crea `src/app/api/favorites/route.ts` siguiendo el exemplar de recipes
+- Testea con curl: POST y GET funcionan, 401 sin auth
+
+**Wave 2 — UI** (~45 min)
+- Crea `FavoriteButton.tsx` con heart toggle y optimistic update
+- Crea `FavoritesList.tsx` con fetch + empty state
+
+**Wave 3 — Integracion** (~30 min)
+- Agrega FavoriteButton a RecipeCard (prop opcional para backward compat)
+- Agrega seccion FavoritesList a ProfilePage
+
+Lucia verifica localmente:
+```bash
+npx prisma migrate dev     # ✓ migration applied
+npm run typecheck           # ✓ no errors
+npm run lint                # ✓ clean
+npm run test                # ✓ 12/12 passing
+npm run build               # ✓ build successful
+```
+
+---
+
+#### Dia 2 — AR: Adversarial Review (AI, 5 min)
+
+**AI ejecuta Adversary Agent** — ataca la implementacion de Lucia:
+
+```
+ADVERSARIAL REVIEW — HU-001
+
+HALLAZGO 1: INFORMATIVO
+Categoria: Performance
+FavoriteButton hace fetch en cada render si no se cachea.
+Recomendacion: Verificar que el estado inicial viene del server side.
+
+HALLAZGO 2: INFORMATIVO
+Categoria: UX
+No hay feedback visual (loading state) mientras se procesa el toggle.
+Recomendacion: Agregar spinner o disabled state durante fetch.
+
+HALLAZGO 3: INFORMATIVO
+Categoria: Security
+Rate limiting no implementado en POST /api/favorites.
+Recomendacion: Considerar rate limit para prevenir spam de toggle.
+
+RESULTADO: 0 BLOQUEANTEs, 3 INFORMATIVOS
+Implementacion APROBADA para continuar.
+```
+
+> Los INFORMATIVOS se documentan. No bloquean el PR.
+> Si hubiera BLOQUEANTEs, Lucia tendria que corregir antes de abrir PR.
+
+---
+
+#### Dia 2 — CR: Code Review (AI, 3 min)
+
+**AI ejecuta Code Review automatizado**:
+
+```
+CODE REVIEW — HU-001
+
+Files reviewed: 6
+- prisma/schema.prisma ✓ (modelo correcto, relaciones bien definidas)
+- src/app/api/favorites/route.ts ✓ (sigue patron de recipes, auth check presente)
+- src/components/FavoriteButton.tsx ✓ (optimistic update implementado)
+- src/components/FavoritesList.tsx ✓ (empty state presente)
+- src/components/RecipeCard.tsx ✓ (prop opcional, backward compatible)
+- src/app/profile/page.tsx ✓ (seccion agregada correctamente)
+
+Patterns check:
+✓ Imports validos — todos los modulos existen
+✓ Patron de API route consistente con codebase
+✓ Tipos TypeScript correctos
+✓ No hay archivos fuera de scope del SDD
+
+RESULTADO: APROBADO
+```
+
+---
+
+#### Dia 2 — PR: Pull Request (Lucia, 5 min)
+
+Lucia hace rebase y abre PR:
+```bash
+git fetch origin main
+git rebase origin/main          # sin conflictos
+git push -u origin feat/001-favoritos
+```
+
+**PR #1 — HU-001: Guardar recetas como favoritas**
+
+```markdown
+## HU: 001 — Guardar recetas como favoritas
+
+## Resumen
+Usuarios autenticados pueden marcar recetas como favoritas con un toggle
+en RecipeCard. Favoritos se muestran en una nueva seccion del perfil.
+
+## Tipo: Feature
+
+## Archivos clave
+- prisma/schema.prisma — modelo Favorite con cascade delete
+- src/app/api/favorites/route.ts — POST (toggle) + GET (listar)
+- src/components/FavoriteButton.tsx — heart icon con optimistic update
+- src/components/FavoritesList.tsx — grid de favoritos en perfil
+- src/components/RecipeCard.tsx — integra FavoriteButton
+- src/app/profile/page.tsx — seccion "Mis Favoritos"
+
+## Testing
+- ✓ Prisma migration exitosa
+- ✓ Typecheck clean
+- ✓ Lint clean
+- ✓ 12/12 tests passing
+- ✓ Build successful
+
+## Checklist
+- [x] Patron de API route seguido (exemplar: recipes/route.ts)
+- [x] Auth check con getCurrentUser()
+- [x] No imports inventados
+- [x] No archivos fuera de scope
+- [x] AR completado — 0 BLOQUEANTEs
+- [x] CR completado — APROBADO
+
+## Evidencia
+AR: 0 BLOQUEANTEs, 3 INFORMATIVOS (documentados en SDD)
+CR: 6/6 archivos aprobados
+```
+
+---
+
+#### Dia 2 — Review del PR (Martin + Lucia, 10 min)
+
+**Aqui es donde el equipo de 2 difiere del solo dev:**
+
+En equipo solo, Lucia mergearia directo. En equipo de 2:
+
+**Martin (como PO)** revisa funcionalidad:
+- Abre el preview/staging deploy
+- Prueba: login -> ir a receta -> click corazon -> ir a perfil -> ver favoritos
+- Prueba: click corazon de nuevo -> se quita -> perfil vacio -> mensaje empty state
+- Prueba: sin login -> no se ve el corazon (o redirige a login)
+
+Martin comenta en el PR:
+> "Funciona perfecto. El empty state esta claro. Unica sugerencia: el corazon podria tener una animacion sutil al hacer click, pero no es bloqueante, puede ser otra HU."
+
+**Lucia (como TL)** revisa tecnica:
+- Ya hizo la implementacion, pero revisa el diff final como TL
+- Verifica que el AR no tiene BLOQUEANTEs
+- Verifica que CI paso (typecheck + lint + test + build)
+
+> **Limitacion de equipo de 2**: Lucia es dev Y reviewer. No hay peer review de otra persona.
+> El AI (AR + CR) cubre la revision tecnica automatizada.
+> Martin cubre la revision funcional/UX.
+> Para el CTO: si se necesita peer review tecnico humano, se necesita minimo 3 personas.
+
+Lucia aprueba y mergea (squash merge):
+```bash
+# CI green ✓ — Martin approved ✓ — AR clean ✓
+# Lucia mergea como TL
+git checkout main && git pull   # branch eliminado automaticamente
+```
+
+---
+
+#### Dia 2 — F4: QA Validation (Lucia como QA + AI, 10 min)
+
+**AI genera el Validation Report**:
+
+```markdown
+# Validation Report — HU-001
+
+## Drift Detection
+| Planificado (SDD) | Implementado | Match? |
+|-------------------|-------------|--------|
+| prisma/schema.prisma (mod) | ✓ modificado | ✓ |
+| src/app/api/favorites/route.ts (crear) | ✓ creado | ✓ |
+| src/components/FavoriteButton.tsx (crear) | ✓ creado | ✓ |
+| src/components/FavoritesList.tsx (crear) | ✓ creado | ✓ |
+| src/components/RecipeCard.tsx (mod) | ✓ modificado | ✓ |
+| src/app/profile/page.tsx (mod) | ✓ modificado | ✓ |
+| Archivos fuera de scope | Ninguno | ✓ |
+
+Drift rate: 0%
+
+## Acceptance Criteria Verification
+| AC | Evidencia | Status |
+|----|-----------|--------|
+| AC1: Icono corazon en RecipeCard | src/components/RecipeCard.tsx:24 — <FavoriteButton /> renderizado | ✓ PASS |
+| AC2: Toggle guarda/quita favorito | src/app/api/favorites/route.ts:18 — logica toggle implementada | ✓ PASS |
+| AC3: Estado persiste en DB | prisma/schema.prisma:48 — modelo Favorite con userId+recipeId | ✓ PASS |
+| AC4: /profile muestra favoritos | src/app/profile/page.tsx:45 — <FavoritesList /> renderizado | ✓ PASS |
+| AC5: Requiere auth | src/app/api/favorites/route.ts:8 — getCurrentUser() + 401 | ✓ PASS |
+| AC6: Empty state | src/components/FavoritesList.tsx:32 — "No tenes favoritos aun" | ✓ PASS |
+
+## Quality Gates
+| Check | Resultado |
+|-------|-----------|
+| TypeScript | ✓ 0 errors |
+| Lint | ✓ 0 warnings |
+| Tests | ✓ 12/12 passing |
+| Build | ✓ successful |
+
+## Resultado: APROBADO — 6/6 ACs cumplidos, 0% drift
+```
+
+Lucia (como QA Lead) confirma:
+> "Evidencia valida. Cada AC tiene archivo:linea. Drift 0%. Aprobado."
+
+---
+
+#### Dia 2 — DONE (AI, 2 min)
+
+**AI ejecuta Docs Agent** — genera report final:
+
+```
+doc/sdd/001-favoritos/
+├── work-item.md      (lo que Martin aprobo)
+├── sdd.md            (lo que Lucia aprobo como TL)
+├── story-file.md     (lo que Lucia uso para implementar)
+├── validation.md     (evidencia de QA)
+└── report.md         (resumen ejecutivo)
+```
+
+AI actualiza `_INDEX.md`:
+```
+| 001 | Guardar recetas favoritas | QUALITY | Lucia | DONE | 2026-03-25 | 2026-03-26 |
+```
+
+---
+
+### Resumen del Caso 3 — Equipo de 2
+
+#### Timeline
+
+| Dia | Actividad | Quien | Duracion |
+|-----|-----------|-------|----------|
+| 1 AM | Sprint Planning | Martin + Lucia | 30 min |
+| 1 AM | F0 + F1 (AI) | AI | 10 min |
+| 1 AM | HU_APPROVED | Martin | 5 min |
+| 1 AM | F2 + AR-SDD (AI) | AI | 15 min |
+| 1 PM | SPEC_APPROVED | Lucia (TL) | 10 min |
+| 1 PM | F2.5 Story File (AI) | AI | 5 min |
+| 1 PM - 2 AM | F3 Implementacion | Lucia + AI | 2-3 horas |
+| 2 AM | AR + CR (AI) | AI | 8 min |
+| 2 AM | PR abierto | Lucia | 5 min |
+| 2 AM | Review PR (funcional) | Martin | 5 min |
+| 2 AM | Review PR (tecnico) + Merge | Lucia (TL) | 5 min |
+| 2 PM | F4 + DONE (AI + Lucia QA) | AI + Lucia | 12 min |
+
+**Total**: ~4-5 horas de trabajo efectivo en ~1.5 dias
+
+#### Tiempo humano vs AI
+
+| Persona | Tiempo invertido | Actividades |
+|---------|-----------------|-------------|
+| **Martin (PO+SM)** | ~40 min | Sprint planning (30) + HU_APPROVED (5) + PR review funcional (5) |
+| **Lucia (TL+Dev+QA)** | ~3.5 horas | SPEC_APPROVED (10) + Implementacion (2.5h) + PR (5) + Merge (5) + QA (10) |
+| **AI** | ~45 min | F0+F1 (10) + F2 (15) + F2.5 (5) + AR (5) + CR (3) + F4 (5) + DONE (2) |
+
+#### Valor del equipo de 2 vs solo dev
+
+| Beneficio | Detalle |
+|-----------|---------|
+| **Separation of concerns** | Martin se enfoca en QUE, Lucia en COMO. Ni uno interfiere con el otro. |
+| **Gate real** | HU_APPROVED lo da alguien que NO va a implementar. Evita sesgo de "es facil, no necesita spec". |
+| **Review funcional** | Martin prueba como usuario real. Lucia no puede hacer eso objetivamente sobre su propio codigo. |
+| **Accountability** | Si algo falla en produccion, hay trazabilidad: Martin aprobo el scope, Lucia aprobo la arquitectura. |
+| **El PO no necesita saber codigo** | Martin nunca lee el SDD ni el Story File. Solo revisa el Work Item y prueba el resultado. |
+
+#### Que NO cambia vs solo dev
+
+| Aspecto | Igual que solo dev |
+|---------|-------------------|
+| Pipeline | F0 → F1 → HU_APPROVED → F2 → SPEC_APPROVED → F2.5 → F3 → AR → CR → F4 → DONE |
+| AI agents | Los mismos 9 agentes hacen el mismo trabajo |
+| Artefactos | Mismos documentos en doc/sdd/NNN/ |
+| Anti-alucinacion | Exemplar Pattern, Codebase Grounding, Constraints — todo igual |
+| Modos | FAST / LAUNCH / QUALITY — mismos criterios |
+
+---
+
+### Bonus: El Fix FAST con 2 personas (HU-002 — Safari Bug)
+
+Despues de mergear HU-001, Lucia ataca el fix FAST:
+
+```
+Timeline total: 15 minutos
+
+1. Lucia dice: "NexusAgile, procesa HU: Fix del bug de login que no funciona en Safari"
+2. AI Triage: FAST (bug conocido, 1-2 archivos, sin DB)
+3. AI Analyst: investiga, encuentra que Safari no soporta crypto.randomUUID()
+4. Martin: HU_APPROVED (texto "Es exactamente ese bug")
+5. AI genera mini-spec + fix directo
+6. Lucia implementa: polyfill de 3 lineas en src/lib/auth.ts
+7. AI AR: 0 BLOQUEANTEs
+8. Lucia abre PR, Martin aprueba funcional ("ya no crashea en Safari"), Lucia mergea
+9. _INDEX.md actualizado: HU-002 DONE
+
+Total Martin: 2 min (HU_APPROVED + PR approval)
+Total Lucia: 10 min (fix + PR)
+Total AI: 3 min (triage + analysis + AR)
+```
+
+> En modo FAST con 2 personas, el overhead del gate HU_APPROVED es minimo (1 mensaje de Martin).
+> El valor: Martin confirma que el bug reportado es el que se esta fixeando — evita el clasico "fixee otra cosa".
+
+---
+
+### Cuando pasar de 2 a 3+ personas
+
+| Senal | Por que indica que necesitas mas gente |
+|-------|---------------------------------------|
+| Lucia no llega a hacer QA porque esta implementando | QA Lead separado |
+| PRs se acumulan sin review >24h | Peer reviewer (otro dev) |
+| Martin no tiene tiempo para gates | PO dedicado o SM separado |
+| Carry-over rate >30% | Mas devs para cubrir capacidad |
+| >3 HUs QUALITY por sprint | 1 dev no puede con todo |
+
+> Regla de oro: **con 2 personas haces 2-3 HUs QUALITY por sprint**.
+> Si necesitas mas throughput, agrega un dev (3 personas).
+> Si necesitas peer review humano obligatorio, necesitas minimo 3 personas.
