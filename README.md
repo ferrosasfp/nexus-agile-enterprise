@@ -1,4 +1,4 @@
-# NexusAgile
+# NexusAgile Enterprise
 
 > *"The human decides WHAT. The agents execute HOW."*
 
@@ -266,13 +266,54 @@ NexusAgile, sprint planning
     ├── story_file_template.md           # Architect-Dev contract + Integration Contract
     ├── adversarial_review_checklist.md  # 8 attack categories for the Adversary
     ├── validation_report_template.md    # QA: drift + ACs + quality gates
-    ├── skills_router.md                 # 🆕 Selective skill loading — clean context per HU
-    ├── subagent_protocol.md             # 🆕 Orchestration — each phase in a fresh context
+    ├── skills_router.md                 # Selective skill loading — clean context per HU
+    ├── subagent_protocol.md             # Orchestration — each phase in a fresh context
     ├── launch_flow.md                   # Detailed LAUNCH mode pipeline
     ├── quick_flow.md                    # Detailed FAST mode pipeline
     ├── sprint_cadence.md                # SM Planning / Status / Retro / Closure Checklist
-    └── project_context_template.md      # Stack-agnostic project-context template
+    ├── project_context_template.md      # Stack-agnostic project-context template
+    ├── roles_matrix.md                  # 🆕 Enterprise: human roles + gate authority matrix
+    ├── concurrent_work_protocol.md      # 🆕 Enterprise: multi-dev branches, PRs, conflicts
+    ├── metrics.md                       # 🆕 Enterprise: KPIs, dashboard, sprint reports
+    └── onboarding.md                    # 🆕 Enterprise: quick start by role + cheat sheet
 ```
+
+
+
+
+## Enterprise — Teams & Organizations
+
+NexusAgile Enterprise extends the core methodology for teams of 2+ developers working concurrently on the same codebase.
+
+### What's New
+
+| Capability | Solo | Enterprise |
+|---|---|---|
+| **Human roles** | One person does everything | PO, Tech Lead, Dev, QA Lead, SM — each with defined authority |
+| **Gate approval** | Self-approved | Specific human approver per gate, with backup and audit trail |
+| **Concurrent work** | Sequential HUs | Multiple devs in parallel with branch protection and PR workflow |
+| **AI delegation** | Full autonomy | Autonomy matrix: what AI can do alone vs what needs human approval |
+| **Metrics** | None | Lead time, BLOQUEANTE rate, drift rate, cost/HU, sprint dashboard |
+| **Onboarding** | Read everything | Role-based reading paths, first HU in <1 hour |
+| **Escalation** | N/A | Dev → TL (2h) → PO (4h) with defined timeouts |
+
+### Enterprise References
+
+| Document | What it covers |
+|---|---|
+|  | 5 human roles, gate authority matrix, AI delegation levels, escalation paths, team size configs |
+|  | Branch strategy, PR workflow, HU ownership, conflict prevention, dependency coordination |
+|  | 20+ KPIs across velocity/quality/anti-hallucination/AI efficiency, dashboard template, sprint report |
+|  | Role-based quick start, first HU walkthrough, cheat sheet, common mistakes, FAQ |
+
+### Team Size Configurations
+
+| Size | Setup |
+|---|---|
+| **Solo (1)** | Original NexusAgile. Self-approved gates. Max AI delegation. |
+| **Small (2-4)** | PO part-time. TL doubles as QA. 1-2 devs. SM rotates. |
+| **Medium (5-8)** | Dedicated PO, TL, QA. 3-5 devs. SM dedicated. |
+| **Large (9+)** | Split into 2+ independent NexusAgile teams. Scrum of Scrums for coordination. |
 
 
 ## Relationship with NexusFactory
