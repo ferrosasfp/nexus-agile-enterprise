@@ -149,11 +149,11 @@ En duda -> QUALITY. Es mejor sobre-engineerear el proceso que sub-engineerearlo.
 
 ## Cheat Sheet
 
-PIPELINE:  F0 -> F1 -> [HU_APPROVED] -> F2 -> [SPEC_APPROVED] -> F2.5 -> F3 -> AR -> CR -> F4 -> DONE
+PIPELINE:  F0 -> F1 -> [HU_APPROVED] -> F2 -> [SPEC_APPROVED] -> F2.5 -> F3 -> AR -> CR -> F4 -> [RELEASE_APPROVED] -> DONE
 
 MODOS:     FAST (trivial) | LAUNCH (MVP) | QUALITY (prod)
 
-GATES:     Solo texto exacto: HU_APPROVED  SPEC_APPROVED  SPRINT_APPROVED  REVIEW_APPROVED  RETRO_APPROVED
+GATES:     Solo texto exacto: HU_APPROVED  SPEC_APPROVED  RELEASE_APPROVED  SPRINT_APPROVED  REVIEW_APPROVED  RETRO_APPROVED
 
 ROLES:     PO (que) | TL (como) | Dev (implementa) | QA (valida) | SM (facilita)
 

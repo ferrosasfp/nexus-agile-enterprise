@@ -212,15 +212,21 @@ Despues de investigar la causa raiz, Dev decide:
 - No refactorizar, no mejorar, no limpiar codigo adyacente
 - Documentar que se cambio y por que
 
-#### Paso 3: Adversarial Review (condicional)
+#### Paso 3: Adversarial Review (obligatorio)
 
-| El fix toca... | AR |
-|----------------|-----|
-| Auth, permisos, sesiones | **Obligatorio** |
-| Datos de usuario, BD, queries | **Obligatorio** |
-| Pagos, transacciones | **Obligatorio** |
-| Solo UI sin logica | Opcional |
-| Solo texto/copy | Opcional |
+AR es **siempre obligatorio** en Hotfix. Un bug en produccion ya demostro que algo fallo — el AR verifica que el fix no introduce un segundo fallo.
+
+| El fix toca... | AR | Nivel de AR |
+|----------------|-----|------------|
+| Auth, permisos, sesiones | **Obligatorio** | Completo (8 categorias) |
+| Datos de usuario, BD, queries | **Obligatorio** | Completo (8 categorias) |
+| Pagos, transacciones | **Obligatorio** | Completo (8 categorias) |
+| Solo UI sin logica | **Obligatorio** | Reducido (3 categorias: imports fantasma, drift, regression) |
+| Solo texto/copy | **Obligatorio** | Reducido (3 categorias: imports fantasma, drift, regression) |
+
+> **Razon del cambio**: AR condicional permitia que hotfixes en areas "seguras" (UI, texto) pasaran sin revision.
+> Pero un cambio de CSS puede romper un overlay, un cambio de texto puede romper un test snapshot, y un fix de UI puede introducir un import fantasma.
+> AR siempre, con nivel proporcional al riesgo.
 
 #### Paso 4: QA - Verificacion
 
@@ -242,7 +248,7 @@ QA verifica DOS cosas:
 | Architect (F2) | Si | No hay decision de diseno, es correccion |
 | SM | Si | No hay story file, el bug description es el spec |
 | Story File (F2.5) | Si | El bug report es el contrato |
-| Code Review | Opcional | Solo si el fix es no-trivial |
+| Code Review | **Obligatorio si >1 archivo o servicio compartido** | CR se omite SOLO si el fix es 1 archivo, <10 lineas, y no toca servicios compartidos (middleware, auth, cache, DB) |
 
 ### Regla de Upgrade
 
