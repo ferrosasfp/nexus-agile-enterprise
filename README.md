@@ -345,7 +345,9 @@ Real-world development is messy. NexusAgile Enterprise defines protocols for whe
 |---|----------|------|------|--------|
 | 1 | Solo dev — Payment integration | 1 person | QUALITY | Documented |
 | 2 | Solo dev — Typo fix | 1 person | FAST | Documented |
-| 3-12 | Small/Medium/Large teams + edge cases | 2-12 people | Mixed | Planned |
+| 3 | 2-person team — Feature + Fix | 2 people | QUALITY + FAST | Documented |
+| 4 | Medium team — 3 HUs in parallel | 5 people | QUALITY + FAST | Documented |
+| 5-12 | Large teams + edge cases | 6-12 people | Mixed | Planned |
 
 
 ## Relationship with NexusFactory
