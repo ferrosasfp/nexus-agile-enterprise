@@ -335,6 +335,19 @@ Real-world development is messy. NexusAgile Enterprise defines protocols for whe
 | Cross-team dependencies | Scrum of Scrums, dependency board, escalation ladder | `references/cross_team_protocol.md` |
 | Components/services communicate | Formal Integration Contract with schema + SLA | `references/integration_contract_template.md` |
 
+### Use Cases — Real-World Simulations
+
+12 simulated scenarios covering every team size and mode combination. Each case shows the complete flow: what the human does, what the AI does, where the gates are, and how long it takes.
+
+> Full document: `use-cases.md` in the root of this repo.
+
+| # | Scenario | Team | Mode | Status |
+|---|----------|------|------|--------|
+| 1 | Solo dev — Payment integration | 1 person | QUALITY | Documented |
+| 2 | Solo dev — Typo fix | 1 person | FAST | Documented |
+| 3-12 | Small/Medium/Large teams + edge cases | 2-12 people | Mixed | Planned |
+
+
 ## Relationship with NexusFactory
 
 ```
