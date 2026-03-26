@@ -67,6 +67,7 @@
 | HU_APPROVED | PO | SM (si PO delega) | ACs claros, scope definido, sin [NEEDS CLARIFICATION] |
 | SPEC_APPROVED | TL | Senior Dev (si TL delega) | SDD tecnicamente viable, Readiness Check OK, sin BLOQUEANTEs en AR de SDD |
 | REVIEW_APPROVED | PO + TL | — | Status revisado, bloqueos identificados, plan de accion |
+| RELEASE_APPROVED | TL + PO (ambos) | Senior Dev + SM | Pre-release checklist OK, staging verificado, rollback definido |
 | RETRO_APPROVED | SM | TL | Action items registrados, retrospectiva completada |
 
 ### Reglas de aprobacion
@@ -95,6 +96,7 @@
 | AR: Adversarial Review | Autonomo | TL revisa BLOQUEANTEs |
 | CR: Code Review | Autonomo + Dev peer | TL aprueba merge |
 | F4: QA Validation | Autonomo | QA Lead valida evidencia |
+| F5: Release Gate checklist | Autonomo | TL + PO aprueban RELEASE_APPROVED |
 | DONE: Documentacion | Autonomo | — |
 | **Crear branch** | Autonomo | — |
 | **Crear PR** | Autonomo | — |

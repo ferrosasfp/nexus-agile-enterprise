@@ -178,6 +178,12 @@ HU (cualquier formato)
 [ F4: QA/Validacion ] --------- QA: drift detection + ACs con evidencia + quality gates
     |                              ↓ AUTOMATICO
     v
+[ F5: Release Gate ] ----------- Pre-release checklist (staging, migrations, env, rollback)
+    |                              ↓ GATE OPCIONAL
+    v
+[ GATE: RELEASE_APPROVED ] ---- TL + PO verifican staging y aprueban deploy
+    |
+    v
 [ Build + Push ] --------------- Docs documenta + actualiza _INDEX.md
     |
     v
@@ -202,6 +208,8 @@ Cuando ejecutas una HU en modo QUALITY, lee `references/quality_pipeline.md` par
 | AR | `references/quality_pipeline.md` + `references/adversarial_review_checklist.md` | 8 categorias de ataque, BLOQUEANTE/MENOR/OK |
 | CR | `references/quality_pipeline.md` | 6 checks de calidad de codigo |
 | F4: QA | `references/quality_pipeline.md` + `references/validation_report_template.md` | Drift Detection, AC Verification, Quality Gates |
+| F5: Release | `references/quality_pipeline.md` | Pre-release checklist, staging verification, RELEASE_APPROVED gate |
+| Case Types | `references/case_types.md` | Modificadores de pipeline: DB-MIGRATION, CONTRACT-CHANGE, INFRA-ENV, SECURITY-INCIDENT, DATA-BACKFILL |
 | DONE | `references/quality_pipeline.md` | Reporte final, _INDEX.md, cierre issue tracker, resumen de sesion |
 
 > **Memoria persistente (opcional pero recomendado):** Si el proyecto usa un sistema de memoria, ver `references/engram_protocol.md` como implementacion de referencia con Engram.

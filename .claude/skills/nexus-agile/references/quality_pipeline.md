@@ -473,6 +473,94 @@ Escribir en `doc/sdd/NNN-titulo/validation.md`.
 
 ---
 
+## F5: Release Gate (opcional por proyecto)
+
+**Agente**: QA + Docs
+**Objetivo**: Verificar que el codigo aprobado en F4 esta listo para produccion.
+**Gate**: RELEASE_APPROVED (TL + PO)
+
+> **Cuando aplica**: Proyectos que deployean a produccion (apps web, APIs, servicios).
+> **Cuando NO aplica**: Librerias, paquetes, skills, herramientas internas sin deploy. Configurar en `project-context.md` con `release_gate: false`.
+> **Default**: Si `project-context.md` no lo especifica, F5 aplica.
+
+### Pre-Release Checklist
+
+El AI genera el checklist automaticamente. El humano (TL + PO) verifica y aprueba.
+
+```
+PRE-RELEASE CHECKLIST — HU-NNN
+
+## Staging
+[ ] Codigo deployeado en staging/preview
+[ ] Smoke test en staging exitoso (flujo principal funciona)
+[ ] No hay errores nuevos en logs de staging
+
+## Migraciones
+[ ] Sin migraciones: N/A
+[ ] Con migraciones: migration aplicada en staging sin errores
+[ ] Con migraciones: migration es reversible (down migration existe)
+[ ] Con migraciones: datos existentes no se corrompen post-migration
+
+## Variables de entorno
+[ ] Sin env vars nuevas: N/A
+[ ] Con env vars nuevas: configuradas en TODOS los entornos (staging + prod)
+[ ] Con env vars nuevas: documentadas en project-context.md o .env.example
+[ ] Secrets no estan hardcodeados ni en el repo
+
+## Dependencias
+[ ] Sin deps nuevas: N/A
+[ ] Con deps nuevas: licencia compatible
+[ ] Con deps nuevas: version pinneada (no latest/*)
+[ ] Con deps nuevas: no hay vulnerabilidades conocidas (npm audit / pip audit)
+
+## Rollback
+[ ] Plan de rollback definido: [revert commit / feature flag off / migration down]
+[ ] Rollback testeado o trivial (revert de un commit)
+
+## Contratos / Integraciones
+[ ] Sin cambios de API publica: N/A
+[ ] Con cambios de API: backward compatible o versionado
+[ ] Con cambios de API: consumidores notificados
+[ ] Servicios externos (payments, email, auth providers): testeados en staging
+
+## Comunicacion
+[ ] Changelog entry preparado (si aplica)
+[ ] Stakeholders notificados del deploy (si aplica)
+```
+
+### Proceso F5
+
+1. AI genera el Pre-Release Checklist con items aplicables (marca N/A los que no aplican)
+2. AI verifica automaticamente lo que puede (env vars en repo, deps audit, migration files)
+3. AI presenta checklist al humano con items pendientes de verificacion manual
+4. Humano (TL) verifica staging, migraciones, rollback
+5. Humano (PO) confirma que la feature en staging es lo esperado
+6. Ambos escriben: **RELEASE_APPROVED**
+7. Pipeline avanza a DONE
+
+### Si F5 falla
+
+| Problema | Accion |
+|----------|--------|
+| Staging roto | Volver a F3 — fix + re-deploy staging |
+| Migration falla en staging | Volver a F3 — fix migration |
+| Env var faltante | Configurar env var — no requiere volver a F3 |
+| Rollback no viable | TL decide: agregar rollback plan o aceptar riesgo (documentado) |
+| PO no aprueba en staging | Volver a F3 con feedback especifico del PO |
+
+### Persistencia F5
+
+Agregar al `doc/sdd/NNN-titulo/report.md`:
+```markdown
+## Release Gate
+- Checklist: [PASS/FAIL por item]
+- Aprobado por: [TL] + [PO]
+- Fecha: YYYY-MM-DD
+- Entorno verificado: [staging URL]
+```
+
+---
+
 ## Build + Push + DONE
 
 **Agente**: Docs
@@ -486,6 +574,7 @@ Escribir en `doc/sdd/NNN-titulo/validation.md`.
    - Drift summary
    - AR/CR summary
    - Auto-Blindaje acumulado
+   - **Release Gate status** (si F5 aplica)
 2. Escribir en `doc/sdd/NNN-titulo/report.md`
 3. Actualizar `doc/sdd/_INDEX.md` con status DONE
 4. Cerrar en el issue tracker del proyecto (Linear, GitHub Issues, Jira, o el configurado en `project-context.md`) — mover el issue a Done/Closed
