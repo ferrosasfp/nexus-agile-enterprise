@@ -12,7 +12,7 @@
 | 1 | [Solo dev — Feature de pagos](#caso-1-solo-dev--feature-quality) | 1 persona | QUALITY | Este doc |
 | 2 | [Solo dev — Fix trivial](#caso-2-solo-dev--fix-trivial-fast) | 1 persona | FAST | Este doc |
 | 3 | [Equipo de 2 — Feature + Fix](#caso-3-equipo-de-2--feature-quality-con-peer-review) | 2 personas | QUALITY + FAST | Este doc |
-| 4 | Small team — Sprint con dependencias | 3 personas | QUALITY | Pendiente |
+| 4 | [Medium team — Sprint con 3 HUs paralelas](#caso-4-medium-team--sprint-con-3-hus-paralelas) | 5 personas | QUALITY + FAST | Este doc |
 | 5 | Small team — Primer sprint (onboarding) | 3 personas | QUALITY | Pendiente |
 | 6 | Small team — Hotfix mid-sprint | 4 personas | QUALITY + HOTFIX | Pendiente |
 | 7 | Medium team — Feature cross-cutting | 6 personas | QUALITY | Pendiente |
@@ -718,31 +718,65 @@ EXEMPLAR: seccion "Mis Recetas" existente como template de layout
 
 ---
 
-#### Dia 1-2 — F3: Implementacion (Lucia + AI, 2-3 horas)
+#### Dia 1-2 — F3: Implementacion (AI implementa, Lucia supervisa — 2-3 horas)
 
-Lucia crea el branch:
+Lucia crea el branch y lanza al AI:
 ```bash
 git checkout main && git pull
 git checkout -b feat/001-favoritos
 ```
 
-Lucia implementa siguiendo las Waves del Story File:
+> **Principio clave**: El AI implementa. Lucia supervisa, revisa y ajusta.
+> Igual que en solo dev, el agente AI es quien escribe el codigo.
+> La diferencia: Lucia tiene criterio tecnico para detectar errores que el solo dev podria pasar por alto.
 
-**Wave 1 — Backend** (~45 min)
-- Modifica `prisma/schema.prisma`: agrega modelo Favorite con relaciones
+**Wave 1 — Backend** (~15 min AI + 10 min Lucia review)
+
+Lucia dice:
+> "Implementa Wave 1 del Story File: modelo Favorite en Prisma + API routes"
+
+El AI:
+- Lee el exemplar `src/app/api/recipes/route.ts` (Codebase Grounding)
+- Modifica `prisma/schema.prisma`: agrega modelo Favorite con relaciones + cascade delete
+- Crea `src/app/api/favorites/route.ts` siguiendo el patron exacto del exemplar
 - Corre `npx prisma migrate dev --name add-favorites`
-- Crea `src/app/api/favorites/route.ts` siguiendo el exemplar de recipes
-- Testea con curl: POST y GET funcionan, 401 sin auth
 
-**Wave 2 — UI** (~45 min)
-- Crea `FavoriteButton.tsx` con heart toggle y optimistic update
+Lucia revisa el output:
+- Verifica que el schema tiene `@@unique([userId, recipeId])` — si, correcto
+- Verifica que el API route usa `getCurrentUser()` del exemplar — si, no invento auth propio
+- Prueba rapida con curl: POST toggle funciona, GET lista funciona, 401 sin auth
+- **Ajuste**: "Agrega `onDelete: Cascade` en la relacion con Recipe" (nota del SPEC_APPROVED)
+
+**Wave 2 — UI** (~15 min AI + 10 min Lucia review)
+
+Lucia dice:
+> "Implementa Wave 2: FavoriteButton y FavoritesList"
+
+El AI:
+- Lee el exemplar `src/components/RecipeCard.tsx` para patron de componente
+- Crea `FavoriteButton.tsx` con heart toggle + optimistic update
+- Lee el exemplar `src/app/profile/page.tsx` seccion "Mis Recetas" para layout
 - Crea `FavoritesList.tsx` con fetch + empty state
 
-**Wave 3 — Integracion** (~30 min)
-- Agrega FavoriteButton a RecipeCard (prop opcional para backward compat)
-- Agrega seccion FavoritesList a ProfilePage
+Lucia revisa:
+- Verifica que FavoriteButton usa estado local (no global) — cumple FORBIDDEN del Story File
+- Verifica empty state "No tenes favoritos aun" — presente
+- **Sin ajustes necesarios**
 
-Lucia verifica localmente:
+**Wave 3 — Integracion** (~10 min AI + 5 min Lucia review)
+
+Lucia dice:
+> "Implementa Wave 3: integra FavoriteButton en RecipeCard y FavoritesList en ProfilePage"
+
+El AI:
+- Modifica `RecipeCard.tsx`: agrega prop `isFavorite?: boolean` (opcional, backward compatible)
+- Modifica `ProfilePage.tsx`: agrega seccion "Mis Favoritos" despues de "Mis Recetas"
+
+Lucia revisa:
+- Verifica que no rompio props existentes de RecipeCard — correcto, prop es opcional
+- Verifica que el layout del perfil es consistente — correcto, sigue patron existente
+
+**Verificacion final** (AI + Lucia, 5 min):
 ```bash
 npx prisma migrate dev     # ✓ migration applied
 npm run typecheck           # ✓ no errors
@@ -750,6 +784,10 @@ npm run lint                # ✓ clean
 npm run test                # ✓ 12/12 passing
 npm run build               # ✓ build successful
 ```
+
+> **Tiempo real de Lucia en F3**: ~25 min revisando outputs del AI + 5 min de ajustes
+> **Tiempo real del AI en F3**: ~40 min implementando 3 waves
+> **vs Solo dev**: Diego revisa sin criterio de TL. Lucia revisa CON criterio de TL — detecta mas cosas.
 
 ---
 
@@ -972,22 +1010,22 @@ AI actualiza `_INDEX.md`:
 | 1 AM | F2 + AR-SDD (AI) | AI | 15 min |
 | 1 PM | SPEC_APPROVED | Lucia (TL) | 10 min |
 | 1 PM | F2.5 Story File (AI) | AI | 5 min |
-| 1 PM - 2 AM | F3 Implementacion | Lucia + AI | 2-3 horas |
+| 1 PM - 2 AM | F3 Implementacion | AI implementa, Lucia supervisa | ~1.5 horas |
 | 2 AM | AR + CR (AI) | AI | 8 min |
 | 2 AM | PR abierto | Lucia | 5 min |
 | 2 AM | Review PR (funcional) | Martin | 5 min |
 | 2 AM | Review PR (tecnico) + Merge | Lucia (TL) | 5 min |
 | 2 PM | F4 + DONE (AI + Lucia QA) | AI + Lucia | 12 min |
 
-**Total**: ~4-5 horas de trabajo efectivo en ~1.5 dias
+**Total**: ~3 horas de trabajo efectivo en ~1.5 dias (Lucia solo invierte ~1h de su tiempo)
 
 #### Tiempo humano vs AI
 
 | Persona | Tiempo invertido | Actividades |
 |---------|-----------------|-------------|
 | **Martin (PO+SM)** | ~40 min | Sprint planning (30) + HU_APPROVED (5) + PR review funcional (5) |
-| **Lucia (TL+Dev+QA)** | ~3.5 horas | SPEC_APPROVED (10) + Implementacion (2.5h) + PR (5) + Merge (5) + QA (10) |
-| **AI** | ~45 min | F0+F1 (10) + F2 (15) + F2.5 (5) + AR (5) + CR (3) + F4 (5) + DONE (2) |
+| **Lucia (TL+Dev+QA)** | ~1 hora | SPEC_APPROVED (10) + Supervision F3 (30) + PR (5) + Merge (5) + QA (10) |
+| **AI** | ~1.5 horas | F0+F1 (10) + F2 (15) + F2.5 (5) + **F3 implementacion (40)** + AR (5) + CR (3) + F4 (5) + DONE (2) |
 
 #### Valor del equipo de 2 vs solo dev
 
@@ -1023,13 +1061,13 @@ Timeline total: 15 minutos
 3. AI Analyst: investiga, encuentra que Safari no soporta crypto.randomUUID()
 4. Martin: HU_APPROVED (texto "Es exactamente ese bug")
 5. AI genera mini-spec + fix directo
-6. Lucia implementa: polyfill de 3 lineas en src/lib/auth.ts
+6. AI implementa: polyfill de 3 lineas en src/lib/auth.ts. Lucia revisa (30 seg).
 7. AI AR: 0 BLOQUEANTEs
 8. Lucia abre PR, Martin aprueba funcional ("ya no crashea en Safari"), Lucia mergea
 9. _INDEX.md actualizado: HU-002 DONE
 
 Total Martin: 2 min (HU_APPROVED + PR approval)
-Total Lucia: 10 min (fix + PR)
+Total Lucia: 3 min (revisar fix del AI + abrir PR)
 Total AI: 3 min (triage + analysis + AR)
 ```
 
@@ -1051,3 +1089,598 @@ Total AI: 3 min (triage + analysis + AR)
 > Regla de oro: **con 2 personas haces 2-3 HUs QUALITY por sprint**.
 > Si necesitas mas throughput, agrega un dev (3 personas).
 > Si necesitas peer review humano obligatorio, necesitas minimo 3 personas.
+
+---
+
+## Caso 4: Medium Team — Sprint con 3 HUs Paralelas
+
+### Contexto
+
+| Dato | Valor |
+|------|-------|
+| **Proyecto** | "LogiTrack" — Plataforma de gestion logistica para PyMEs |
+| **Stack** | Next.js 14 + tRPC + Prisma + PostgreSQL + Tailwind + Zustand |
+| **Equipo** | 5 personas |
+| **Sprint** | Sprint 4 — el equipo ya tiene 3 sprints de experiencia con NexusAgile |
+| **HUs del sprint** | 3 HUs QUALITY en paralelo + 1 FAST mid-sprint |
+
+### Distribucion de Roles (5 personas)
+
+| Persona | Rol | Responsabilidad |
+|---------|-----|----------------|
+| **Ana** | Product Owner | Define que se construye, prioriza backlog, aprueba HU_APPROVED |
+| **Carlos** | Tech Lead | Arquitectura, aprueba SPEC_APPROVED, review final de PRs, resuelve conflictos tecnicos |
+| **Sofia** | Developer 1 | Implementa HUs asignadas (con AI), peer review de PRs de Mateo |
+| **Mateo** | Developer 2 | Implementa HUs asignadas (con AI), peer review de PRs de Sofia |
+| **Valeria** | QA Lead + SM | Facilita ceremonias, valida evidencia en F4, drift detection |
+
+> Segun `roles_matrix.md` seccion "Equipo mediano (5-8 personas)":
+> PO dedicado, TL dedicado, QA dedicado, 2+ devs, SM (puede compartirse).
+> Valeria combina QA + SM — viable en equipo de 5.
+
+### Diferencias clave vs Equipo de 2
+
+| Aspecto | Equipo de 2 | Equipo de 5 |
+|---------|-------------|-------------|
+| Gates | 2 personas se turnan | **PO, TL, QA son personas distintas** — nadie aprueba su propio trabajo |
+| Peer review | Imposible (1 solo dev) | **Real**: Sofia revisa PRs de Mateo y viceversa |
+| Paralelismo | 1 HU a la vez | **2-3 HUs simultaneas** — cada dev trabaja su HU |
+| Conflictos | No hay (1 dev) | **Prevencion activa**: TL verifica scope disjunto en planning |
+| QA | Dev hace su propio QA | **QA Lead independiente** — Valeria valida sin sesgo |
+| Ceremonias | Informales | **Estructuradas**: Planning, Daily, Status, Retro — Valeria facilita |
+
+---
+
+### Dia 1 — Sprint Planning (45 min, sync)
+
+**Facilita**: Valeria (SM)
+**Participantes**: Ana, Carlos, Sofia, Mateo, Valeria
+
+#### Paso 1: Ana presenta backlog priorizado
+
+Ana dice:
+> "Prioridades de Sprint 4:
+> 1. Dashboard de metricas de envio — los clientes lo piden hace 2 sprints
+> 2. Notificaciones por email cuando cambia el estado de un envio
+> 3. Exportar reporte de envios a PDF
+> Todas son QUALITY — tocan DB, API y UI."
+
+#### Paso 2: Carlos estima y verifica scope
+
+Carlos analiza dependencias:
+> "Dashboard y Notificaciones son independientes — dominios distintos. Dashboard toca /dashboard/* y metricas. Notificaciones toca /api/notifications y el servicio de email. Zero overlap.
+>
+> PDF Export tiene soft dependency con Dashboard — usa las mismas queries de metricas. Pero puede mockear los datos mientras Dashboard no esta mergeado.
+>
+> **Propuesta**: Sofia toma Dashboard (mas complejo, ella conoce el dominio). Mateo toma Notificaciones. PDF Export arranca cuando Dashboard mergee, o Mateo la toma con mock."
+
+#### Paso 3: Asignacion + dependency check
+
+| HU | Owner | Modo | Branch | Dependencia | Archivos clave |
+|----|-------|------|--------|-------------|---------------|
+| 001 — Dashboard metricas | @sofia | QUALITY | feat/001-dashboard | ninguna | /dashboard/*, /api/metrics |
+| 002 — Notificaciones email | @mateo | QUALITY | feat/002-notifications | ninguna | /api/notifications, /lib/email |
+| 003 — Export PDF | @mateo | QUALITY | feat/003-export-pdf | soft dep con 001 | /api/export, /lib/pdf |
+
+Carlos verifica:
+> "Sofia toca /dashboard y /api/metrics. Mateo toca /api/notifications y /lib/email. **Zero file overlap**. Pueden correr 100% en paralelo. HU-003 la toma Mateo despues de HU-002 con Integration Contract para las queries de metricas."
+
+Valeria confirma capacidad:
+> "2 devs x 5 dias = 10 dev-days. 3 HUs QUALITY es ambicioso. Si HU-003 no llega, la llevamos al sprint 5. El commitment firme es HU-001 + HU-002."
+
+Ana y Carlos escriben:
+> SPRINT_APPROVED
+
+---
+
+### Dia 1 — Pipeline Paralelo: 2 HUs Simultaneas
+
+#### HU-001 y HU-002 arrancan en paralelo
+
+El AI procesa ambas HUs simultaneamente. Cada una pasa por su propio pipeline:
+
+```
+                    PARALELO
+         ┌──────────────────────────────┐
+         │                              │
+HU-001:  F0 → F1 → [HU_APPROVED] → F2 → [SPEC_APPROVED] → F2.5 → F3...
+         │                              │
+HU-002:  F0 → F1 → [HU_APPROVED] → F2 → [SPEC_APPROVED] → F2.5 → F3...
+         │                              │
+         └──────────────────────────────┘
+```
+
+#### F0 + F1: AI procesa ambas (15 min)
+
+**HU-001 (Dashboard)** — AI genera Work Item:
+```markdown
+AC1: Dashboard muestra metricas de envios: total, en transito, entregados, demorados
+AC2: Filtro por rango de fechas
+AC3: Graficos de tendencia (envios por dia, semana, mes)
+AC4: KPIs con comparativa vs periodo anterior (flechas up/down)
+AC5: Dashboard accesible solo para roles admin y manager
+AC6: Loading skeleton mientras cargan los datos
+```
+
+**HU-002 (Notificaciones)** — AI genera Work Item:
+```markdown
+AC1: Cuando un envio cambia de estado, se envia email al cliente
+AC2: Template de email con: numero de envio, estado anterior, estado nuevo, fecha
+AC3: Cola de emails con retry (no perder notificaciones si el servicio falla)
+AC4: Configuracion: el cliente puede activar/desactivar notificaciones
+AC5: Log de notificaciones enviadas (auditable)
+AC6: Rate limit: max 10 emails por envio (prevenir loops)
+```
+
+#### Gate: HU_APPROVED x2 (Ana, 10 min)
+
+Ana revisa ambos Work Items:
+
+**HU-001**: "Los ACs cubren lo que necesito. El filtro por fecha es clave. Agrego: AC7 — el dashboard se actualiza automaticamente cada 5 min sin refresh manual."
+
+**HU-002**: "Los ACs estan bien. El rate limit es buena idea. El log auditable es necesario por compliance. Aprobado."
+
+Ana escribe:
+> HU-001: HU_APPROVED (con AC7 agregado: auto-refresh cada 5 min)
+> HU-002: HU_APPROVED
+
+#### F2: AI genera SDDs para ambas (20 min en paralelo)
+
+El AI genera los SDDs en paralelo — cada uno con Codebase Grounding sobre el proyecto real.
+
+**SDD-001 (Dashboard)** — archivos clave:
+| Accion | Archivo |
+|--------|---------|
+| Crear | src/app/dashboard/page.tsx |
+| Crear | src/app/dashboard/components/MetricsCards.tsx |
+| Crear | src/app/dashboard/components/TrendChart.tsx |
+| Crear | src/app/dashboard/components/DateFilter.tsx |
+| Crear | src/app/api/metrics/route.ts |
+| Crear | src/lib/metrics.ts (queries de metricas) |
+| Modificar | src/app/layout.tsx (agregar link a dashboard en nav) |
+| Modificar | prisma/schema.prisma (indice para queries de metricas) |
+
+**SDD-002 (Notificaciones)** — archivos clave:
+| Accion | Archivo |
+|--------|---------|
+| Crear | src/lib/email/notification-service.ts |
+| Crear | src/lib/email/templates/shipment-status.tsx |
+| Crear | src/app/api/notifications/route.ts |
+| Crear | src/app/api/notifications/preferences/route.ts |
+| Crear | src/app/settings/notifications/page.tsx |
+| Modificar | prisma/schema.prisma (modelo NotificationLog + NotificationPreference) |
+| Modificar | src/app/api/shipments/[id]/route.ts (trigger notificacion al cambiar estado) |
+
+**Carlos detecta overlap**:
+> "Ambas tocan prisma/schema.prisma. HU-001 agrega un indice. HU-002 agrega 2 modelos. No se pisan — son cambios en zonas distintas del schema. Pero para evitar conflicto de migration: **HU-001 mergea primero su migration**, HU-002 hace rebase antes de crear la suya."
+
+#### Gate: SPEC_APPROVED x2 (Carlos, 15 min)
+
+Carlos revisa ambos SDDs:
+
+**SDD-001**: "Exemplars correctos. Queries de metricas bien definidas. Agrego constraint: REQUIRED usar React Query para cache + auto-refresh (no polling manual)."
+
+**SDD-002**: "Patron de queue con retry esta bien. Template de email usa React Email — consistente con lo que ya tenemos. Constraint agregado: REQUIRED implementar dead-letter queue para emails que fallan 3x."
+
+Carlos escribe:
+> SDD-001: SPEC_APPROVED
+> SDD-002: SPEC_APPROVED
+
+#### F2.5: Story Files generados (AI, 5 min cada uno)
+
+El AI genera 2 Story Files. Cada dev recibe el suyo:
+- Sofia recibe Story File HU-001 (Dashboard) — 4 waves
+- Mateo recibe Story File HU-002 (Notificaciones) — 3 waves
+
+---
+
+### Dia 1-3 — F3: Implementacion Paralela
+
+> **Recordatorio**: El AI implementa. Los devs supervisan, revisan y ajustan.
+> Esto es igual que en solo dev y equipo de 2, pero ahora hay 2 pipelines en paralelo.
+
+#### Sofia + AI: HU-001 Dashboard (Dia 1 tarde - Dia 2)
+
+Sofia crea su branch:
+```bash
+git checkout main && git pull
+git checkout -b feat/001-dashboard
+```
+
+**Wave 1 — Queries de metricas** (~15 min AI + 10 min Sofia review)
+
+Sofia dice:
+> "Implementa Wave 1 del Story File: queries de metricas en src/lib/metrics.ts y API route"
+
+AI implementa. Sofia revisa:
+- Verifica que las queries usan los indices definidos en el SDD — correcto
+- Verifica que el auth check usa `getCurrentUser()` y valida rol admin/manager — correcto
+- Prueba con curl: datos correctos, performance OK
+
+**Wave 2 — Componentes UI** (~20 min AI + 10 min Sofia review)
+
+Sofia: "Implementa Wave 2: MetricsCards, TrendChart, DateFilter"
+
+AI implementa. Sofia revisa:
+- Verifica que TrendChart usa la libreria de charts existente (recharts) — correcto, no invento otra
+- Verifica loading skeletons — presentes en todos los componentes
+- **Ajuste**: "El DateFilter deberia tener 'Ultima semana' como default, no 'Ultimo mes'"
+
+**Wave 3 — Dashboard page + auto-refresh** (~10 min AI + 5 min Sofia review)
+
+Sofia: "Implementa Wave 3: pagina del dashboard con React Query y auto-refresh cada 5 min"
+
+AI implementa. Sofia revisa:
+- Verifica `refetchInterval: 300000` en React Query — correcto
+- Verifica que no hace polling manual — cumple REQUIRED del constraint de Carlos
+
+**Wave 4 — Integracion nav** (~5 min AI + 2 min Sofia review)
+
+Sofia: "Implementa Wave 4: link al dashboard en el nav"
+
+AI modifica `layout.tsx`. Sofia verifica: link visible solo para admin/manager.
+
+Verificacion:
+```bash
+npm run typecheck  # ✓
+npm run lint       # ✓
+npm run test       # ✓ 18/18
+npm run build      # ✓
+```
+
+#### Mateo + AI: HU-002 Notificaciones (Dia 1 tarde - Dia 2)
+
+En paralelo, Mateo trabaja en su branch:
+```bash
+git checkout main && git pull
+git checkout -b feat/002-notifications
+```
+
+**Wave 1 — Servicio de email + templates** (~15 min AI + 10 min Mateo review)
+
+Mateo dice:
+> "Implementa Wave 1: notification-service.ts con queue + retry + dead-letter, y template de email"
+
+AI implementa. Mateo revisa:
+- Verifica retry logic: 3 intentos con backoff exponencial — correcto
+- Verifica dead-letter queue despues de 3 fallos — implementado como log con status 'failed'
+- Verifica template: incluye numero envio, estado anterior/nuevo, fecha — completo
+- **Ajuste**: "El template necesita el logo de la empresa en el header"
+
+**Wave 2 — API + preferencias** (~15 min AI + 10 min Mateo review)
+
+Mateo: "Implementa Wave 2: API routes de notificaciones y preferencias del usuario"
+
+AI implementa. Mateo revisa:
+- Verifica rate limit de 10 emails por envio — implementado con counter en NotificationLog
+- Verifica toggle de preferencias — ON/OFF por tipo de notificacion
+- Verifica log auditable — cada envio se registra con timestamp, status, recipiente
+
+**Wave 3 — Trigger + integracion** (~10 min AI + 5 min Mateo review)
+
+Mateo: "Implementa Wave 3: trigger de notificacion cuando cambia estado de envio"
+
+AI modifica `src/app/api/shipments/[id]/route.ts`. Mateo revisa:
+- Verifica que el trigger es async (no bloquea la respuesta de la API de shipments) — correcto
+- Verifica que chequea preferencias antes de enviar — correcto
+
+Verificacion:
+```bash
+npm run typecheck  # ✓
+npm run lint       # ✓
+npm run test       # ✓ 15/15
+npm run build      # ✓
+```
+
+---
+
+### Dia 2 — Daily Standup (10 min, async en Slack #sprint-004)
+
+Valeria facilita:
+
+> **Sofia**: HU-001 Dashboard — F3 completa, waves 1-4 done, corriendo AR ahora. PR hoy.
+> **Mateo**: HU-002 Notificaciones — F3 completa, push final listo. PR hoy.
+> **Carlos**: Voy a revisar ambos SDDs una vez mas antes de los PRs. Sin bloqueos.
+> **Ana**: Nada de mi lado. Esperando PRs para review funcional.
+> **Valeria**: Todo on-track. Si ambos PRs llegan hoy, puedo hacer F4 manana y arrancar HU-003.
+
+---
+
+### Dia 2 — AR + CR + PRs
+
+#### HU-001: AR + CR (AI, 10 min)
+
+```
+ADVERSARIAL REVIEW — HU-001 Dashboard
+- INFORMATIVO: Considerar memoizacion en TrendChart para datasets grandes
+- INFORMATIVO: DateFilter no tiene aria-labels para accesibilidad
+- 0 BLOQUEANTEs
+
+CODE REVIEW — HU-001
+- 8/8 archivos revisados ✓
+- Imports validos, patrones consistentes, tipos correctos
+- APROBADO
+```
+
+#### HU-002: AR + CR (AI, 10 min)
+
+```
+ADVERSARIAL REVIEW — HU-002 Notificaciones
+- BLOQUEANTE: notification-service.ts no maneja el caso donde el email del cliente es null/invalido
+- INFORMATIVO: Template de email no tiene version plain-text (spam filters)
+- 1 BLOQUEANTE, 1 INFORMATIVO
+
+CODE REVIEW — HU-002
+- 7/7 archivos revisados
+- BLOQUEADO hasta resolver hallazgo de AR
+```
+
+**Mateo corrige el BLOQUEANTE**:
+
+Mateo dice:
+> "Agrega validacion de email: si es null o invalido, loguear como 'skipped' en NotificationLog y no intentar enviar"
+
+AI implementa la validacion. Mateo revisa. AR re-ejecuta:
+
+```
+AR RE-RUN — HU-002
+- INFORMATIVO: Template sin plain-text (no bloqueante)
+- 0 BLOQUEANTEs
+- APROBADO
+```
+
+#### PRs abiertos
+
+**Sofia** abre PR #12 — HU-001 Dashboard
+**Mateo** abre PR #13 — HU-002 Notificaciones
+
+Ambos hacen rebase contra main antes:
+```bash
+git fetch origin main && git rebase origin/main && git push -u origin feat/NNN-titulo
+```
+
+---
+
+### Dia 2-3 — Peer Review Cruzado + TL Review
+
+> **Aqui esta la diferencia fundamental del equipo de 5: peer review humano real.**
+
+#### PR #12 (Dashboard) — Mateo revisa, Carlos aprueba
+
+**Mateo** (peer review):
+- Lee el diff (~350 lineas)
+- Verifica: queries eficientes, componentes bien separados, loading states
+- Comenta: "En MetricsCards.tsx linea 45, el calculo de % cambio puede dar division por zero si el periodo anterior tiene 0 envios"
+- Status: **Request changes**
+
+Sofia corrige: agrega guard `previousCount === 0 ? 'N/A' : ...`. Push.
+
+**Mateo** re-revisa: "Fix correcto. Approved."
+
+**Carlos** (TL final review):
+- Verifica AR clean, CI green, peer review approved
+- Revisa arquitectura general: patron consistente, no hay drift
+- **Approved + Merge** (squash)
+
+#### PR #13 (Notificaciones) — Sofia revisa, Carlos aprueba
+
+**Sofia** (peer review):
+- Lee el diff (~280 lineas)
+- Verifica: retry logic, dead-letter, rate limit, trigger async
+- Comenta: "Buen trabajo con el backoff exponencial. Una pregunta: el dead-letter log tiene indice para busqueda rapida?"
+- Mateo responde: "Si, hay indice en (status, createdAt)."
+- Status: **Approved**
+
+**Carlos** (TL final review):
+- Verifica AR clean (post-fix), CI green, peer review approved
+- Nota que Mateo corrigio un BLOQUEANTE de AR — bien resuelto
+- **Approved + Merge** (squash)
+
+**Orden de merge** (Carlos decide):
+1. Primero PR #12 (Dashboard) — incluye migration de indice en schema
+2. Mateo hace rebase de PR #13 contra main actualizado
+3. Segundo PR #13 (Notificaciones) — migration de modelos nuevos
+4. Zero conflictos gracias al scope disjunto definido en planning
+
+---
+
+### Dia 3 — F4: QA Validation (Valeria)
+
+> **Valeria es QA Lead independiente** — no implemento ni reviso codigo. Su unica funcion es validar con evidencia.
+
+#### HU-001 Validation
+
+```markdown
+# Validation Report — HU-001 Dashboard
+
+## Drift Detection
+| Planificado (SDD) | Implementado | Match? |
+|-------------------|-------------|--------|
+| src/app/dashboard/page.tsx | ✓ creado | ✓ |
+| src/app/dashboard/components/MetricsCards.tsx | ✓ creado | ✓ |
+| src/app/dashboard/components/TrendChart.tsx | ✓ creado | ✓ |
+| src/app/dashboard/components/DateFilter.tsx | ✓ creado | ✓ |
+| src/app/api/metrics/route.ts | ✓ creado | ✓ |
+| src/lib/metrics.ts | ✓ creado | ✓ |
+| src/app/layout.tsx (mod) | ✓ modificado | ✓ |
+| prisma/schema.prisma (mod) | ✓ modificado | ✓ |
+| Archivos fuera de scope | Ninguno | ✓ |
+Drift rate: 0%
+
+## AC Verification
+| AC | Evidencia | Status |
+|----|-----------|--------|
+| AC1: Metricas total/transito/entregados/demorados | MetricsCards.tsx:15-48 | ✓ PASS |
+| AC2: Filtro por rango de fechas | DateFilter.tsx:8-32 | ✓ PASS |
+| AC3: Graficos de tendencia | TrendChart.tsx:12-67 | ✓ PASS |
+| AC4: KPIs con comparativa | MetricsCards.tsx:52-68 | ✓ PASS |
+| AC5: Solo admin/manager | api/metrics/route.ts:8 | ✓ PASS |
+| AC6: Loading skeleton | page.tsx:24 (Suspense) | ✓ PASS |
+| AC7: Auto-refresh 5 min | page.tsx:18 refetchInterval | ✓ PASS |
+
+## Quality Gates: ✓ typecheck ✓ lint ✓ tests ✓ build
+## Resultado: APROBADO — 7/7 ACs, 0% drift
+```
+
+#### HU-002 Validation
+
+```markdown
+# Validation Report — HU-002 Notificaciones
+
+## Drift Detection
+Drift rate: 0% (7/7 archivos match)
+
+## AC Verification
+| AC | Evidencia | Status |
+|----|-----------|--------|
+| AC1: Email al cambiar estado | shipments/[id]/route.ts:45 trigger | ✓ PASS |
+| AC2: Template con datos | templates/shipment-status.tsx:12-38 | ✓ PASS |
+| AC3: Cola con retry | notification-service.ts:23-56 | ✓ PASS |
+| AC4: Preferencias on/off | preferences/route.ts:8-24 | ✓ PASS |
+| AC5: Log auditable | notification-service.ts:62-78 | ✓ PASS |
+| AC6: Rate limit 10/envio | notification-service.ts:15-20 | ✓ PASS |
+
+## Nota: BLOQUEANTE de AR corregido pre-merge (validacion email null)
+## Quality Gates: ✓ typecheck ✓ lint ✓ tests ✓ build
+## Resultado: APROBADO — 6/6 ACs, 0% drift
+```
+
+Valeria confirma ambas:
+> "HU-001 y HU-002 validadas. Evidencia archivo:linea en todos los ACs. Cero drift. Ambas DONE."
+
+---
+
+### Dia 3 PM — FAST mid-sprint: Bug urgente
+
+Martin, un usuario, reporta: "El boton de 'Crear Envio' no funciona en mobile."
+
+Ana dice:
+> "Esto es urgente — los operadores usan tablets en el deposito."
+
+**Triage**: FAST (bug en UI, 1-2 archivos, sin DB)
+
+Pipeline FAST (15 min):
+1. AI investiga: el boton tiene `onClick` que depende de hover state — no funciona en touch
+2. Ana: HU_APPROVED ("Es ese bug exactamente")
+3. AI implementa: cambia hover trigger a click trigger + agrega touch event
+4. Sofia (disponible, ya termino HU-001) toma el fix
+5. Sofia revisa output del AI — correcto
+6. AR: 0 BLOQUEANTEs
+7. PR #14 abierto — Mateo peer review ("fix limpio, approved"), Carlos merge
+8. DONE en 15 min
+
+> **En equipo de 5**: el fix FAST no interrumpe a Mateo (que esta arrancando HU-003).
+> Sofia lo toma porque esta libre. **Zero impacto en el sprint.**
+
+---
+
+### Dia 3-4 — HU-003: Export PDF (Mateo, post-merge de HU-001)
+
+Ahora que HU-001 esta mergeada, Mateo puede usar las queries reales de metricas:
+
+```
+Pipeline normal QUALITY:
+F0 → F1 → Ana: HU_APPROVED → F2 → Carlos: SPEC_APPROVED → F2.5 → F3 → AR → CR → PR
+
+Particularidad: Integration Contract
+- El SDD de HU-003 referencia src/lib/metrics.ts de HU-001 como exemplar
+- No hay mock — usa las queries reales que Sofia ya implemento
+- El AI lee el codigo REAL de metrics.ts (Codebase Grounding post-merge)
+```
+
+Mateo + AI implementan. Sofia hace peer review. Carlos aprueba. Valeria valida.
+
+---
+
+### Dia 5 — Sprint Closure
+
+#### Sprint Status Meeting (Valeria facilita, 15 min)
+
+```markdown
+## Sprint 4 — Status Final
+
+| HU | Owner | Status | PR | Merged |
+|----|-------|--------|-----|--------|
+| 001 — Dashboard | Sofia | DONE | #12 | ✓ |
+| 002 — Notificaciones | Mateo | DONE | #13 | ✓ |
+| FAST — Fix mobile | Sofia | DONE | #14 | ✓ |
+| 003 — Export PDF | Mateo | DONE | #15 | ✓ |
+
+Commitment: 3 HUs QUALITY → 3 entregadas + 1 FAST bonus
+Carry-over: 0%
+BLOQUEANTEs en AR: 1 (HU-002, resuelto pre-merge)
+Drift rate promedio: 0%
+```
+
+Ana y Carlos:
+> REVIEW_APPROVED
+
+#### Retrospectiva (Valeria facilita, 20 min)
+
+| Que funciono | Que mejorar | Action item |
+|-------------|-------------|-------------|
+| Scope disjunto — zero conflictos de merge | BLOQUEANTE de email null — el AR lo detecto, bien, pero deberia estar en el Story File como constraint | Carlos: agregar constraint "REQUIRED: validar inputs null" como regla global |
+| Peer review cruazado Sofia<->Mateo encontro bug de division por zero | Daily async funciona, pero a veces nadie lee hasta tarde | Valeria: daily a las 10 AM con notificacion |
+| HU-003 reutilizo codigo de HU-001 limpiamente | HU-003 empezo tarde por dependency — podria haber empezado con mock | Carlos: para Sprint 5, usar Integration Contract + mock desde dia 1 |
+
+Valeria:
+> RETRO_APPROVED
+
+---
+
+### Resumen del Caso 4 — Equipo de 5
+
+#### Timeline del Sprint
+
+| Dia | HU-001 (Sofia) | HU-002 (Mateo) | HU-003 (Mateo) | Otros |
+|-----|----------------|-----------------|-----------------|-------|
+| 1 | F0→F2.5 | F0→F2.5 | — | Sprint Planning |
+| 2 | F3 (AI impl) | F3 (AI impl) | — | Daily |
+| 2-3 | AR→CR→PR→Merge | AR→CR→PR→Merge | — | FAST fix (Sofia) |
+| 3 | F4 (Valeria) ✓ | F4 (Valeria) ✓ | F0→F2.5 | — |
+| 3-4 | — | — | F3→AR→CR→PR→Merge | — |
+| 5 | — | — | F4 (Valeria) ✓ | Status + Retro |
+
+#### Tiempo humano por persona
+
+| Persona | Tiempo total en sprint | Actividades principales |
+|---------|----------------------|------------------------|
+| **Ana** (PO) | ~1.5 horas | Planning (45) + 3x HU_APPROVED (15) + FAST approval (2) + PR reviews funcionales (15) + Status (10) |
+| **Carlos** (TL) | ~3 horas | Planning (45) + 3x SPEC_APPROVED (30) + 4x PR final review (40) + merges + conflict check + Retro |
+| **Sofia** (Dev) | ~3 horas | F3 supervision HU-001 (45) + FAST fix (10) + peer review HU-002 (20) + peer review HU-003 (20) + dailies |
+| **Mateo** (Dev) | ~4 horas | F3 supervision HU-002 (45) + F3 supervision HU-003 (45) + peer review HU-001 (20) + dailies |
+| **Valeria** (QA+SM) | ~3 horas | Facilitar ceremonias (90) + 3x F4 validation (45) + FAST validation (5) |
+| **AI** | ~6 horas | 3x pipeline completo (F0-DONE) + 1 FAST + toda la implementacion |
+
+#### Valor del equipo de 5
+
+| Beneficio | Detalle |
+|-----------|---------|
+| **Paralelismo real** | 2 HUs avanzan simultaneamente — el sprint entrega 3x mas que equipo de 2 |
+| **Peer review humano** | Sofia y Mateo se revisan mutuamente — deteccion de bugs que el AI no encontro (division por zero) |
+| **QA independiente** | Valeria valida sin sesgo — nunca toco el codigo que valida |
+| **Separation of concerns total** | Ana (que), Carlos (como), Sofia/Mateo (ejecutan con AI), Valeria (valida + facilita) |
+| **Resiliencia** | Si Sofia se enferma, Mateo puede tomar su HU. FAST fix no interrumpe a nadie. |
+| **El AI escala** | Mismos 9 agentes, pero ahora corren 2-3 pipelines en paralelo sin costo humano adicional |
+
+#### Que NO cambia vs equipos mas chicos
+
+| Aspecto | Igual en todos los tamanos |
+|---------|--------------------------|
+| Pipeline por HU | F0 → F1 → HU_APPROVED → F2 → SPEC_APPROVED → F2.5 → F3 → AR → CR → F4 → DONE |
+| AI implementa | El AI escribe el codigo. Los devs supervisan y ajustan. Siempre. |
+| Anti-alucinacion | Exemplar Pattern, Codebase Grounding, Constraints — no cambia |
+| Gates son humanos | AI nunca auto-aprueba. PO, TL, QA son personas. |
+| Artefactos | work-item + sdd + story-file + validation + report por HU |
+
+---
+
+### Cuando el equipo de 5 necesita escalar
+
+| Senal | Accion |
+|-------|--------|
+| >5 HUs QUALITY por sprint | Agregar Dev 3 |
+| Valeria no llega a facilitar + QA | Separar SM y QA Lead |
+| Carlos es bottleneck en SPEC_APPROVED | Senior Dev como backup approver |
+| >8 personas | Dividir en 2 equipos con cross_team_protocol.md |
+| Dominio muy amplio | Equipos por dominio (Team Envios, Team Facturacion) |
