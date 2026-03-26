@@ -275,7 +275,11 @@ NexusAgile, sprint planning
     ├── roles_matrix.md                  # 🆕 Enterprise: human roles + gate authority matrix
     ├── concurrent_work_protocol.md      # 🆕 Enterprise: multi-dev branches, PRs, conflicts
     ├── metrics.md                       # 🆕 Enterprise: KPIs, dashboard, sprint reports
-    └── onboarding.md                    # 🆕 Enterprise: quick start by role + cheat sheet
+    ├── onboarding.md                    # 🆕 Enterprise: quick start by role + cheat sheet
+    ├── governance.md                    # 🆕 Enterprise: scope changes, disputes, incidents
+    ├── greenfield_bootstrap.md          # 🆕 Enterprise: new project from scratch
+    ├── cross_team_protocol.md           # 🆕 Enterprise: multi-team coordination
+    └── integration_contract_template.md # 🆕 Enterprise: API/service contract template
 ```
 
 
@@ -315,6 +319,21 @@ NexusAgile Enterprise extends the core methodology for teams of 2+ developers wo
 | **Medium (5-8)** | Dedicated PO, TL, QA. 3-5 devs. SM dedicated. |
 | **Large (9+)** | Split into 2+ independent NexusAgile teams. Scrum of Scrums for coordination. |
 
+
+
+### Governance & Exception Protocols
+
+Real-world development is messy. NexusAgile Enterprise defines protocols for when things don't go as planned:
+
+| Situation | Protocol | Reference |
+|---|---|---|
+| PO changes scope after approval gate | Scope Change Tiers (Trivial/Minor/Major) | `references/governance.md` |
+| Dev disputes an AR BLOQUEANTE finding | Dispute Resolution (Confirm/Downgrade/Dismiss) | `references/governance.md` |
+| Production incident mid-sprint | Incident Protocol (P0/P1/P2) with severity, SLA, and sprint adjustment | `references/governance.md` |
+| FAST mode turns out to be complex | Clean escalation to QUALITY with artifact carry-over | `references/governance.md` |
+| Building from scratch (no codebase) | Greenfield Bootstrap with stack capture + scaffold | `references/greenfield_bootstrap.md` |
+| Cross-team dependencies | Scrum of Scrums, dependency board, escalation ladder | `references/cross_team_protocol.md` |
+| Components/services communicate | Formal Integration Contract with schema + SLA | `references/integration_contract_template.md` |
 
 ## Relationship with NexusFactory
 

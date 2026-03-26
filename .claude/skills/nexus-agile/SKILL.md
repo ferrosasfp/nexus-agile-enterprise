@@ -424,3 +424,18 @@ Cada rol tiene un path de lectura especifico. Un dev nuevo puede ejecutar su pri
 | Branches, PRs, conflictos | `references/concurrent_work_protocol.md` |
 | KPIs, dashboard, sprint report | `references/metrics.md` |
 | Primer dia, setup, FAQ | `references/onboarding.md` |
+
+
+### Governance y Protocolos de Excepcion
+
+La realidad interrumpe los procesos. Estos protocolos definen que hacer:
+
+| Situacion | Protocolo | Referencia |
+|-----------|----------|-----------|
+| PO cambia scope despues de gate | Scope Change Tiers (Trivial/Menor/Mayor) | references/governance.md |
+| Dev disputa un BLOQUEANTE del AR | Dispute Resolution (Confirmar/Degradar/Descartar) | references/governance.md |
+| Produccion se cae mid-sprint | Incident Protocol (P0/P1/P2) | references/governance.md |
+| FAST resulta ser complejo | Escalation FAST->QUALITY | references/governance.md |
+| Proyecto nuevo sin codigo | Greenfield Bootstrap | references/greenfield_bootstrap.md |
+| 2+ equipos comparten dependencias | Cross-Team Protocol | references/cross_team_protocol.md |
+| Componentes se comunican | Integration Contract | references/integration_contract_template.md |
