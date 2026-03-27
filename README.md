@@ -1,6 +1,6 @@
 # NexusAgile Enterprise
 
-> *"The human decides WHAT. The agents execute HOW."*
+> *"The human decides WHAT. The agents decide HOW."*
 
 You describe a feature. Claude writes code confidently, imports a module that doesn't exist, follows patterns inconsistent with your codebase, and modifies files it wasn't supposed to touch. You spend 40 minutes fixing what should have taken 10.
 
@@ -65,7 +65,6 @@ The human makes decisions at the gates. **Everything else runs automatically.**
 | **You get** | Working code in minutes | A structured codebase with anti-hallucination from day one | Full audit trail: spec, adversarial review, QA evidence |
 | **Human gates** | None | One: approve the HU list | Two per HU + three sprint ceremony gates |
 | **Sprint ceremonies** | No | No | Yes |
-| **Speed** | ⚡⚡⚡ | ⚡⚡ | ⚡ |
 | **When in doubt** | | | Use this one |
 
 
@@ -235,7 +234,7 @@ Between gates, the pipeline runs automatically. The agent never asks "shall I co
 ## Installation
 
 ```bash
-git clone https://github.com/ferrosasfp/NexusAgile.git /tmp/nexus-agile
+git clone https://github.com/ferrosasfp/nexus-agile-enterprise /tmp/nexus-agile
 cp -r /tmp/nexus-agile/.claude/skills/nexus-agile/ your-project/.claude/skills/nexus-agile/
 rm -rf /tmp/nexus-agile
 ```
@@ -305,10 +304,10 @@ NexusAgile Enterprise extends the core methodology for teams of 2+ developers wo
 
 | Document | What it covers |
 |---|---|
-|  | 5 human roles, gate authority matrix, AI delegation levels, escalation paths, team size configs |
-|  | Branch strategy, PR workflow, HU ownership, conflict prevention, dependency coordination |
-|  | 20+ KPIs across velocity/quality/anti-hallucination/AI efficiency, dashboard template, sprint report |
-|  | Role-based quick start, first HU walkthrough, cheat sheet, common mistakes, FAQ |
+| `references/roles_matrix.md` | 5 human roles, gate authority matrix, AI delegation levels, escalation paths, team size configs |
+| `references/concurrent_work_protocol.md` | Branch strategy, PR workflow, HU ownership, conflict prevention, dependency coordination |
+| `references/metrics.md` | 20+ KPIs across velocity/quality/anti-hallucination/AI efficiency, dashboard template, sprint report |
+| `references/onboarding.md` | Role-based quick start, first HU walkthrough, cheat sheet, common mistakes, FAQ |
 
 ### Team Size Configurations
 
@@ -337,7 +336,7 @@ Real-world development is messy. NexusAgile Enterprise defines protocols for whe
 
 ### Use Cases — Real-World Simulations
 
-12 simulated scenarios covering every team size and mode combination. Each case shows the complete flow: what the human does, what the AI does, where the gates are, and how long it takes.
+12 simulated scenarios covering every team size and mode combination. Each case shows the complete flow: what the human does, what the AI does, and where the gates are.
 
 > Full document: `use-cases.md` in the root of this repo.
 
@@ -371,3 +370,4 @@ Methodology created by [Fernando Rosas](https://github.com/ferrosasfp).
 Merges the Nexus SDD Workflow with agile sprint practices and specialized AI agent roles.
 
 MIT License
+
