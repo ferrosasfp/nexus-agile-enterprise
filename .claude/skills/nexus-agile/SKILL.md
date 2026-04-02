@@ -22,6 +22,7 @@ description: >
 1. **Stack-Agnostic** — No asumimos tecnologias. Cada proyecto define su stack en `project-context.md` (ver `references/project_context_template.md`).
 2. **1 HU = 1 ejecucion** — No mezclar historias. Una historia, un pipeline completo.
 3. **Anti-Alucinacion** — Codebase Grounding obligatorio. Leer codigo real, extraer patrones reales, referenciar archivos existentes. Nunca inventar.
+3b. **Project-Context First** — Antes de cualquier F0, leer `.nexus/project-context.md` (o `project-context.md`). Es la fuente de verdad del stack y las reglas. Si el código difiere del project-context, reportar drift al humano — nunca asumir que el código manda sobre el project-context.
 4. **Agentes Especializados** — Cada fase tiene agentes asignados con roles claros. Los roles NO se mezclan (ver `references/agents_roster.md`).
 5. **Gates Estrictos** — No se avanza sin aprobacion humana explicita en los gates.
    **Entre gates, el pipeline corre solo.** El agente NO pide permiso para pasar de F0→F1, F2→F2.5, F3→AR, AR→CR, CR→QA, QA→Docs. Solo se detiene en los gates formales. Preguntar "¿continuo?" entre fases es un error de proceso.
@@ -302,7 +303,7 @@ El clarify es informativo, no bloqueante. El humano decide.
 2. **Gates bloqueantes**. No avanzar sin el texto exacto del gate.
 3. **Abort**: Si el humano aborta, Docs actualiza _INDEX.md con ABORTED.
 4. **Auto-Blindaje**: Documentar errores cuando ocurren, no al final.
-5. **Stack del proyecto**: Respetar `project-context.md`, sin excepciones.
+5. **Stack del proyecto**: Respetar `project-context.md`, sin excepciones. Buscar en `.nexus/project-context.md` primero. Si el código usa un stack diferente al definido → reportar drift, no continuar.
 6. **Cambios minimos**: No tocar lo que no esta en scope.
 7. **Max 3 preguntas** en F1 para completar DoR.
 8. **Conservador**: Si hay duda, NO expandir alcance.

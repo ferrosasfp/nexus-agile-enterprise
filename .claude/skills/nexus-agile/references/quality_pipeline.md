@@ -11,11 +11,28 @@
 **Agentes**: Analyst (requisitos) + Architect (arquitectura)
 **Objetivo**: Establecer contexto del proyecto y del codebase antes de procesar la HU.
 
+### ⚠️ PASO 0 — OBLIGATORIO ANTES DE TODO (Anti-Drift)
+
+> **El orquestador y cada sub-agente deben leer `project-context.md` como PRIMER acto, antes de leer el codebase, antes de hacer cualquier análisis.**
+> Violar este paso es el error más costoso del pipeline — lleva a implementar con el stack incorrecto.
+
+Buscar en este orden hasta encontrar:
+1. `.nexus/project-context.md` (ubicación preferida)
+2. `project-context.md` (raíz del proyecto)
+3. `docs/project-context.md`
+
+**Si existe:** leer COMPLETO antes de continuar. El `project-context.md` define:
+- Stack inmutable (framework, DB, librerías) — **NUNCA asumir el stack del código si difiere del project-context**
+- Reglas absolutas (Golden Path) — inviolables
+- Patrones y convenciones del proyecto
+
+**Si NO existe:** ejecutar Bootstrap de Proyecto (ver sección siguiente) antes de continuar.
+
+**Regla anti-drift:** Si el código existente usa un framework/librería diferente al definido en `project-context.md`, reportar el drift al humano ANTES de continuar. No asumir que el código es la fuente de verdad.
+
 ### Proceso
 
-1. **Verificar si existe `project-context.md`**:
-   - **Si existe**: leerlo para conocer stack, arquitectura, comandos, guardrails y exemplars
-   - **Si NO existe**: ejecutar **Bootstrap de Proyecto** (ver seccion siguiente) antes de continuar
+1. **Leer `project-context.md`** (ver Paso 0 arriba — BLOQUEANTE)
 2. **Codebase Grounding inicial**: Explorar la estructura del proyecto con Glob/Grep
 3. **Leer `doc/sdd/_INDEX.md`** para siguiente NNN. Si no existe, crearlo.
 4. **Smart Sizing** — Clasificar la HU:
