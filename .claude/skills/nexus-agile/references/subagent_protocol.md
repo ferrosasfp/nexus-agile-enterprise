@@ -60,8 +60,6 @@ Cada sub-agente recibe un prompt autocontenido con:
 
 ```
 Eres el agente [ROL] de NexusAgil ejecutando [FASE].
-Stack-agnostic skill: .claude/skills/nexus-agile/SKILL.md
-Skills de dominio: [skill-frontend | skill-database | ...] (según Skills Router)
 
 INPUT:
 [artefacto de la fase anterior — work-item.md, sdd.md, etc.]
@@ -71,12 +69,37 @@ TU TAREA:
 
 OUTPUT ESPERADO:
 [artefacto a generar — nombre de archivo, formato]
+[ruta exacta donde escribir el artefacto]
 
 SCOPE:
 - Lee SOLO los archivos referenciados en tu INPUT
 - No explores el codebase más allá de lo necesario para tu tarea
 - Si necesitas algo que no está en tu INPUT: escala al orquestador
+
+## ⛔ PROHIBIDO EN ESTA FASE — [FASE]
+[Copiar el bloque correspondiente de la tabla abajo]
 ```
+
+### Tabla de PROHIBIDO por fase (obligatorio incluir en cada prompt)
+
+| Fase | PROHIBIDO (copiar literal en el prompt) |
+|------|-----------------------------------------|
+| **F0** | NO modificar código. NO crear work-item. NO implementar. Solo leer y generar `project-context.md` si no existe. |
+| **F1** | NO escribir código de producción. NO modificar archivos fuera de `doc/sdd/NNN-titulo/`. NO ejecutar tests. NO hacer commits. Entregable único: `work-item.md`. |
+| **F2** | NO escribir código de producción. NO implementar. NO modificar archivos fuera de `doc/sdd/NNN-titulo/`. Entregable único: `sdd.md`. |
+| **F2.5** | NO escribir código de producción. NO implementar. Entregable único: `story-file.md`. |
+| **F3** | NO tocar archivos fuera del Scope IN del Story File. NO crear archivos no listados en el Story File. NO expandir scope. Si algo no está en el Story File → parar y escalar. |
+| **AR** | NO modificar código. Solo reportar hallazgos. Entregable único: `ar-report.md`. |
+| **CR** | NO modificar código. Solo reportar. Entregable único: `cr-report.md`. |
+| **F4** | NO modificar código. Solo verificar y reportar. Entregable único: `validation.md`. |
+| **DONE** | NO modificar código. Solo generar artefactos de cierre. |
+
+### Regla del orquestador sobre outputs inesperados
+
+Si un sub-agente reporta que hizo trabajo de una fase diferente a la asignada (ej: un F1 que dice "también implementé el código"), el orquestador DEBE:
+1. Revertir los cambios no autorizados (`git checkout -- .` sobre los archivos modificados fuera de `doc/`)
+2. Registrar como Auto-Blindaje
+3. Re-lanzar la fase correcta si el artefacto esperado no fue generado correctamente
 
 ---
 
