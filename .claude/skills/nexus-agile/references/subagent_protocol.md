@@ -192,3 +192,38 @@ La memoria persistente (Principio 8) compensa la falta de sub-agentes
 3. **Falla explícita** — si un sub-agente no entrega el artefacto esperado, el orquestador informa al humano y re-lanza
 4. **Gates en el orquestador** — los gates (HU_APPROVED, SPEC_APPROVED) los maneja el orquestador, no los sub-agentes
 5. **Agnóstico** — el protocolo funciona con cualquier implementación de sub-agentes disponible en el IDE
+
+---
+
+## ⚠️ Auto-Blindaje — F3 Paralelo en Repositorio Compartido
+
+**Fecha:** 2026-04-02 | **Proyecto:** wasiai-a2a | **HUs afectadas:** WKH-6, WKH-7
+
+**Error:** Lanzar 2 sub-agentes F3 en paralelo sobre el mismo directorio de trabajo causa commits mezclados entre branches. Ambos Devs operan sobre el mismo filesystem — los `git add/commit/push` concurrentes contaminan ambos branches con cambios del otro.
+
+**Síntoma:** Branch de WKH-6 contenía commits de WKH-7 y viceversa. El AR detectó scope drift severo.
+
+**Fix aplicado:** Cherry-pick post-hoc para aislar commits por HU. Funciona pero es trabajo extra y arriesgado.
+
+### Regla obligatoria para F3 paralelo:
+
+**OPCIÓN A — Serializar F3 (recomendado por defecto):**
+Nunca lanzar dos sub-agentes F3 simultáneamente sobre el mismo repo. Implementar WKH-X → merge → implementar WKH-Y.
+
+**OPCIÓN B — Git worktrees (si el paralelismo es crítico):**
+Crear un worktree separado por HU antes de lanzar F3:
+```bash
+git worktree add ../wasiai-a2a-wkh-6 -b feat/wkh-6-xxx
+git worktree add ../wasiai-a2a-wkh-7 -b feat/wkh-7-xxx
+```
+Cada sub-agente F3 recibe su propio `cwd` distinto. Al terminar, eliminar worktrees:
+```bash
+git worktree remove ../wasiai-a2a-wkh-6
+git worktree remove ../wasiai-a2a-wkh-7
+```
+
+**El orquestador debe verificar antes de lanzar F3 paralelo:**
+- ¿Hay un único directorio de trabajo compartido? → Serializar
+- ¿Hay worktrees separados preparados? → Puede paralelizar
+
+**Esta regla aplica a cualquier proyecto**, no solo wasiai-a2a.
