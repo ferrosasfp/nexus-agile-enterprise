@@ -295,6 +295,30 @@ El Story File es el **unico documento que Dev lee**. Contiene todo lo necesario:
 ### Regla Critica
 Dev **NUNCA** lee el SDD ni el Work Item. Solo el Story File. Si el Story File es ambiguo, Dev escala a Architect — no inventa.
 
+### ⚠️ Grounding Check obligatorio ANTES de generar el Story File
+
+El Architect DEBE ejecutar esto antes de escribir el Story File:
+
+```bash
+# 1. Traer estado actual del codebase
+git pull origin main
+
+# 2. Verificar que cada archivo del Scope IN existe
+# (reemplazar con los archivos del SDD)
+ls src/routes/[archivo].ts src/services/[archivo].ts 2>/dev/null
+
+# 3. Verificar que cada tipo/función referenciado existe
+grep -r "export.*[NombreTipo]\|export.*[NombreFuncion]" src/
+
+# 4. Verificar que cada import del SDD es válido
+grep -r "from '[ruta]'" src/ | head -3
+```
+
+**Si algo no existe:** corregir en el Story File antes de entregarlo. Documentar en auto-blindaje.
+**Si el codebase cambió desde el SDD:** actualizar el Story File para reflejar el estado real.
+
+> Origen: Auto-Blindaje 2026-04-02 — WKH-7 Story File referenció `discover.ts` pero el código real estaba en `discovery.ts`. WKH-6 usó `FastifyPreHandlerHookHandler` que no existe en Fastify v4.
+
 ### Persistencia F2.5
 Escribir en `doc/sdd/NNN-titulo/story-file.md`.
 
@@ -393,6 +417,23 @@ Si hay errores durante implementacion:
 **Objetivo**: Atacar la solucion implementada buscando fallas ANTES de validar.
 
 > Checklist completo en `references/adversarial_review_checklist.md`.
+
+### ⚠️ Paso 0 Obligatorio — Sincronizar branch antes de revisar
+
+```bash
+git fetch origin
+git checkout [branch-de-la-HU]
+git reset --hard origin/[branch-de-la-HU]
+git log --oneline -5
+git diff main --name-only
+```
+
+**Confirmar antes de continuar:**
+- El branch tiene commits de F3 (no está vacío)
+- El diff vs main muestra SOLO los archivos del Scope IN
+- Si el branch está vacío → reportar al orquestador, NO continuar con el AR
+
+> Origen: Auto-Blindaje 2026-04-02 — AR de WKH-7 reportó AR_FAIL porque el Adversary no hizo `git fetch`. El branch local estaba vacío mientras el remoto tenía todos los commits.
 
 ### Proceso
 
@@ -583,6 +624,10 @@ Agregar al `doc/sdd/NNN-titulo/report.md`:
 **Agente**: Docs
 **Objetivo**: Cerrar el pipeline y documentar.
 
+> ⚠️ **DONE es obligatorio. El merge del PR NO cierra la HU.**
+> La HU está DONE cuando _INDEX.md tiene su fila con status DONE y el issue tracker está cerrado.
+> Origen: Auto-Blindaje 2026-04-02 — 4 HUs mergeadas sin ejecutar DONE. _INDEX.md quedó con solo WKH-5.
+
 ### Proceso
 
 1. Compilar reporte final con:
@@ -595,7 +640,9 @@ Agregar al `doc/sdd/NNN-titulo/report.md`:
 2. Escribir en `doc/sdd/NNN-titulo/report.md`
 3. Actualizar `doc/sdd/_INDEX.md` con status DONE
 4. Cerrar en el issue tracker del proyecto (Linear, GitHub Issues, Jira, o el configurado en `project-context.md`) — mover el issue a Done/Closed
-5. Presentar resumen al humano
+5. Si la HU generó nuevas reglas de proceso → actualizar `project-context.md` o el SKILL.md relevante
+6. Si usó Engram → persistir métricas: `engram save "HU done" "sprint:N hu:ID bloqueantes:N menores:N auto-blindajes:N" --scope project`
+7. Presentar resumen al humano
 
 ### Abort
 Si el humano aborta en cualquier punto: Docs actualiza _INDEX.md con status ABORTED y cierra el issue en el tracker como CANCELLED.
