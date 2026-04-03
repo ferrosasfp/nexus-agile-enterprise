@@ -185,6 +185,27 @@ La memoria persistente (Principio 8) compensa la falta de sub-agentes
 
 ---
 
+## ⚠️ Checklist obligatorio antes de lanzar sub-agente F3
+
+El orquestador ejecuta esto ANTES de lanzar cualquier sub-agente Dev:
+
+```
+[ ] ¿Hay otro sub-agente F3 corriendo sobre el mismo directorio?
+    → Si SÍ: esperar a que termine, o crear git worktree separado
+    → git worktree add ../[repo]-[hu-id] -b feat/[hu-id]-titulo
+
+[ ] ¿El branch base es main actualizado?
+    → git checkout main && git pull origin main
+
+[ ] ¿El Story File fue aprobado con SPEC_APPROVED?
+    → Verificar que el gate fue respetado antes de lanzar
+
+[ ] ¿Las env vars necesarias para la HU están configuradas?
+    → Si la HU toca DB, pagos o servicios externos: verificar antes
+```
+
+**Si falla algún check:** resolver antes de lanzar F3. No lanzar sobre entorno roto.
+
 ## Reglas del orquestador
 
 1. **Nunca hace trabajo real** — si el orquestador empieza a generar código o SDDs, es un error de proceso
