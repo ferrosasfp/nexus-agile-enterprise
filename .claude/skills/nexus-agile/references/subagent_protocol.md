@@ -248,3 +248,39 @@ git worktree remove ../wasiai-a2a-wkh-7
 - ¿Hay worktrees separados preparados? → Puede paralelizar
 
 **Esta regla aplica a cualquier proyecto**, no solo wasiai-a2a.
+
+---
+
+## ⚠️ Auto-Blindaje — Gates saltados por sub-agente one-shot
+
+**Fecha:** 2026-04-04 | **Proyecto:** wasiai-a2a | **HUs afectadas:** WKH-10, WKH-13, WKH-14
+
+**Error:** El orquestador lanzó un sub-agente único con instrucción "pipeline completo F0→DONE". Los sub-agentes en modo `run` (one-shot) no pueden pausar y esperar respuesta humana — saltaron HU_APPROVED y SPEC_APPROVED silenciosamente.
+
+**Síntoma:** El orquestador aprobó los gates él mismo, sin presentar Work Item ni SDD al humano para revisión. Violación directa del principio "El humano decide QUÉ".
+
+### Regla obligatoria para orquestador:
+
+**NUNCA incluir más de un gate en el prompt de un sub-agente.**
+
+El flujo correcto es:
+
+```
+Orquestador lanza sub-agente F0+F1
+  → sub-agente entrega work-item.md
+  → orquestador presenta Work Item al humano
+  → humano escribe HU_APPROVED
+Orquestador lanza sub-agente F2+F2.5
+  → sub-agente entrega sdd.md + story-file.md
+  → orquestador presenta SDD al humano
+  → humano escribe SPEC_APPROVED
+Orquestador lanza sub-agente F3→DONE
+  → sin gates humanos en este tramo (AR, CR, F4 son reviews de agentes)
+```
+
+**Señales de que estás violando esta regla:**
+- El prompt del sub-agente dice "pipeline completo" o "F0→DONE"
+- El prompt del sub-agente dice "esperar HU_APPROVED" (imposible en modo one-shot)
+- El orquestador presenta el resultado final sin haber mostrado Work Item ni SDD al humano
+
+**Fix:** Siempre dividir en mínimo 3 lanzamientos separados: F0+F1 / F2+F2.5 / F3→DONE. El orquestador es el checkpoint humano entre ellos.
