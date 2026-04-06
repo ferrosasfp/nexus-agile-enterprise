@@ -4,7 +4,7 @@ argument-hint: <HU-ID>
 allowed-tools: Task, Read, Bash
 ---
 
-# /nexus-f4 — QA Validation
+# /nexus-p7-f4 — QA Validation (Paso 7/8)
 
 Lanza el sub-agente `nexus-qa` para validar ACs con evidencia concreta y ejecutar quality gates.
 
@@ -55,9 +55,9 @@ Task tool:
 
 | Veredicto | Acción |
 |-----------|--------|
-| APROBADO PARA DONE | Lanzar `/nexus-done` |
+| APROBADO PARA DONE | Lanzar `/nexus-p8-done` |
 | APROBADO con observaciones | Presentar al humano para decidir |
-| RECHAZADO | Re-lanzar `/nexus-f3` con AC fallidos |
+| RECHAZADO | Re-lanzar `/nexus-p4-f3` con AC fallidos |
 
 ## ⚠️ Importante
 - Vos sos el ORQUESTADOR. NO ejecutás los tests vos mismo, ni validás ACs vos mismo.

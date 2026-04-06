@@ -4,7 +4,7 @@ argument-hint: <HU-ID> [descripción libre]
 allowed-tools: Task, Read, Glob, Grep, Write
 ---
 
-# /nexus-f0-f1 — Context Bootstrap + Work Item
+# /nexus-p1-f0-f1 — Context Bootstrap + Work Item (Paso 1/8)
 
 Lanza el sub-agente `nexus-analyst` para ejecutar F0 (Context Bootstrap) + F1 (Work Item generation) sobre la HU especificada.
 

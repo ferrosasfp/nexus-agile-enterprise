@@ -4,7 +4,7 @@ argument-hint: <HU-ID>
 allowed-tools: Task, Read
 ---
 
-# /nexus-done — Pipeline Closure
+# /nexus-p8-done — Pipeline Closure (Paso 8/8)
 
 Lanza el sub-agente `nexus-docs` para cerrar la HU: reporte final, actualización de _INDEX, consolidación de Auto-Blindaje.
 

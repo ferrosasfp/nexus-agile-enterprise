@@ -4,7 +4,7 @@ argument-hint: <HU-ID>
 allowed-tools: Task, Read, Bash
 ---
 
-# /nexus-ar — Adversarial Review
+# /nexus-p5-ar — Adversarial Review (Paso 5/8)
 
 Lanza el sub-agente `nexus-adversary` para atacar la implementación recién terminada.
 
@@ -59,8 +59,8 @@ Task tool:
 
 | Veredicto | Acción del orquestador |
 |-----------|------------------------|
-| APROBADO / APROBADO con MENORs | Lanzar `/nexus-cr` |
-| RECHAZADO (BLOQUEANTEs activos) | Re-lanzar `/nexus-f3` con la lista de findings |
+| APROBADO / APROBADO con MENORs | Lanzar `/nexus-p6-cr` |
+| RECHAZADO (BLOQUEANTEs activos) | Re-lanzar `/nexus-p4-f3` con la lista de findings |
 
 ## ⚠️ Importante
 - Vos sos el ORQUESTADOR. NO ataques vos mismo.

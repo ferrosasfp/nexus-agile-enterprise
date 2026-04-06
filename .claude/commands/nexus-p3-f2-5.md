@@ -4,7 +4,7 @@ argument-hint: <HU-ID>
 allowed-tools: Task, Read, Glob
 ---
 
-# /nexus-f2-5 — Story File Generation
+# /nexus-p3-f2-5 — Story File Generation (Paso 3/8)
 
 Lanza el sub-agente `nexus-architect` para generar el Story File a partir del SDD aprobado.
 
