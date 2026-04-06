@@ -68,9 +68,51 @@ The human makes decisions at the gates. **Everything else runs automatically.**
 | **When in doubt** | | | Use this one |
 
 
-## What's New — Sub-Agent Protocol + Skills Router
+## What's New — Custom Agents, Slash Commands, Sub-Agent Protocol & Skills Router
 
-Two additions that solve context overload in complex features:
+Four additions that eliminate context overload AND prevent the orchestrator from "forgetting" to delegate:
+
+### Custom Sub-Agents (`.claude/agents/`)
+
+Six specialized Claude Code agents — one per pipeline phase — with the role, allowed tools, and `⛔ FORBIDDEN IN THIS PHASE` block baked into the agent file itself. The orchestrator literally **cannot** invoke them without inheriting the constraints.
+
+| Agent | Phases | Model | Tools | Output |
+|---|---|---|---|---|
+| `nexus-analyst` | F0, F1 | opus | Read, Glob, Grep, Write, AskUserQuestion | `project-context.md`, `work-item.md` |
+| `nexus-architect` | F2, F2.5, CR | opus | Read, Glob, Grep, Write, Edit, Bash | `sdd.md`, `story-file.md` |
+| `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash | code + `auto-blindaje.md` |
+| `nexus-adversary` | AR, CR | opus | Read, Glob, Grep, Bash | `ar-report.md`, `cr-report.md` |
+| `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash | `validation.md` |
+| `nexus-docs` | DONE | sonnet | Read, Write, Edit, Glob, Bash | `report.md`, `_INDEX.md` |
+
+`nexus-adversary` and `nexus-qa` have **no Edit/Write tools** for source files — they physically cannot modify code, only read and report. Same for `nexus-docs` regarding source. The role isn't a suggestion, it's enforced at the tool level.
+
+### Slash Commands (`.claude/commands/`)
+
+Eight typed shortcuts that wrap each phase. The orchestrator types one command and the entire Task tool invocation is built — sub-agent type, full prompt, prerequisites check, expected output, and forbidden block.
+
+| Command | Phase | Sub-agent launched | Pre-requisite |
+|---|---|---|---|
+| `/nexus-f0-f1 <HU>` | F0 + F1 | `nexus-analyst` | — |
+| `/nexus-f2 <HU>` | F2 (SDD) | `nexus-architect` | `HU_APPROVED` |
+| `/nexus-f2-5 <HU>` | F2.5 (Story File) | `nexus-architect` | `SPEC_APPROVED` |
+| `/nexus-f3 <HU>` | F3 (impl) | `nexus-dev` | `story-file.md` exists |
+| `/nexus-ar <HU>` | AR | `nexus-adversary` | F3 finished |
+| `/nexus-cr <HU>` | CR | `nexus-adversary` | AR APPROVED |
+| `/nexus-f4 <HU>` | F4 (QA) | `nexus-qa` | CR APPROVED |
+| `/nexus-done <HU>` | DONE | `nexus-docs` | F4 APPROVED |
+
+**Critical constraint built into every command**: only ONE gate per launch. You cannot pipe `HU_APPROVED → F2 → SPEC_APPROVED` in a single sub-agent invocation, because one-shot sub-agents can't pause for human input — they would silently auto-approve. Each command launches exactly one phase (or two adjacent gateless phases like F0+F1).
+
+### Why this matters
+
+Without custom agents and slash commands, the orchestrator has to remember to:
+1. Pass the FORBIDDEN block in every prompt
+2. Restrict tools per phase
+3. Verify pre-requisites before launching
+4. Not split a gate across two sub-agent calls
+
+In practice, these get forgotten under load. With custom agents + slash commands, **the rules live in the file system, not in the orchestrator's context window** — which means they survive compaction, context overflow, and human typos.
 
 ### Sub-Agent Protocol
 
@@ -233,13 +275,31 @@ Between gates, the pipeline runs automatically. The agent never asks "shall I co
 
 ## Installation
 
+NexusAgile distributes three things: the **skill** (methodology), the **sub-agents**, and the **slash commands**. You can install them per-project or globally.
+
+### Per-project (recommended for trying it out)
+
 ```bash
 git clone https://github.com/ferrosasfp/nexus-agile-enterprise /tmp/nexus-agile
-cp -r /tmp/nexus-agile/.claude/skills/nexus-agile/ your-project/.claude/skills/nexus-agile/
+mkdir -p your-project/.claude/skills your-project/.claude/agents your-project/.claude/commands
+cp -r /tmp/nexus-agile/.claude/skills/nexus-agile/ your-project/.claude/skills/
+cp /tmp/nexus-agile/.claude/agents/nexus-*.md your-project/.claude/agents/
+cp /tmp/nexus-agile/.claude/commands/nexus-*.md your-project/.claude/commands/
 rm -rf /tmp/nexus-agile
 ```
 
-Restart Claude Code. Skills load automatically.
+### Global (every project gets it automatically)
+
+```bash
+git clone https://github.com/ferrosasfp/nexus-agile-enterprise /tmp/nexus-agile
+mkdir -p ~/.claude/skills ~/.claude/agents ~/.claude/commands
+cp -r /tmp/nexus-agile/.claude/skills/nexus-agile/ ~/.claude/skills/
+cp /tmp/nexus-agile/.claude/agents/nexus-*.md ~/.claude/agents/
+cp /tmp/nexus-agile/.claude/commands/nexus-*.md ~/.claude/commands/
+rm -rf /tmp/nexus-agile
+```
+
+Restart Claude Code. The skill, the 6 sub-agents, and the 8 slash commands load automatically. Type `/nexus-` in the prompt to see autocomplete for all commands.
 
 **First session:**
 ```
@@ -254,31 +314,50 @@ NexusAgile, sprint planning
 ```
 
 
-## Skill Structure
+## Repo Structure
 
 ```
-.claude/skills/nexus-agile/
-├── SKILL.md                             # Full pipeline, 3 modes, global rules
-└── references/
-    ├── agents_roster.md                 # 9 agents — personality + responsibilities
-    ├── sdd_template.md                  # SDD templates: FULL / BUGFIX / MINI
-    ├── story_file_template.md           # Architect-Dev contract + Integration Contract
-    ├── adversarial_review_checklist.md  # 8 attack categories for the Adversary
-    ├── validation_report_template.md    # QA: drift + ACs + quality gates
-    ├── skills_router.md                 # Selective skill loading — clean context per HU
-    ├── subagent_protocol.md             # Orchestration — each phase in a fresh context
-    ├── launch_flow.md                   # Detailed LAUNCH mode pipeline
-    ├── quick_flow.md                    # Detailed FAST mode pipeline
-    ├── sprint_cadence.md                # SM Planning / Status / Retro / Closure Checklist
-    ├── project_context_template.md      # Stack-agnostic project-context template
-    ├── roles_matrix.md                  # 🆕 Enterprise: human roles + gate authority matrix
-    ├── concurrent_work_protocol.md      # 🆕 Enterprise: multi-dev branches, PRs, conflicts
-    ├── metrics.md                       # 🆕 Enterprise: KPIs, dashboard, sprint reports
-    ├── onboarding.md                    # 🆕 Enterprise: quick start by role + cheat sheet
-    ├── governance.md                    # 🆕 Enterprise: scope changes, disputes, incidents
-    ├── greenfield_bootstrap.md          # 🆕 Enterprise: new project from scratch
-    ├── cross_team_protocol.md           # 🆕 Enterprise: multi-team coordination
-    └── integration_contract_template.md # 🆕 Enterprise: API/service contract template
+.claude/
+├── agents/                              # 🆕 6 custom sub-agents (one per pipeline phase)
+│   ├── nexus-analyst.md                 #     F0, F1 — opus
+│   ├── nexus-architect.md               #     F2, F2.5, CR — opus
+│   ├── nexus-dev.md                     #     F3 — opus
+│   ├── nexus-adversary.md               #     AR, CR — opus (read-only tools)
+│   ├── nexus-qa.md                      #     F4 — sonnet (read-only tools)
+│   └── nexus-docs.md                    #     DONE — sonnet
+│
+├── commands/                            # 🆕 8 slash commands (typed shortcuts per phase)
+│   ├── nexus-f0-f1.md                   #     /nexus-f0-f1 — bootstrap + work-item
+│   ├── nexus-f2.md                      #     /nexus-f2 — SDD generation
+│   ├── nexus-f2-5.md                    #     /nexus-f2-5 — Story File generation
+│   ├── nexus-f3.md                      #     /nexus-f3 — implementation by waves
+│   ├── nexus-ar.md                      #     /nexus-ar — adversarial review
+│   ├── nexus-cr.md                      #     /nexus-cr — code review
+│   ├── nexus-f4.md                      #     /nexus-f4 — QA validation
+│   └── nexus-done.md                    #     /nexus-done — pipeline closure
+│
+└── skills/nexus-agile/
+    ├── SKILL.md                         # Full pipeline, 3 modes, global rules
+    └── references/
+        ├── agents_roster.md             # 9 agent roles — personality + responsibilities
+        ├── subagent_protocol.md         # Orchestration — each phase in a fresh context
+        ├── skills_router.md             # Selective skill loading — clean context per HU
+        ├── sdd_template.md              # SDD templates: FULL / BUGFIX / MINI
+        ├── story_file_template.md       # Architect-Dev contract + Integration Contract
+        ├── adversarial_review_checklist.md  # 8 attack categories for the Adversary
+        ├── validation_report_template.md    # QA: drift + ACs + quality gates
+        ├── launch_flow.md               # Detailed LAUNCH mode pipeline
+        ├── quick_flow.md                # Detailed FAST mode pipeline
+        ├── sprint_cadence.md            # SM Planning / Status / Retro / Closure
+        ├── project_context_template.md  # Stack-agnostic project-context template
+        ├── roles_matrix.md              # Enterprise: human roles + gate authority
+        ├── concurrent_work_protocol.md  # Enterprise: multi-dev branches, PRs
+        ├── metrics.md                   # Enterprise: KPIs, dashboard, sprint reports
+        ├── onboarding.md                # Enterprise: quick start by role
+        ├── governance.md                # Enterprise: scope changes, disputes, incidents
+        ├── greenfield_bootstrap.md      # Enterprise: new project from scratch
+        ├── cross_team_protocol.md       # Enterprise: multi-team coordination
+        └── integration_contract_template.md  # Enterprise: API/service contract
 ```
 
 
