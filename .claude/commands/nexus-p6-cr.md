@@ -4,7 +4,7 @@ argument-hint: <HU-ID>
 allowed-tools: Task, Read, Bash
 ---
 
-# /nexus-cr — Code Review
+# /nexus-p6-cr — Code Review (Paso 6/8)
 
 Lanza el sub-agente `nexus-adversary` (en modo CR) para revisar calidad de código, patrones y complejidad.
 
@@ -55,8 +55,8 @@ Task tool:
 
 | Veredicto | Acción |
 |-----------|--------|
-| APROBADO / APROBADO con MENORs | Lanzar `/nexus-f4` |
-| RECHAZADO | Re-lanzar `/nexus-f3` con la lista de findings |
+| APROBADO / APROBADO con MENORs | Lanzar `/nexus-p7-f4` |
+| RECHAZADO | Re-lanzar `/nexus-p4-f3` con la lista de findings |
 
 ## ⚠️ Importante
 - Vos sos el ORQUESTADOR. NO revisás vos mismo.

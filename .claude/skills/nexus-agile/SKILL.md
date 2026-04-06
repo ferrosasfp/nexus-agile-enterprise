@@ -55,14 +55,16 @@ Cada agente tiene su bloque `⛔ PROHIBIDO EN ESTA FASE` integrado en el system 
 
 | Comando | Fase | Sub-agente que lanza | Pre-requisito |
 |---------|------|---------------------|---------------|
-| `/nexus-f0-f1 <HU>` | F0 + F1 | `nexus-analyst` | — |
-| `/nexus-f2 <HU>` | F2 (SDD) | `nexus-architect` | `HU_APPROVED` |
-| `/nexus-f2-5 <HU>` | F2.5 (Story File) | `nexus-architect` | `SPEC_APPROVED` |
-| `/nexus-f3 <HU>` | F3 (impl) | `nexus-dev` | `story-file.md` existe |
-| `/nexus-ar <HU>` | AR | `nexus-adversary` | F3 terminado |
-| `/nexus-cr <HU>` | CR | `nexus-adversary` | AR APROBADO |
-| `/nexus-f4 <HU>` | F4 (QA) | `nexus-qa` | CR APROBADO |
-| `/nexus-done <HU>` | DONE | `nexus-docs` | F4 APROBADO |
+| `/nexus-p1-f0-f1 <HU>` | F0 + F1 | `nexus-analyst` | — |
+| `/nexus-p2-f2 <HU>` | F2 (SDD) | `nexus-architect` | `HU_APPROVED` |
+| `/nexus-p3-f2-5 <HU>` | F2.5 (Story File) | `nexus-architect` | `SPEC_APPROVED` |
+| `/nexus-p4-f3 <HU>` | F3 (impl) | `nexus-dev` | `story-file.md` existe |
+| `/nexus-p5-ar <HU>` | AR | `nexus-adversary` | F3 terminado |
+| `/nexus-p6-cr <HU>` | CR | `nexus-adversary` | AR APROBADO |
+| `/nexus-p7-f4 <HU>` | F4 (QA) | `nexus-qa` | CR APROBADO |
+| `/nexus-p8-done <HU>` | DONE | `nexus-docs` | F4 APROBADO |
+
+> **Prefijo `pN`**: el número del paso indica el orden obligatorio. Arrancá siempre por `p1` y avanzá secuencialmente. Los gates humanos (`HU_APPROVED`, `SPEC_APPROVED`) ocurren entre `p1→p2` y `p2→p3`. Entre `p3→p8` el pipeline corre solo.
 
 ### Instalación
 
@@ -82,7 +84,7 @@ Después de instalar, los slash commands aparecen con autocomplete al escribir `
 ### Por qué esto reduce el olvido del orquestador
 
 1. **El rol está en el archivo del agente** — el orquestador solo escribe `Task(subagent_type="nexus-architect")` y el bloque PROHIBIDO viene incluido. No puede olvidarlo.
-2. **Los slash commands son atajos** — `/nexus-f2 WKH-29` expande a un Task tool completo. Menos fricción = más uso = menos saltos al modo "yo lo hago acá mismo".
+2. **Los slash commands son atajos** — `/nexus-p2-f2 WKH-29` expande a un Task tool completo. Menos fricción = más uso = menos saltos al modo "yo lo hago acá mismo".
 3. **Tools restringidas por agente** — `nexus-adversary` no tiene `Edit` ni `Write` sobre `src/`, así que no puede modificar código aunque quiera.
 4. **Pre-requisitos explícitos en cada command** — el slash command verifica que el gate previo esté cumplido antes de lanzar.
 

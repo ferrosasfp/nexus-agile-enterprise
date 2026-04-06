@@ -4,7 +4,7 @@ argument-hint: <HU-ID>
 allowed-tools: Task, Read, Glob
 ---
 
-# /nexus-f2 — SDD Generation
+# /nexus-p2-f2 — SDD Generation (Paso 2/8)
 
 Lanza el sub-agente `nexus-architect` para generar el SDD a partir del work-item aprobado.
 

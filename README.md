@@ -93,14 +93,16 @@ Eight typed shortcuts that wrap each phase. The orchestrator types one command a
 
 | Command | Phase | Sub-agent launched | Pre-requisite |
 |---|---|---|---|
-| `/nexus-f0-f1 <HU>` | F0 + F1 | `nexus-analyst` | — |
-| `/nexus-f2 <HU>` | F2 (SDD) | `nexus-architect` | `HU_APPROVED` |
-| `/nexus-f2-5 <HU>` | F2.5 (Story File) | `nexus-architect` | `SPEC_APPROVED` |
-| `/nexus-f3 <HU>` | F3 (impl) | `nexus-dev` | `story-file.md` exists |
-| `/nexus-ar <HU>` | AR | `nexus-adversary` | F3 finished |
-| `/nexus-cr <HU>` | CR | `nexus-adversary` | AR APPROVED |
-| `/nexus-f4 <HU>` | F4 (QA) | `nexus-qa` | CR APPROVED |
-| `/nexus-done <HU>` | DONE | `nexus-docs` | F4 APPROVED |
+| `/nexus-p1-f0-f1 <HU>` | F0 + F1 | `nexus-analyst` | — |
+| `/nexus-p2-f2 <HU>` | F2 (SDD) | `nexus-architect` | `HU_APPROVED` |
+| `/nexus-p3-f2-5 <HU>` | F2.5 (Story File) | `nexus-architect` | `SPEC_APPROVED` |
+| `/nexus-p4-f3 <HU>` | F3 (impl) | `nexus-dev` | `story-file.md` exists |
+| `/nexus-p5-ar <HU>` | AR | `nexus-adversary` | F3 finished |
+| `/nexus-p6-cr <HU>` | CR | `nexus-adversary` | AR APPROVED |
+| `/nexus-p7-f4 <HU>` | F4 (QA) | `nexus-qa` | CR APPROVED |
+| `/nexus-p8-done <HU>` | DONE | `nexus-docs` | F4 APPROVED |
+
+> **`pN` prefix**: the step number marks the mandatory execution order. Always start at `p1` and go sequentially. Human gates (`HU_APPROVED`, `SPEC_APPROVED`) happen between `p1→p2` and `p2→p3`. From `p3→p8` the pipeline runs on its own.
 
 **Critical constraint built into every command**: only ONE gate per launch. You cannot pipe `HU_APPROVED → F2 → SPEC_APPROVED` in a single sub-agent invocation, because one-shot sub-agents can't pause for human input — they would silently auto-approve. Each command launches exactly one phase (or two adjacent gateless phases like F0+F1).
 
@@ -326,15 +328,15 @@ NexusAgile, sprint planning
 │   ├── nexus-qa.md                      #     F4 — sonnet (read-only tools)
 │   └── nexus-docs.md                    #     DONE — sonnet
 │
-├── commands/                            # 🆕 8 slash commands (typed shortcuts per phase)
-│   ├── nexus-f0-f1.md                   #     /nexus-f0-f1 — bootstrap + work-item
-│   ├── nexus-f2.md                      #     /nexus-f2 — SDD generation
-│   ├── nexus-f2-5.md                    #     /nexus-f2-5 — Story File generation
-│   ├── nexus-f3.md                      #     /nexus-f3 — implementation by waves
-│   ├── nexus-ar.md                      #     /nexus-ar — adversarial review
-│   ├── nexus-cr.md                      #     /nexus-cr — code review
-│   ├── nexus-f4.md                      #     /nexus-f4 — QA validation
-│   └── nexus-done.md                    #     /nexus-done — pipeline closure
+├── commands/                            # 🆕 8 slash commands (numbered p1..p8)
+│   ├── nexus-p1-f0-f1.md                #     /nexus-p1-f0-f1 — bootstrap + work-item
+│   ├── nexus-p2-f2.md                   #     /nexus-p2-f2 — SDD generation
+│   ├── nexus-p3-f2-5.md                 #     /nexus-p3-f2-5 — Story File generation
+│   ├── nexus-p4-f3.md                   #     /nexus-p4-f3 — implementation by waves
+│   ├── nexus-p5-ar.md                   #     /nexus-p5-ar — adversarial review
+│   ├── nexus-p6-cr.md                   #     /nexus-p6-cr — code review
+│   ├── nexus-p7-f4.md                   #     /nexus-p7-f4 — QA validation
+│   └── nexus-p8-done.md                 #     /nexus-p8-done — pipeline closure
 │
 └── skills/nexus-agile/
     ├── SKILL.md                         # Full pipeline, 3 modes, global rules

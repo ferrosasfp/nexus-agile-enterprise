@@ -4,7 +4,7 @@ argument-hint: <HU-ID> [wave-number]
 allowed-tools: Task, Read, Bash
 ---
 
-# /nexus-f3 — Implementation
+# /nexus-p4-f3 — Implementation (Paso 4/8)
 
 Lanza el sub-agente `nexus-dev` para implementar la HU desde el Story File.
 
@@ -71,7 +71,7 @@ Task tool:
 
 ## Después de F3
 
-El pipeline continúa automático: lanzá `/nexus-ar` inmediatamente con la misma HU.
+El pipeline continúa automático: lanzá `/nexus-p5-ar` inmediatamente con la misma HU.
 
 ## ⚠️ Importante
 - Vos sos el ORQUESTADOR. NO escribas código vos mismo.
