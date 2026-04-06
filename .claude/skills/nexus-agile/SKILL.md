@@ -34,6 +34,60 @@ description: >
 
 ---
 
+## Sub-Agentes Custom y Slash Commands
+
+NexusAgil distribuye **6 agentes custom** en `.claude/agents/` y **8 slash commands** en `.claude/commands/` para que el orquestador no tenga que armar prompts a mano y NUNCA pueda olvidar el bloque PROHIBIDO de cada fase. El rol está fijo en el archivo del agente — no se puede saltear.
+
+### 6 Agentes Custom (`.claude/agents/`)
+
+| Agente | Fases | Modelo | Tools | Output |
+|--------|-------|--------|-------|--------|
+| `nexus-analyst` | F0, F1 | opus | Read, Glob, Grep, Write, AskUserQuestion | `project-context.md`, `work-item.md` |
+| `nexus-architect` | F2, F2.5, CR | opus | Read, Glob, Grep, Write, Edit, Bash | `sdd.md`, `story-file.md` |
+| `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash | código + `auto-blindaje.md` |
+| `nexus-adversary` | AR, CR | opus | Read, Glob, Grep, Bash | `ar-report.md`, `cr-report.md` |
+| `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash | `validation.md` |
+| `nexus-docs` | DONE | sonnet | Read, Write, Edit, Glob, Bash | `report.md`, `_INDEX.md` |
+
+Cada agente tiene su bloque `⛔ PROHIBIDO EN ESTA FASE` integrado en el system prompt. El orquestador no puede olvidar incluirlo porque ya está en el archivo del agente.
+
+### 8 Slash Commands (`.claude/commands/`)
+
+| Comando | Fase | Sub-agente que lanza | Pre-requisito |
+|---------|------|---------------------|---------------|
+| `/nexus-f0-f1 <HU>` | F0 + F1 | `nexus-analyst` | — |
+| `/nexus-f2 <HU>` | F2 (SDD) | `nexus-architect` | `HU_APPROVED` |
+| `/nexus-f2-5 <HU>` | F2.5 (Story File) | `nexus-architect` | `SPEC_APPROVED` |
+| `/nexus-f3 <HU>` | F3 (impl) | `nexus-dev` | `story-file.md` existe |
+| `/nexus-ar <HU>` | AR | `nexus-adversary` | F3 terminado |
+| `/nexus-cr <HU>` | CR | `nexus-adversary` | AR APROBADO |
+| `/nexus-f4 <HU>` | F4 (QA) | `nexus-qa` | CR APROBADO |
+| `/nexus-done <HU>` | DONE | `nexus-docs` | F4 APROBADO |
+
+### Instalación
+
+Los agentes y commands se instalan desde el repo a la ubicación de Claude Code del usuario:
+
+```bash
+# Global (todos los proyectos)
+cp -r .claude/agents/nexus-*.md ~/.claude/agents/
+cp -r .claude/commands/nexus-*.md ~/.claude/commands/
+
+# O por proyecto (solo este repo)
+# Ya están en .claude/agents/ y .claude/commands/ del repo
+```
+
+Después de instalar, los slash commands aparecen con autocomplete al escribir `/nexus-` en Claude Code.
+
+### Por qué esto reduce el olvido del orquestador
+
+1. **El rol está en el archivo del agente** — el orquestador solo escribe `Task(subagent_type="nexus-architect")` y el bloque PROHIBIDO viene incluido. No puede olvidarlo.
+2. **Los slash commands son atajos** — `/nexus-f2 WKH-29` expande a un Task tool completo. Menos fricción = más uso = menos saltos al modo "yo lo hago acá mismo".
+3. **Tools restringidas por agente** — `nexus-adversary` no tiene `Edit` ni `Write` sobre `src/`, así que no puede modificar código aunque quiera.
+4. **Pre-requisitos explícitos en cada command** — el slash command verifica que el gate previo esté cumplido antes de lanzar.
+
+---
+
 ## Tabla de Gates
 
 | Gate | Texto exacto | Contexto | Efecto |
