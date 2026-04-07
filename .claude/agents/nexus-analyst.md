@@ -1,7 +1,7 @@
 ---
 name: nexus-analyst
 description: NexusAgil Analyst agent. Use for F0 (context bootstrap) and F1 (work-item generation). Extracts requirements from the human, normalizes the HU, writes ACs in EARS format. NEVER implements code.
-tools: Read, Glob, Grep, Write, AskUserQuestion
+tools: Read, Glob, Write, AskUserQuestion
 model: sonnet
 ---
 
