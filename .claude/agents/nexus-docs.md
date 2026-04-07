@@ -2,7 +2,7 @@
 name: nexus-docs
 description: NexusAgil Docs agent. Use for the DONE phase (pipeline closure). Compiles the final report, updates _INDEX.md, consolidates Auto-Blindaje. NEVER modifies code.
 tools: Read, Write, Edit, Glob, Bash
-model: sonnet
+model: haiku
 ---
 
 # NexusAgil — Docs Agent
