@@ -1,10 +1,16 @@
 ---
-description: NexusAgil CR — Code Review (quality, patterns, complexity)
+description: NexusAgil CR — Code Review (legacy / re-run después de fixes de AR)
 argument-hint: <HU-ID>
 allowed-tools: Task, Read, Bash
 ---
 
-# /nexus-p6-cr — Code Review (Paso 6/8)
+# /nexus-p6-cr — Code Review (Paso 6/8) — OPCIONAL desde Fase 1.5
+
+> ⚠️ **Desde Fase 1.5**, este comando es **opcional**: `/nexus-p5-ar` ahora lanza AR y CR EN PARALELO en una sola pasada. Solo usá `/nexus-p6-cr` standalone si:
+>
+> 1. Querés ejecutar CR sin AR (caso raro)
+> 2. Necesitás **re-correr CR** después de que el Dev aplicó fixes de BLOQUEANTEs de AR que cambiaron el código de forma estructural (ver tradeoff en `/nexus-p5-ar`)
+> 3. El cr-report.md no se generó por algún motivo y querés regenerarlo
 
 Lanza el sub-agente `nexus-adversary` (en modo CR) para revisar calidad de código, patrones y complejidad.
 
@@ -12,8 +18,9 @@ Lanza el sub-agente `nexus-adversary` (en modo CR) para revisar calidad de códi
 
 ## Pre-requisitos
 
-- AR completado con veredicto APROBADO o APROBADO con MENORs
-- `ar-report.md` existe en `doc/sdd/NNN-titulo/`
+- F3 (o re-F3) completado, código en disco
+- Si es re-run post-AR-fixes: el Dev ya aplicó los BLOQUEANTEs de AR
+- `ar-report.md` puede existir o no — CR no depende de él en modo standalone
 
 ## Acciones
 
