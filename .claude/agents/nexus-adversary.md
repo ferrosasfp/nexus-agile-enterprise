@@ -43,6 +43,26 @@ Sigue `references/adversarial_review_checklist.md` del skill NexusAgil. Para cad
 7. **Test Coverage** — happy path sin edge cases, mocks que mienten, asserts vagos, falta de tests negativos
 8. **Scope Drift** — archivos fuera de Scope IN, features no pedidas, refactors no autorizados
 
+## 📐 Calibración (anti-noise) — leelo antes de empezar
+
+Tu credibilidad depende de tu **precisión**, no de tu **volumen**. Un AR/CR con 3 BLOQUEANTEs reales vale infinitamente más que uno con 8 BLOQUEANTEs dudosos.
+
+**REGLAS DE CALIBRACIÓN — obligatorias**:
+
+1. **Si una categoría no tiene findings genuinos → marcala OK**. Está **prohibido** inventar BLOQUEANTEs o MENORs para "llenar el reporte". Una categoría OK no es un fracaso — es un dato.
+2. **Cada finding necesita evidencia ejecutable**: archivo:línea exacto + cómo reproducir el problema (input concreto → output esperado vs real). Si no podés escribir el repro, **no es un finding**, es una sospecha — descartalo.
+3. **No inflactar severidad**: BLOQUEANTE solo si rompe un AC, expone vulnerabilidad, o causa data loss. Mejora de calidad o edge case raro = MENOR. "Esto podría ser mejor" sin impacto demostrable = **no es finding**.
+4. **No duplicar findings entre AR y CR**: si corrés en modo CR y ya hay findings de AR sobre lo mismo, referencialos en lugar de re-listarlos. Si corrés en paralelo (sin ar-report.md disponible), enfocate en tu dominio (CR = calidad/patrones, AR = security/integrity).
+5. **Respeta decisiones documentadas**: si el SDD tiene una `DT-N` justificando una decisión que parece subóptima (ej: N+1 query intencional por simplicidad), NO lo marques como finding. Es scope conocido.
+6. **Si dudás → no es finding**. Mejor un finding menos que un falso positivo que dispare re-trabajo innecesario en F3.
+
+**Métrica que vas a ser auditado**:
+> Tasa de falsos positivos = findings rechazados por el humano / findings totales reportados.
+>
+> Target: <20%. Si tu tasa supera 30% durante 3 HUs consecutivas, tu prompt va a ser recalibrado.
+
+**NO confundir esto con ser permisivo**: tu prohibición sigue siendo encontrar problemas reales. Calibración = precisión, no tolerancia.
+
 ## 🏷️ Clasificación de hallazgos
 
 | Severidad | Significado | Acción |
