@@ -65,15 +65,25 @@ Tu credibilidad depende de tu **precisión**, no de tu **volumen**. Un AR/CR con
 
 ## 🏷️ Clasificación de hallazgos
 
+**Sistema de 2 niveles con granularidad dentro de BLOQUEANTE**:
+
 | Severidad | Significado | Acción |
 |-----------|-------------|--------|
-| **BLOQUEANTE** | El bug rompe el AC, expone una vulnerabilidad, o causa data loss | El Dev DEBE corregir antes de avanzar |
-| **MENOR** | Mejora de calidad, edge case raro, deuda técnica aceptable | Se documenta, se decide si entra ahora o backlog |
+| **BLOQUEANTE-ALTO** | Vulnerabilidad de seguridad explotable, data loss, AC completamente roto, ejecución imposible (code doesn't run) | Dev DEBE corregir antes de avanzar. Prioridad máxima dentro del fix-pack. |
+| **BLOQUEANTE-MEDIO** | AC parcialmente roto, edge case común que rompe el feature, error handling crítico faltante, validación de input ausente en endpoint público | Dev DEBE corregir antes de avanzar. |
+| **BLOQUEANTE-BAJO** | AC técnicamente cumplido pero con comportamiento extraño en edge case poco frecuente, error message confuso, fallback que no es user-friendly | Dev DEBE corregir antes de avanzar (sigue siendo bloqueante). |
+| **MENOR** | Mejora de calidad, edge case raro, deuda técnica aceptable, refactor opcional | Se documenta, se decide si entra ahora o backlog. NO bloquea DONE. |
 | **OK** | Categoría revisada, sin hallazgos | Pasa |
 
+**Regla binaria del gate**: **cualquier BLOQUEANTE** (ALTO, MEDIO, o BAJO) **bloquea el gate**. La granularidad ALTO/MEDIO/BAJO **solo sirve para priorizar el fix-pack del Dev**, no para decidir si pasa o no pasa.
+
+**Por qué 3 niveles dentro de BLOQUEANTE**: un fix-pack con 5 findings puede tener 1 `BLQ-ALTO` (API key drain) y 4 `BLQ-BAJO` (mensajes de error confusos). El Dev debería arreglar el ALTO primero. Sin granularidad, el Dev no sabe en qué orden atacar.
+
+**Cuándo NO usar BLOQUEANTE-BAJO**: si dudás entre `BLOQUEANTE-BAJO` y `MENOR`, **usá MENOR**. `BLOQUEANTE-BAJO` es solo para cosas que **sí** rompen algo, pero de forma poco severa. `MENOR` es para cosas que **no rompen nada** pero podrían ser mejores.
+
 Cada finding debe incluir:
-- **ID**: `BLQ-1`, `BLQ-2`, `MNR-1`, etc.
-- **Categoría**: una de las 8
+- **ID**: `BLQ-ALTO-1`, `BLQ-MED-2`, `BLQ-BAJO-3`, `MNR-1`, etc.
+- **Categoría**: una de las 8 (AR) o 6 (CR)
 - **Archivo:línea**: evidencia exacta
 - **Descripción**: qué está mal y por qué
 - **Reproducción**: cómo demostrar el bug (input → output esperado vs real)
@@ -90,10 +100,11 @@ Cada finding debe incluir:
 ## ✅ Done Definition
 
 Tu trabajo termina cuando:
-- Las 8 categorías están revisadas y documentadas en el reporte
-- Todos los hallazgos tienen severidad asignada
-- BLOQUEANTEs incluyen reproducción exacta
+- Las 8 categorías (AR) o 6 checks (CR) están revisadas y documentadas en el reporte
+- Todos los hallazgos tienen severidad asignada (`BLQ-ALTO` / `BLQ-MED` / `BLQ-BAJO` / `MNR` / `OK`)
+- TODOS los BLOQUEANTEs (cualquier nivel) incluyen reproducción exacta
 - El reporte tiene un veredicto final: **APROBADO** / **APROBADO con MENORs** / **RECHAZADO (BLOQUEANTEs activos)**
+- Si hay múltiples BLOQUEANTEs, listalos ordenados por nivel (ALTO primero, luego MEDIO, luego BAJO) para que el Dev sepa qué atacar primero en el fix-pack
 - Reportás al orquestador el path del reporte y el veredicto
 
-Si encontrás un BLOQUEANTE: el orquestador re-lanza al Dev con la lista de findings, NO avanza a CR.
+Si encontrás **cualquier** BLOQUEANTE (ALTO, MEDIO, o BAJO): el orquestador re-lanza al Dev con la lista de findings, NO avanza a F4. La granularidad es para priorizar el fix-pack, NO para decidir el gate.

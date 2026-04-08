@@ -45,7 +45,7 @@ Task #1 (AR):
     7. Test Coverage
     8. Scope Drift
 
-    Para cada categoría: BLOQUEANTE / MENOR / OK con evidencia archivo:línea.
+    Para cada categoría: BLQ-ALTO / BLQ-MED / BLQ-BAJO / MENOR / OK con evidencia archivo:línea. Cualquier BLQ (ALTO, MED, o BAJO) bloquea el gate — la granularidad solo sirve para priorizar el fix-pack del Dev.
 
     OUTPUT ESPERADO:
     - doc/sdd/NNN-titulo/ar-report.md
@@ -87,7 +87,7 @@ Task #2 (CR — corre en paralelo con #1):
     5. Tests: cobertura, claridad, asserts significativos
     6. Documentación inline (JSDoc/comments donde la lógica no es obvia)
 
-    Clasificar hallazgos como BLOQUEANTE / MENOR / OK.
+    Clasificar hallazgos como BLQ-ALTO / BLQ-MED / BLQ-BAJO / MENOR / OK (cualquier BLQ bloquea el gate).
 
     OUTPUT ESPERADO:
     - doc/sdd/NNN-titulo/cr-report.md
@@ -123,8 +123,22 @@ Task #2 (CR — corre en paralelo con #1):
 
 El orquestador decide caso a caso. Por defecto, si los fixes de AR son <20 líneas o solo agregan validaciones, no hace falta re-CR.
 
+## ⚡ Bonus — paralelización humana mientras AR+CR corren
+
+Mientras AR y CR se ejecutan en paralelo (3-8 min dependiendo del tamaño del diff), **el orquestador tiene capacidad ociosa**. Aprovechala para tareas de infra **no-dependientes** que igual iban a correrse en algún momento:
+
+- **Aplicar migrations al remoto** (Supabase Management API, prisma migrate deploy, etc.) — siempre y cuando la migration sea del Scope IN de esta HU y el Dev ya la haya commiteado
+- **Levantar servicios locales** que F4 va a necesitar para validación (DB local, mock APIs, preview deploys)
+- **Pre-warm del CR-report reader del qa** — leer archivos grandes como `project-context.md` o exemplars que el qa va a necesitar
+- **Commitear y pushear el branch** si F3 dejó cambios sin pushear (útil para que el CI corra en paralelo con AR+CR)
+
+**Regla**: la tarea paralela NO debe depender del output de AR ni CR. Si depende (ej: "aplicar el fix de AR"), no es paralelizable — tiene que esperar.
+
+**Dato real**: en LUM-8 este patrón bajó AR+CR wallclock de ~6 min a ~3 min porque `migration apply` se ejecutó en paralelo. **Ahorro depende del stack** — más infra → más paralelización posible.
+
 ## ⚠️ Importante
 
 - Vos sos el ORQUESTADOR. NO ataques ni revisás vos mismo.
 - Si hay BLOQUEANTEs: NO avances a `/nexus-p7-f4` hasta que el Dev los resuelva en una nueva iteración de F3.
 - Asegurate de que los 2 Task tool calls salgan en EL MISMO mensaje, no secuenciales.
+- Las tareas paralelas del bonus son **opt-in** — si no hay nada útil para paralelizar, no fuerces. No paralelices cosas riesgosas (push a prod, dropping tables) mientras AR+CR corren.

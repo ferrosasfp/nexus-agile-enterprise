@@ -41,7 +41,7 @@ Task tool:
     1. Naming consistency con el proyecto
     2. Complejidad (funciones >50 líneas, ciclomática alta)
     3. DRY violations (código duplicado evitable)
-    4. SOLID — evaluá cada principio como PASS / MENOR / BLOQUEANTE:
+    4. SOLID — evaluá cada principio como PASS / MENOR / BLQ-BAJO / BLQ-MED / BLQ-ALTO:
        - **S (SRP)**: ¿alguna clase/función tiene >1 responsabilidad clara? Señales: nombre con "y" (UserAndEmailService), >300 líneas, importa librerías de dominios no relacionados.
        - **O (OCP)**: ¿hay if/switch hardcodeado sobre tipo/categoría que requeriría editar para agregar un caso nuevo? (Solo flag si la variación ya apareció ≥2 veces; YAGNI > OCP prematuro.)
        - **L (LSP)**: ¿algún override de subclase rompe el contrato del padre? (Excepciones nuevas, postcondiciones más débiles, precondiciones más estrictas, throws de UnsupportedOperation.)
@@ -51,7 +51,7 @@ Task tool:
     5. Tests: cobertura, claridad, asserts significativos
     6. Documentación inline (JSDoc/comments donde la lógica no es obvia)
 
-    Clasificar hallazgos como BLOQUEANTE / MENOR / OK.
+    Clasificar hallazgos como BLQ-ALTO / BLQ-MED / BLQ-BAJO / MENOR / OK (cualquier BLQ bloquea el gate).
 
     OUTPUT ESPERADO:
     - doc/sdd/NNN-titulo/cr-report.md
