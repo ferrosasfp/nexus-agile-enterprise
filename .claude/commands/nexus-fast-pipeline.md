@@ -43,9 +43,20 @@ Pipeline compacto para Historias de Usuario que **no justifican** el overhead de
 | **SKIPPED** | p3 (F2.5 Story File) | — | — | El dev usa el work-item como contrato |
 | **SKIPPED** | p5/p6 (AR + CR) | — | — | ⚠️ NO hay adversarial review — riesgo asumido |
 
-**Ahorro de tiempo**: ~70-80% vs pipeline QUALITY. FAST típicamente termina en **3-7 minutos** vs 12-26 min.
+**Tiempo real observado** (datos LUM-11 + P3/P4 dev-puro):
 
-**Costo del ahorro**: NO hay AR ni CR. Si la HU requiere review de seguridad o calidad, **usá QUALITY**.
+| Métrica | Rango real | Nota |
+|---------|-----------|------|
+| F3 dev-puro (solo implementación) | 5-7 min | Lo que tarda `nexus-dev` solo |
+| FAST total (orquestador incluido) | **10-14 min** | F1 + gate + F3 + F4 fast + DONE fast |
+| Ahorro vs QUALITY (60-120 min) | ~80-90% | Depende del tamaño de la HU QUALITY de referencia |
+
+**NO uses el número "3-7 min" de versiones previas** — era optimista, medía solo dev-puro. El wallclock real de una HU chica FAST real es **10-14 min**.
+
+**Costo del ahorro**: NO hay AR ni CR. Si la HU requiere review de seguridad o calidad, **NO uses FAST**:
+- **HU chica + bajo riesgo** (UI pura, reads, typos, doc) → `/nexus-fast-pipeline` (este)
+- **HU chica + alto riesgo** (writes, auth, streaming, admin, RLS) → `/nexus-fast-plus-ar` ⭐ (sweet spot — 17-32 min con AR+CR)
+- **HU grande o arquitectónica** → `/nexus-p1-f0-f1` (QUALITY completo)
 
 ## 🎯 Ejecución
 
@@ -218,6 +229,29 @@ El analyst (en cualquier modo) puede recomendar cuál usar, pero el humano decid
 ## 📊 Métricas (Fase 2 — futuro)
 
 Cuando se instrumenten métricas, FAST trackeará:
-- Tiempo total wallclock (target: <7 min)
+- Tiempo total wallclock (target: **10-14 min** para HU chica real)
 - Tasa de escalación a QUALITY (target: <20% — si pasa 30%, las heurísticas de "qué califica como FAST" están mal)
-- Bugs post-DONE en HUs FAST vs QUALITY (target: similar — si FAST dispara más bugs, hay que recalibrar el threshold)
+- Tasa de escalación a FAST+AR (si está >40% → muchas HUs tienen riesgo oculto y FAST puro está mal elegido por default)
+- Bugs post-DONE en HUs FAST vs FAST+AR vs QUALITY (si FAST dispara más bugs, hay que recalibrar el threshold o mover la HU a FAST+AR)
+
+## 🎯 Tabla de elección rápida (leé esto antes de elegir pipeline)
+
+| Señal | Pipeline |
+|-------|----------|
+| Toca solo UI / CSS / layout / typography | FAST |
+| Solo reads a tablas ya validadas | FAST |
+| Fix de typo / copy / string | FAST |
+| Refactor mecánico de código ya cubierto por AR previo | FAST |
+| Server Action con DB write (insert/update/delete) | **FAST+AR** ⭐ |
+| Cambio en auth/RBAC/middleware | **FAST+AR** ⭐ |
+| Nuevo endpoint que recibe input externo | **FAST+AR** ⭐ |
+| Refactor de streaming/tool calling | **FAST+AR** ⭐ |
+| Panel admin o gate `is_admin` | **FAST+AR** ⭐ |
+| RLS policy nueva o modificada | **FAST+AR** ⭐ |
+| Llamada a API externa con secrets | **FAST+AR** ⭐ |
+| Feature grande (>5 archivos o >10 ACs) | QUALITY |
+| Migration destructiva o no-additive sobre data | QUALITY |
+| Función postgres con `SECURITY DEFINER` | QUALITY |
+| Necesitás SDD para pensar antes de codear | QUALITY |
+
+**Regla de oro**: en duda → subí un escalón (FAST → FAST+AR → QUALITY), nunca bajes.
