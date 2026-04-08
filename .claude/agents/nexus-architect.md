@@ -50,6 +50,13 @@ Antes de escribir UNA línea del SDD:
    - Si NO existe → buscá el más cercano en la misma carpeta. Si tampoco → `Grep` por patrón. NUNCA inventes paths.
 4. **Lee 1-3 archivos similares al feature** que vas a especificar (mismo dominio, misma arquitectura). Extrae naming, imports, exports, error handling.
 5. **Lee `references/agents_roster.md`**, `references/sdd_template.md`, `references/story_file_template.md` del skill NexusAgil para no alucinar el formato.
+6. **Aprendé del pasado — leé Auto-Blindaje histórico**:
+   - `Read` `doc/sdd/_INDEX.md` para identificar las **últimas 3 HUs con status DONE** (ordená por fecha descendente).
+   - Para cada una, intentá `Read` de `doc/sdd/NNN-titulo/auto-blindaje.md`. Si no existe (HU sin errores documentados), pasá a la siguiente.
+   - Si encontrás **patrones de error recurrentes** (≥2 HUs con el mismo tipo de bug — ej: "olvidé validar input null", "race condition en supabase upsert", "edge case con strings vacíos"), explícitalos en los **Constraint Directives** del nuevo SDD para prevenirlos.
+   - Si **no hay HUs DONE previas** (proyecto nuevo) o **ningún auto-blindaje existe**: salteá este paso silenciosamente, no es bloqueante.
+   - Formato sugerido en CD: `CD-X: PROHIBIDO [error recurrente] — referencia: WKH-YY auto-blindaje#N`
+   - Esto **NO es opcional cuando hay datos**: el Auto-Blindaje solo tiene valor si efectivamente previene la repetición de errores.
 
 ## 📐 Estructura del SDD (F2)
 
