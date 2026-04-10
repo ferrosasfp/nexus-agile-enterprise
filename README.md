@@ -57,20 +57,55 @@ npm i  →  No.  Just copy one folder into your project.  Done.
 The human makes decisions at the gates. **Everything else runs automatically.**
 
 
-## 3 Modes
+## 4 Modes
 
-| | FAST | LAUNCH | QUALITY |
-|---|---|---|---|
-| **Best for** | Fix a bug, update a text, tweak a style | Build an MVP or prototype from scratch | Ship a feature to real users |
-| **You get** | Working code in minutes | A structured codebase with anti-hallucination from day one | Full audit trail: spec, adversarial review, QA evidence |
-| **Human gates** | None | One: approve the HU list | Two per HU + three sprint ceremony gates |
-| **Sprint ceremonies** | No | No | Yes |
-| **When in doubt** | | | Use this one |
+| | FAST | FAST+AR | QUALITY | AUTO |
+|---|---|---|---|---|
+| **Best for** | Fix a bug, tweak a style, update text | Small change that touches auth, DB writes, RLS, streaming | Ship a feature to real users | Batch of 1-N HUs, hands-off execution |
+| **You get** | Working code in ~12 min | AR + CR security review in ~25 min | Full audit trail in ~60-120 min | All of the above, pipeline auto-selected per HU |
+| **Human gates** | `HU_APPROVED` | `HU_APPROVED` | `HU_APPROVED` + `SPEC_APPROVED` | Clinical review (self-approved or escalated) |
+| **AR/CR** | Skipped | Yes (parallel) | Yes (parallel) | Yes (when pipeline requires it) |
+| **Command** | `/nexus-fast-pipeline` | `/nexus-fast-plus-ar` | `/nexus-p1-f0-f1` → `p8` | `/nexus-auto` |
+| **When in doubt** | | | Use this one | |
 
 
-## What's New — Custom Agents, Slash Commands, Sub-Agent Protocol & Skills Router
+## What's New — AUTO Mode, FAST+AR Pipeline, Custom Agents & Sub-Agent Protocol
 
-Four additions that eliminate context overload AND prevent the orchestrator from "forgetting" to delegate:
+### AUTO Mode — Autonomous Multi-HU Orchestrator
+
+The latest addition. One command, N user stories, zero human gates (unless something fails):
+
+```
+/nexus-auto WKH-42                          # single HU
+/nexus-auto WKH-42 WKH-43 WKH-44           # batch of 3
+/nexus-auto WKH-42 --user=Fernando          # explicit attribution
+```
+
+**How it works:**
+1. All analysts run in parallel (one per HU)
+2. Each analyst's Smart Sizing determines the pipeline: FAST, FAST+AR, or QUALITY
+3. At gates (`HU_APPROVED`, `SPEC_APPROVED`), Claude executes a **clinical review** — a 7-criterion checklist — and self-approves if all pass
+4. Any criterion fails → escalates to the human with the full checklist
+5. Dependent HUs (overlapping Scope IN) are serialized automatically
+6. Dashboard at the end with status, time, and branch per HU
+
+**10 escalation rules** ensure Claude stops and asks when: clinical review fails, fix-pack loops ≥3 times, analyst aborts, domain knowledge needed, circular dependencies, sub-agent crashes, or scope conflicts.
+
+### FAST+AR — The Sweet Spot
+
+For small changes that touch risky territory (auth, DB writes, streaming, admin panels, RLS policies):
+
+```
+/nexus-fast-plus-ar WKH-42
+```
+
+Same speed as FAST (~17-32 min) but with AR + CR running in parallel after implementation. Catches the bugs that FAST would miss — without the overhead of a full SDD.
+
+---
+
+### Custom Agents, Slash Commands & Sub-Agent Protocol
+
+Four structural additions that eliminate context overload AND prevent the orchestrator from "forgetting" to delegate:
 
 ### Custom Sub-Agents (`.claude/agents/`)
 
@@ -89,7 +124,7 @@ Six specialized Claude Code agents — one per pipeline phase — with the role,
 
 ### Slash Commands (`.claude/commands/`)
 
-Eight typed shortcuts that wrap each phase. The orchestrator types one command and the entire Task tool invocation is built — sub-agent type, full prompt, prerequisites check, expected output, and forbidden block.
+Eleven typed shortcuts that wrap each phase. The orchestrator types one command and the entire Task tool invocation is built — sub-agent type, full prompt, prerequisites check, expected output, and forbidden block.
 
 | Command | Phase | Sub-agent launched | Pre-requisite |
 |---|---|---|---|
@@ -97,12 +132,15 @@ Eight typed shortcuts that wrap each phase. The orchestrator types one command a
 | `/nexus-p2-f2 <HU>` | F2 (SDD) | `nexus-architect` | `HU_APPROVED` |
 | `/nexus-p3-f2-5 <HU>` | F2.5 (Story File) | `nexus-architect` | `SPEC_APPROVED` |
 | `/nexus-p4-f3 <HU>` | F3 (impl) | `nexus-dev` | `story-file.md` exists |
-| `/nexus-p5-ar <HU>` | AR | `nexus-adversary` | F3 finished |
+| `/nexus-p5-ar <HU>` | AR + CR | `nexus-adversary` x2 | F3 finished |
 | `/nexus-p6-cr <HU>` | CR | `nexus-adversary` | AR APPROVED |
 | `/nexus-p7-f4 <HU>` | F4 (QA) | `nexus-qa` | CR APPROVED |
 | `/nexus-p8-done <HU>` | DONE | `nexus-docs` | F4 APPROVED |
+| `/nexus-fast-pipeline <HU>` | FAST (end-to-end) | analyst → dev → qa → docs | — |
+| `/nexus-fast-plus-ar <HU>` | FAST+AR (end-to-end) | analyst → dev → adversary → qa → docs | — |
+| `/nexus-auto <HU> [HU ...]` | AUTO (analyst decides) | orchestrator (self) | — |
 
-> **`pN` prefix**: the step number marks the mandatory execution order. Always start at `p1` and go sequentially. Human gates (`HU_APPROVED`, `SPEC_APPROVED`) happen between `p1→p2` and `p2→p3`. From `p3→p8` the pipeline runs on its own.
+> **`pN` prefix**: the step number marks the mandatory execution order for QUALITY mode. Always start at `p1` and go sequentially. Human gates (`HU_APPROVED`, `SPEC_APPROVED`) happen between `p1→p2` and `p2→p3`. From `p3→p8` the pipeline runs on its own. For FAST/FAST+AR, use the single-command variants. For autonomous execution, use `/nexus-auto`.
 
 **Critical constraint built into every command**: only ONE gate per launch. You cannot pipe `HU_APPROVED → F2 → SPEC_APPROVED` in a single sub-agent invocation, because one-shot sub-agents can't pause for human input — they would silently auto-approve. Each command launches exactly one phase (or two adjacent gateless phases like F0+F1).
 
@@ -301,7 +339,7 @@ cp /tmp/nexus-agile/.claude/commands/nexus-*.md ~/.claude/commands/
 rm -rf /tmp/nexus-agile
 ```
 
-Restart Claude Code. The skill, the 6 sub-agents, and the 8 slash commands load automatically. Type `/nexus-` in the prompt to see autocomplete for all commands.
+Restart Claude Code. The skill, the 6 sub-agents, and the 11 slash commands load automatically. Type `/nexus-` in the prompt to see autocomplete for all commands.
 
 **First session:**
 ```
@@ -328,15 +366,18 @@ NexusAgile, sprint planning
 │   ├── nexus-qa.md                      #     F4 — sonnet (read-only tools)
 │   └── nexus-docs.md                    #     DONE — sonnet
 │
-├── commands/                            # 🆕 8 slash commands (numbered p1..p8)
+├── commands/                            # 11 slash commands
 │   ├── nexus-p1-f0-f1.md                #     /nexus-p1-f0-f1 — bootstrap + work-item
 │   ├── nexus-p2-f2.md                   #     /nexus-p2-f2 — SDD generation
 │   ├── nexus-p3-f2-5.md                 #     /nexus-p3-f2-5 — Story File generation
 │   ├── nexus-p4-f3.md                   #     /nexus-p4-f3 — implementation by waves
-│   ├── nexus-p5-ar.md                   #     /nexus-p5-ar — adversarial review
+│   ├── nexus-p5-ar.md                   #     /nexus-p5-ar — adversarial review + CR
 │   ├── nexus-p6-cr.md                   #     /nexus-p6-cr — code review
 │   ├── nexus-p7-f4.md                   #     /nexus-p7-f4 — QA validation
-│   └── nexus-p8-done.md                 #     /nexus-p8-done — pipeline closure
+│   ├── nexus-p8-done.md                 #     /nexus-p8-done — pipeline closure
+│   ├── nexus-fast-pipeline.md           #     /nexus-fast-pipeline — FAST end-to-end
+│   ├── nexus-fast-plus-ar.md            #     /nexus-fast-plus-ar — FAST+AR end-to-end
+│   └── nexus-auto.md                    #     /nexus-auto — autonomous multi-HU orchestrator
 │
 └── skills/nexus-agile/
     ├── SKILL.md                         # Full pipeline, 3 modes, global rules
