@@ -480,20 +480,41 @@ Gates self-approved: N | Gates escalated: N
 Total wallclock: NN min
 ```
 
-**Sección 3 — Post-merge status (si aplica)**
+**Sección 3 — Production State (si hubo merge)**
 
-Si hubo merge a main o deploy, reportar el estado de producción:
+Tabla por capa/feature mostrando qué está live en producción después del batch:
 
 ```
-Producción post-merge
+Lo que está en producción ahora
 
+┌───────────────┬──────────────────────────────────────────────────┬─────────┐
+│     Capa      │                    Feature                       │ Status  │
+├───────────────┼──────────────────────────────────────────────────┼─────────┤
+│ L2 Adapters   │ PaymentAdapter, GaslessAdapter, etc.             │ ✅ Live │
+├───────────────┼──────────────────────────────────────────────────┼─────────┤
+│ L3 Identity   │ POST /auth/agent-signup → wasi_a2a_ keys         │ ✅ Live │
+├───────────────┼──────────────────────────────────────────────────┼─────────┤
+│ Hardening     │ Rate limit, circuit breaker, error boundary      │ ✅ Live │
+├───────────────┼──────────────────────────────────────────────────┼─────────┤
+│ Smoke test    │ scripts/smoke-test.sh — 8/8 endpoints            │ ✅ Live │
+└───────────────┴──────────────────────────────────────────────────┴─────────┘
+```
+
+**Columnas:**
+- **Capa**: nivel arquitectónico o subsistema (L1/L2/L3/L4, Middleware, Hardening, Docs, etc.)
+- **Feature**: descripción concisa de lo que se deployó
+- **Status**: ✅ Live / 🔄 Deploying / ⚠️ Pending review
+
+Incluir también el estado técnico:
+
+```
 - PR #N merged a main: [timestamp]
 - Tests: N/N passing, tsc clean
 - Deploy: [status — auto-triggered / manual / pending]
-- Endpoints live: [lista de endpoints afectados]
+- New deps: [si aplica]
 ```
 
-Si no hubo merge (branches pendientes de review humano), indicar:
+Si no hubo merge (branches pendientes de review humano):
 
 ```
 Branches pendientes de merge
@@ -501,6 +522,48 @@ Branches pendientes de merge
 - feat/NNN-titulo (WKH-XX) — ready for PR
 - feat/NNN-titulo (WKH-YY) — ready for PR
 ```
+
+**Sección 4 — What Remains (siempre)**
+
+Tabla de tickets pendientes del proyecto/sprint que NO se procesaron en este batch:
+
+```
+Lo que queda
+
+┌────────┬──────────────────────────────────────┬───────────────────┐
+│ Ticket │                 Qué                  │     Esfuerzo      │
+├────────┼──────────────────────────────────────┼───────────────────┤
+│ WKH-26 │ Mid-checkpoint submission            │ Operativo — horas │
+├────────┼──────────────────────────────────────┼───────────────────┤
+│ WKH-17 │ Video + README final                 │ 1 día             │
+├────────┼──────────────────────────────────────┼───────────────────┤
+│ WKH-31 │ Pitch deck final                     │ Owner: [nombre]   │
+└────────┴──────────────────────────────────────┴───────────────────┘
+```
+
+**Columnas:**
+- **Ticket**: HU-ID o nombre
+- **Qué**: descripción de 1 línea
+- **Esfuerzo**: estimación libre (horas, días, "owner-name-owned", etc.)
+
+Si no quedan tickets pendientes, indicar: "El backlog está vacío. Sprint completo."
+
+**Sección 5 — Cross-session summary (si aplica)**
+
+Si el batch es parte de un sprint de múltiples sesiones, incluir totales acumulados:
+
+```
+Resumen acumulado (sesiones YYYY-MM-DD a YYYY-MM-DD)
+
+- N HUs shipped en producción
+- Tests: N → N (+N new)
+- BLOQUEANTEs encontrados por AR: N → todos resueltos
+- PRs merged: #N, #N, #N
+- Modos usados: N FAST, N FAST+AR, N QUALITY
+```
+
+Esta sección solo aparece cuando hay contexto de sesiones anteriores (vía Engram o memoria persistente).
+Si es la primera sesión del sprint, omitir.
 
 ---
 
