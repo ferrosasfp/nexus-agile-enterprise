@@ -63,6 +63,7 @@ Cada agente tiene su bloque `⛔ PROHIBIDO EN ESTA FASE` integrado en el system 
 | `/nexus-p6-cr <HU>` | CR | `nexus-adversary` | AR APROBADO |
 | `/nexus-p7-f4 <HU>` | F4 (QA) | `nexus-qa` | CR APROBADO |
 | `/nexus-p8-done <HU>` | DONE | `nexus-docs` | F4 APROBADO |
+| `/nexus-auto <HU> [HU ...]` | AUTO (analyst decide) | orquestador (self) | — |
 
 > **Prefijo `pN`**: el número del paso indica el orden obligatorio. Arrancá siempre por `p1` y avanzá secuencialmente. Los gates humanos (`HU_APPROVED`, `SPEC_APPROVED`) ocurren entre `p1→p2` y `p2→p3`. Entre `p3→p8` el pipeline corre solo.
 
@@ -152,6 +153,16 @@ Para features que van a usuarios reales, con DB, auth, pagos, o en equipo.
 Pipeline completo con todos los gates, AR, CR, y QA con evidencia.
 
 > **Proceso completo:** `references/quality_pipeline.md`
+
+### AUTO — Orquestación Autónoma
+
+Para batches de 1-N HUs donde Claude actúa como orquestador Y aprobador de gates.
+Usa clinical review checklists para self-aprobar HU_APPROVED y SPEC_APPROVED.
+El analyst decide el pipeline (FAST/FAST+AR/QUALITY) por HU vía Smart Sizing.
+Escala al humano solo en ambigüedad, fallas repetidas, o clinical review failed.
+
+> **Comando:** `/nexus-auto WKH-XX [WKH-YY ...]`
+> **Proceso completo:** el propio command file contiene los 3 flows (FAST/FAST+AR/QUALITY AUTO)
 
 ---
 

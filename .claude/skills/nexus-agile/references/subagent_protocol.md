@@ -284,3 +284,52 @@ Orquestador lanza sub-agente F3→DONE
 - El orquestador presenta el resultado final sin haber mostrado Work Item ni SDD al humano
 
 **Fix:** Siempre dividir en mínimo 3 lanzamientos separados: F0+F1 / F2+F2.5 / F3→DONE. El orquestador es el checkpoint humano entre ellos.
+
+---
+
+## AUTO Mode — Clinical Review Gate Handling
+
+En modo AUTO (`/nexus-auto`), el orquestador reemplaza `AskUserQuestion` en los gates
+con clinical reviews estructurados. Lee el artefacto, evalúa contra checklist, y
+self-aprueba (con atribución) o escala al humano.
+
+### Atribución (obligatoria)
+
+Todo self-approval documenta:
+
+```
+[GATE] — [fecha] by Claude (delegated by [user])
+Clinical review: [criterios con PASS/FAIL]
+Notes: [observaciones]
+```
+
+### Cuándo escalar vs self-aprobar
+
+- **Self-aprobar:** todos los criterios PASS, sin ambigüedad, sin `[NEEDS CLARIFICATION]`.
+- **Escalar:** cualquier criterio FAIL, analyst abortó, o incertidumbre del orquestador.
+
+La regla es binaria: si hay duda, escalar. El costo de preguntar al humano es bajo;
+el costo de aprobar algo incorrecto puede ser alto (bugs en prod, rework).
+
+### Compatibilidad con Auto-Blindaje "Gates saltados"
+
+AUTO mode **NO viola** la regla de "NUNCA incluir más de un gate en el prompt de un sub-agente".
+Los sub-agentes siguen recibiendo **UNA fase a la vez**. La diferencia es que el orquestador
+self-aprueba en lugar de esperar al humano. El gate sigue existiendo como checkpoint —
+solo cambia **QUIÉN** aprueba.
+
+Flujo correcto en AUTO:
+```
+Orquestador lanza sub-agente F0+F1
+  → sub-agente entrega work-item.md
+  → orquestador ejecuta clinical review (§4.1 de /nexus-auto)
+  → PASS → self-approve con atribución
+  → FAIL → AskUserQuestion al humano
+Orquestador lanza sub-agente F2
+  → sub-agente entrega sdd.md
+  → orquestador ejecuta clinical review (§4.2 de /nexus-auto)
+  → PASS → self-approve con atribución
+  → FAIL → AskUserQuestion al humano
+Orquestador lanza sub-agentes F2.5 → F3 → AR → CR → F4 → DONE
+  → sin gates humanos en este tramo (ya son automáticos en manual también)
+```
