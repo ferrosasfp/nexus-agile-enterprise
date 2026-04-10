@@ -41,16 +41,52 @@ Parsear `$ARGUMENTS` para extraer la lista de HU-IDs y el flag `--user` si exist
 
 ---
 
-## §3 Pipeline selection (delegado al Analyst)
+## §3 Pipeline selection (Analyst propone, orquestador valida)
 
-El orquestador **NO decide** qué pipeline usar. Cada HU pasa por F1 (analyst) que incluye
-**Smart Sizing**. El sizing determina el pipeline:
+Cada HU pasa por F1 (analyst) que incluye **Smart Sizing**. El sizing propone el pipeline:
 
 | Sizing del Analyst | Pipeline AUTO |
 |--------------------|---------------|
 | FAST | FAST AUTO (§7.1) |
 | FAST + categoría de riesgo | FAST+AR AUTO (§7.2) |
 | QUALITY / full | QUALITY AUTO (§7.3) |
+
+### §3.1 Orchestrator Override
+
+El orquestador **puede y debe** subir el pipeline si el clinical review detecta riesgo
+que el analyst no capturó. Nunca bajar.
+
+**Señales de override:**
+- Analyst dice FAST pero el scope toca auth/payment/RLS → subir a FAST+AR
+- Analyst dice FAST+AR pero hay >5 archivos o necesita SDD → subir a QUALITY
+- Analyst dice LAUNCH pero toca auth/payment path → subir a FAST+AR mínimo
+
+**Regla: siempre subir, nunca bajar.** Si el analyst dice QUALITY, no bajarlo a FAST
+aunque parezca chico — el analyst vio algo que justificó QUALITY.
+
+### §3.2 Classification Table (obligatoria en Phase 2)
+
+Después de evaluar todos los F1, el orquestador presenta una tabla de clasificación:
+
+```
+┌───────────┬─────────────┬────────────────┬─────────────┬──────────────────────────────┐
+│    HU     │  Analyst    │ My assessment  │   Final     │          Rationale           │
+│           │   sizing    │                │  pipeline   │                              │
+├───────────┼─────────────┼────────────────┼─────────────┼──────────────────────────────┤
+│ WKH-XX    │ FAST        │ ✅ FAST        │ FAST        │ Correct: script only, no DB  │
+├───────────┼─────────────┼────────────────┼─────────────┼──────────────────────────────┤
+│ WKH-YY    │ LAUNCH      │ FAST+AR ↑      │ FAST+AR     │ Touches auth middleware →    │
+│           │             │ upgrade        │             │ needs adversarial review     │
+├───────────┼─────────────┼────────────────┼─────────────┼──────────────────────────────┤
+│ WKH-ZZ    │ QUALITY     │ ✅ QUALITY     │ QUALITY     │ Correct: 12 ACs, 4 waves    │
+└───────────┴─────────────┴────────────────┴─────────────┴──────────────────────────────┘
+```
+
+**Columnas:**
+- **Analyst sizing**: lo que el analyst propuso en el work-item
+- **My assessment**: `✅` si coincide, o `↑ upgrade` con razón si el orquestador sube
+- **Final pipeline**: el pipeline que efectivamente se ejecutará
+- **Rationale**: 1 línea explicando por qué
 
 Si el analyst aborta (scope too large, ambigüedad) → escalar al humano (§6 regla #3).
 
@@ -317,6 +353,34 @@ Fase 8 — DONE
 - HU_APPROVED es clinical review (§4.1) en vez de pregunta al humano
 - SPEC_APPROVED es clinical review (§4.2) en vez de pregunta al humano
 - El resto del pipeline (F3→DONE) ya es automático en manual — sin cambios
+
+### §7.4 AR+CR BLQ Deduplication (fix-pack prep)
+
+Cuando AR y CR corren en paralelo, ambos pueden encontrar el **mismo issue**.
+Antes de lanzar fix-pack, el orquestador DEBE:
+
+1. Leer `ar-report.md` y `cr-report.md`
+2. Identificar BLQs duplicados (mismo archivo + misma causa raíz)
+3. Consolidar en una tabla deduplicada con columna **Source**:
+
+```
+┌────────────┬─────────────┬──────────────────────────┬────────────────────────────┐
+│    BLQ     │   Source    │        Problema          │           Fix              │
+├────────────┼─────────────┼──────────────────────────┼────────────────────────────┤
+│ BLQ-1      │ AR+CR ambos │ [issue encontrado x2]    │ [fix unificado]            │
+├────────────┼─────────────┼──────────────────────────┼────────────────────────────┤
+│ BLQ-2 (AR) │ AR          │ [issue solo de AR]       │ [fix]                      │
+├────────────┼─────────────┼──────────────────────────┼────────────────────────────┤
+│ BLQ-2 (CR) │ CR          │ [issue solo de CR]       │ [fix]                      │
+└────────────┴─────────────┴──────────────────────────┴────────────────────────────┘
+```
+
+**Por qué importa:** sin deduplicación, el dev del fix-pack puede aplicar 2 fixes
+contradictorios al mismo archivo. La tabla consolidada es el input del fix-pack.
+
+**Métrica:** "AR encontró N BLOQUEANTEs → fix-pack → N resueltos" se incluye en el
+completion report (§8.2). Cuando AR encuentra BLQs reales, documenta:
+"AR justified its existence" — dato útil para validar que FAST+AR fue la elección correcta.
 
 ---
 
