@@ -69,11 +69,11 @@ The human makes decisions at the gates. **Everything else runs automatically.**
 | **When in doubt** | | | Use this one | |
 
 
-## What's New — AUTO Mode, FAST+AR Pipeline, Custom Agents & Sub-Agent Protocol
+## AUTO Mode, FAST+AR Pipeline, Custom Agents & Sub-Agent Protocol
 
 ### AUTO Mode — Autonomous Multi-HU Orchestrator
 
-The latest addition. One command, N user stories, zero human gates (unless something fails):
+One command, N user stories, zero human gates (unless something fails):
 
 ```
 /nexus-auto WKH-42                          # single HU
@@ -380,22 +380,25 @@ NexusAgile, sprint planning
 │   └── nexus-auto.md                    #     /nexus-auto — autonomous multi-HU orchestrator
 │
 └── skills/nexus-agile/
-    ├── SKILL.md                         # Full pipeline, 3 modes, global rules
+    ├── SKILL.md                         # Full pipeline, 4 modes, global rules
     └── references/
         ├── agents_roster.md             # 9 agent roles — personality + responsibilities
-        ├── subagent_protocol.md         # Orchestration — each phase in a fresh context
+        ├── subagent_protocol.md         # Orchestration + AUTO clinical review + Bash Auto-Blindaje
         ├── skills_router.md             # Selective skill loading — clean context per HU
         ├── sdd_template.md              # SDD templates: FULL / BUGFIX / MINI
         ├── story_file_template.md       # Architect-Dev contract + Integration Contract
         ├── adversarial_review_checklist.md  # 8 attack categories for the Adversary
         ├── validation_report_template.md    # QA: drift + ACs + quality gates
-        ├── launch_flow.md               # Detailed LAUNCH mode pipeline
+        ├── launch_flow.md               # Detailed LAUNCH/QUALITY mode pipeline
         ├── quick_flow.md                # Detailed FAST mode pipeline
+        ├── quality_pipeline.md          # QUALITY pipeline detailed flow
+        ├── case_types.md                # HU classification and sizing criteria
         ├── sprint_cadence.md            # SM Planning / Status / Retro / Closure
         ├── project_context_template.md  # Stack-agnostic project-context template
+        ├── engram_protocol.md           # Persistent memory protocol for cross-session context
         ├── roles_matrix.md              # Enterprise: human roles + gate authority
         ├── concurrent_work_protocol.md  # Enterprise: multi-dev branches, PRs
-        ├── metrics.md                   # Enterprise: KPIs, dashboard, sprint reports
+        ├── metrics.md                   # KPIs, baselines (Luma AI), token analysis, sprint reports
         ├── onboarding.md                # Enterprise: quick start by role
         ├── governance.md                # Enterprise: scope changes, disputes, incidents
         ├── greenfield_bootstrap.md      # Enterprise: new project from scratch
@@ -428,7 +431,7 @@ NexusAgile Enterprise extends the core methodology for teams of 2+ developers wo
 |---|---|
 | `references/roles_matrix.md` | 5 human roles, gate authority matrix, AI delegation levels, escalation paths, team size configs |
 | `references/concurrent_work_protocol.md` | Branch strategy, PR workflow, HU ownership, conflict prevention, dependency coordination |
-| `references/metrics.md` | 20+ KPIs across velocity/quality/anti-hallucination/AI efficiency, dashboard template, sprint report |
+| `references/metrics.md` | 20+ KPIs, production baselines (Luma AI: 53 HUs, 4 days), token analysis script, project report template |
 | `references/onboarding.md` | Role-based quick start, first HU walkthrough, cheat sheet, common mistakes, FAQ |
 
 ### Team Size Configurations
@@ -456,19 +459,31 @@ Real-world development is messy. NexusAgile Enterprise defines protocols for whe
 | Cross-team dependencies | Scrum of Scrums, dependency board, escalation ladder | `references/cross_team_protocol.md` |
 | Components/services communicate | Formal Integration Contract with schema + SLA | `references/integration_contract_template.md` |
 
-### Use Cases — Real-World Simulations
+### Production Validated
 
-12 simulated scenarios covering every team size and mode combination. Each case shows the complete flow: what the human does, what the AI does, and where the gates are.
+NexusAgile has been validated in production on the **Luma AI** project — a full AI SaaS built from scratch:
 
-> Full document: `use-cases.md` in the root of this repo.
+| Metric | Value |
+|---|---|
+| HUs completed | 53 |
+| Development time | 4 days |
+| Test suite | 256 tests passing |
+| Bugs in production | 0 |
+| Lines of code | 10,258 TS/TSX + 5,072 tests |
+| Database | 10 tables, 29 RLS policies, 13 migrations |
+| Claude Code cost | ~$28 (Max Pro subscription) |
+| Cost per HU | $0.53 |
 
-| # | Scenario | Team | Mode | Status |
-|---|----------|------|------|--------|
-| 1 | Solo dev — Payment integration | 1 person | QUALITY | Documented |
-| 2 | Solo dev — Typo fix | 1 person | FAST | Documented |
-| 3 | 2-person team — Feature + Fix | 2 people | QUALITY + FAST | Documented |
-| 4 | Medium team — 3 HUs in parallel | 5 people | QUALITY + FAST | Documented |
-| 5-12 | Large teams + edge cases | 6-12 people | Mixed | Planned |
+Pipeline distribution from the project:
+
+```
+QUALITY:    ████████░░░░░░░░░░░░░░░░░░░░░░  8  (15%)  — core architecture
+FAST+AR:    ████████████░░░░░░░░░░░░░░░░░░  12 (23%)  — small + risky
+FAST:       ██████████████████░░░░░░░░░░░░  18 (34%)  — hotfixes, UI, config
+Pre-Nexus:  ███████████████░░░░░░░░░░░░░░░  15 (28%)  — before NexusAgile adoption
+```
+
+Measured pipeline times: FAST ~8-15 min, FAST+AR ~15-20 min, QUALITY ~45-90 min.
 
 
 ## Relationship with NexusFactory
