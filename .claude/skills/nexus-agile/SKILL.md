@@ -107,7 +107,7 @@ Después de instalar, los slash commands aparecen con autocomplete al escribir `
 
 ---
 
-## Los 3 Modos
+## Los 4 Modos
 
 > Al inicio de cada sesion, si no hay contexto claro, Claude pregunta:
 >
