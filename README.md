@@ -471,8 +471,6 @@ NexusAgile has been validated in production on the **Luma AI** project — a ful
 | Bugs in production | 0 |
 | Lines of code | 10,258 TS/TSX + 5,072 tests |
 | Database | 10 tables, 29 RLS policies, 13 migrations |
-| Claude Code cost | ~$28 (Max Pro subscription) |
-| Cost per HU | $0.53 |
 
 Pipeline distribution from the project:
 
