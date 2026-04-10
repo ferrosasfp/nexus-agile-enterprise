@@ -320,7 +320,54 @@ Fase 8 — DONE
 
 ---
 
-## §8 Completion Dashboard
+## §8 Progress Reporting
+
+### §8.1 In-Flight Progress (obligatorio)
+
+Después de cada lanzamiento de sub-agente y cada transición de fase, el orquestador
+DEBE mostrar la **progress bar visual** de cada HU del batch. Formato:
+
+```
+WKH-XX:  F0✅ → F1✅ → HU✅ → [F2 🔄] → F2.5 → F3 → AR+CR → F4 → DONE
+```
+
+**Convenciones:**
+- `✅` = fase completada
+- `🔄` = fase en ejecución (dentro de corchetes: `[fase 🔄]`)
+- Sin icono = fase pendiente
+- Gates aprobados se marcan con el nombre corto: `HU✅` = HU_APPROVED, `SPEC✅` = SPEC_APPROVED
+
+**Progress bars por pipeline type:**
+
+```
+FAST:      F1✅ → HU✅ → [F3 🔄] → F4 → DONE
+FAST+AR:   F1✅ → HU✅ → F3✅ → [AR+CR 🔄] → F4 → DONE
+QUALITY:   F0✅ → F1✅ → HU✅ → F2✅ → SPEC✅ → F2.5✅ → [F3 🔄] → AR+CR → F4 → DONE
+```
+
+**En batch de N HUs**, mostrar todas las progress bars juntas:
+
+```
+WKH-34:  F1✅ → HU✅ → F3✅ → AR+CR✅ → F4✅ → DONE✅     (FAST — 12 min)
+WKH-35:  F0✅ → F1✅ → HU✅ → F2✅ → SPEC✅ → F2.5✅ → [F3 🔄] → AR+CR → F4 → DONE
+WKH-36:  F1✅ → HU✅ → [F3 🔄] → AR+CR → F4 → DONE
+```
+
+**Después de cada progress bar**, incluir una línea de contexto explicando qué sigue:
+
+```
+WKH-18:  F0✅ → F1✅ → HU✅ → F2✅ → SPEC✅ → F2.5✅ → [F3 impl 🔄] → AR+CR → F4 → DONE
+
+Este es el más grande del batch — 4 waves, ~19 archivos. Cuando F3 completa → AR+CR → F4 → DONE.
+```
+
+**Cuándo mostrar la progress bar:**
+- Al lanzar cada sub-agente
+- Al completar cada sub-agente (actualizar ✅)
+- Al self-aprobar un gate (actualizar HU✅ o SPEC✅)
+- Al escalar al humano (marcar `[⚠️ ESCALATED]` en vez de 🔄)
+
+### §8.2 Completion Dashboard
 
 Al terminar TODAS las HUs del batch (o al escalar en la regla #10), presentar:
 
