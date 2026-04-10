@@ -111,6 +111,148 @@
 
 ---
 
+## Baselines Reales (datos de produccion)
+
+> Datos del proyecto Luma AI: 53 HUs en 4 dias, 256 tests, 0 bugs en prod.
+
+### Tiempos por pipeline (wallclock medido)
+
+| Pipeline | Rango real | Incluye |
+|----------|-----------|---------|
+| **FAST** | 8-15 min | F1 + HU_APPROVED + F3 + F4 + DONE |
+| **FAST+AR** | 15-20 min | F1 + HU_APPROVED + F3 + AR+CR paralelo + fix-pack + F4 + DONE |
+| **QUALITY** | 45-90 min | F0+F1 + HU_APPROVED + F2 + SPEC_APPROVED + F2.5 + F3 + AR+CR + F4 + DONE |
+
+### Distribucion tipica de pipelines
+
+```
+QUALITY:    ████████░░░░░░░░░░░░░░░░░░░░░░  15%  (core architecture)
+FAST+AR:    ████████████░░░░░░░░░░░░░░░░░░  23%  (small + risky)
+FAST:       ██████████████████░░░░░░░░░░░░  34%  (hotfixes, UI, config)
+Sin Nexus:  ███████████████░░░░░░░░░░░░░░░  28%  (pre-Nexus, mecanico)
+```
+
+**Patron observado**: conforme el sprint avanza, QUALITY baja y FAST+AR/FAST sube (la arquitectura se estabiliza, los cambios son incrementales).
+
+### Costo por sesion (Claude Code, Opus pricing)
+
+| Metrica | Valor observado |
+|---------|----------------|
+| Costo por turn | $0.08-0.11 |
+| Cache read ratio | ~89% del input (ahorro ~90% vs sin cache) |
+| Output tokens (dominante) | $75/M — el mayor componente de costo |
+| Sesion mediana | $20-40 por sesion de trabajo |
+| Sprint completo (8 HUs, mixed pipelines) | ~$89 |
+| Costo estimado por HU | ~$11 (promedio FAST+QUALITY mixed) |
+
+### Token analysis script
+
+Parsear los transcripts `.jsonl` de Claude Code para extraer tokens y costo:
+
+```python
+# Guardar como scripts/analyze-sessions.py
+import json, os, glob
+
+base = os.path.expanduser("~/.claude/projects/")
+# Buscar en el subdirectorio del proyecto
+for project_dir in glob.glob(base + "*/"):
+    files = sorted(glob.glob(project_dir + "*.jsonl"), key=os.path.getmtime, reverse=True)
+    for fp in files[:5]:
+        ti = to = tcr = tcc = turns = 0
+        with open(fp, "r", encoding="utf-8") as f:
+            for line in f:
+                try:
+                    obj = json.loads(line.strip())
+                    if obj.get("type") == "assistant":
+                        msg = obj.get("message", {})
+                        if isinstance(msg, dict) and "usage" in msg:
+                            u = msg["usage"]
+                            ti += u.get("input_tokens", 0)
+                            to += u.get("output_tokens", 0)
+                            tcr += u.get("cache_read_input_tokens", 0)
+                            tcc += u.get("cache_creation_input_tokens", 0)
+                            turns += 1
+                except:
+                    pass
+        cost = (ti/1e6)*15 + (tcc/1e6)*3.75 + (tcr/1e6)*0.375 + (to/1e6)*75
+        fname = os.path.basename(fp)[:10]
+        size = os.path.getsize(fp) / 1e6
+        print(f"{fname}  {size:5.1f}MB  {turns:>4}t  out:{to:>8,}  ${cost:.2f}")
+```
+
+---
+
+## Project Metrics Report — Template
+
+> Formato validado en Luma AI (53 HUs, 4 dias). Usar al cierre de proyecto o sprint largo.
+
+### Seccion 1 — Totales
+
+```
+┌───────────────────────────────────────────┬──────────────────────────────────┐
+│                  Metrica                  │              Valor               │
+├───────────────────────────────────────────┼──────────────────────────────────┤
+│ HUs completadas (Done)                    │ N                                │
+├───────────────────────────────────────────┼──────────────────────────────────┤
+│ Pipeline QUALITY                          │ N                                │
+├───────────────────────────────────────────┼──────────────────────────────────┤
+│ Pipeline FAST+AR                          │ N                                │
+├───────────────────────────────────────────┼──────────────────────────────────┤
+│ Pipeline FAST                             │ N                                │
+├───────────────────────────────────────────┼──────────────────────────────────┤
+│ Sin pipeline Nexus                        │ N                                │
+├───────────────────────────────────────────┼──────────────────────────────────┤
+│ Periodo                                   │ YYYY-MM-DD → YYYY-MM-DD (N dias) │
+├───────────────────────────────────────────┼──────────────────────────────────┤
+│ Promedio HUs/dia                          │ ~N                               │
+└───────────────────────────────────────────┴──────────────────────────────────┘
+```
+
+### Seccion 2 — Detalle por pipeline
+
+Tabla por HU agrupada por pipeline: #, HU-ID, Feature (1 linea), Closed date, Docs generados.
+
+### Seccion 3 — Distribucion visual
+
+```
+QUALITY:    ████████░░░░░░░░░░░░░░░░░░░░░░  N  (N%)
+FAST+AR:    ████████████░░░░░░░░░░░░░░░░░░  N  (N%)
+FAST:       ██████████████████░░░░░░░░░░░░  N  (N%)
+Sin Nexus:  ███████████████░░░░░░░░░░░░░░░  N  (N%)
+```
+
+### Seccion 4 — Distribucion temporal
+
+Tabla dia por dia: fecha, HUs cerradas, tipo predominante, notas.
+
+### Seccion 5 — Tiempos por pipeline (medidos)
+
+Datos reales de la ejecucion, no estimados. Incluir ejemplo representativo por pipeline.
+
+### Seccion 6 — Resumen ejecutivo
+
+```
+┌────────────────────────────┬───────────────────────────────────────────┐
+│          Metrica           │                  Valor                    │
+├────────────────────────────┼───────────────────────────────────────────┤
+│ HUs totales                │ N                                         │
+├────────────────────────────┼───────────────────────────────────────────┤
+│ Dias de desarrollo         │ N                                         │
+├────────────────────────────┼───────────────────────────────────────────┤
+│ HUs/dia promedio           │ N                                         │
+├────────────────────────────┼───────────────────────────────────────────┤
+│ Tests al cierre            │ N passing                                 │
+├────────────────────────────┼───────────────────────────────────────────┤
+│ Errores en produccion      │ N                                         │
+├────────────────────────────┼───────────────────────────────────────────┤
+│ Pipeline mas usado         │ [nombre] (N%) — [contexto]                │
+├────────────────────────────┼───────────────────────────────────────────┤
+│ Pipeline mas valioso       │ [nombre] (N%) — [contexto]                │
+└────────────────────────────┴───────────────────────────────────────────┘
+```
+
+---
+
 ## Herramientas de Medicion
 
 ### Opcion 1: Manual (equipo chico)
@@ -118,12 +260,14 @@
 - Timestamps en artefactos (work-item.md, sdd.md, validation.md, report.md)
 - Conteo manual en _INDEX.md
 - Sprint report manual con el template de arriba
+- Token analysis script (ver seccion anterior)
 - Costo: 30 min por sprint para compilar
 
 ### Opcion 2: Semi-automatizado (equipo mediano)
 
 - GitHub Actions que extrae metricas de PRs (merge time, review time)
 - Script que parsea _INDEX.md y genera estadisticas
+- Token analysis script integrado en CI
 - Dashboard en Notion/Confluence
 - Costo: setup inicial 2-4h, luego 15 min por sprint
 
