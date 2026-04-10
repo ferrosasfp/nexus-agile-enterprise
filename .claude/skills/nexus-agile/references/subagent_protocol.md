@@ -202,6 +202,12 @@ El orquestador ejecuta esto ANTES de lanzar cualquier sub-agente Dev:
 
 [ ] ¿Las env vars necesarias para la HU están configuradas?
     → Si la HU toca DB, pagos o servicios externos: verificar antes
+
+[ ] ¿Los permisos de Bash están configurados para background agents?
+    → Los sub-agentes en background NO pueden pedir aprobación interactiva
+    → Si vas a lanzar F3 en background: verificar que .claude/settings.json
+      tenga los permisos granulares necesarios (ver Auto-Blindaje "Bash bloqueado")
+    → Si vas a lanzar F3 en foreground: no hace falta (el humano aprueba cada call)
 ```
 
 **Si falla algún check:** resolver antes de lanzar F3. No lanzar sobre entorno roto.
@@ -284,6 +290,53 @@ Orquestador lanza sub-agente F3→DONE
 - El orquestador presenta el resultado final sin haber mostrado Work Item ni SDD al humano
 
 **Fix:** Siempre dividir en mínimo 3 lanzamientos separados: F0+F1 / F2+F2.5 / F3→DONE. El orquestador es el checkpoint humano entre ellos.
+
+---
+
+## ⚠️ Auto-Blindaje — Bash bloqueado en background agents
+
+**Fecha:** 2026-04-09 | **Proyecto:** wasiai-a2a | **HUs afectadas:** WKH-34, WKH-35
+
+**Error:** Sub-agentes F3 lanzados en background (`run_in_background: true`) fallan silenciosamente porque necesitan Bash para operaciones obligatorias del pipeline (git checkout -b, npm test, npx tsc --noEmit, mkdir, rm) pero los background agents no pueden solicitar aprobación interactiva al humano. El sub-agente se bloquea en el primer Bash call no aprobado y aborta sin output útil.
+
+**Síntoma:** Ambos sub-agentes F3 retornan error o output vacío. El orquestador reintenta con los mismos permisos → mismo resultado. Tiempo perdido: ~2 relanzamientos por HU antes de diagnosticar la causa.
+
+**Fix aplicado:** Configurar permisos granulares de Bash en `.claude/settings.json` ANTES de lanzar sub-agentes en background:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm test*)",
+      "Bash(npm run *)",
+      "Bash(npx tsc*)",
+      "Bash(npx vitest*)",
+      "Bash(mkdir *)",
+      "Bash(rm src/*)",
+      "Bash(rm -rf node_modules/.cache*)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(wc *)"
+    ]
+  }
+}
+```
+
+### Regla obligatoria para el orquestador:
+
+**Antes de lanzar cualquier sub-agente F3 en background**, verificar que los permisos de Bash estén configurados. Si no lo están:
+
+1. **Opción recomendada:** configurar permisos granulares (lista específica de patrones aprobados)
+2. **Alternativa:** lanzar el sub-agente en foreground (el humano aprueba cada Bash call interactivamente — más lento pero no requiere config previa)
+3. **Último recurso:** el orquestador implementa directamente — viola "orquestador no codea" pero es un override consciente por limitación técnica. Documentar como excepción.
+
+**Señales de que estás cayendo en este error:**
+- Sub-agente F3 retorna output vacío o error genérico
+- El error menciona "tool not allowed" o "permission denied" para Bash
+- El sub-agente fue lanzado con `run_in_background: true`
+
+**Alcance:** aplica a CUALQUIER sub-agente en background que necesite Bash, no solo F3. AR/CR generalmente no necesitan Bash (solo Read/Glob/Grep), pero F3, F4 (quality gates), y DONE (git operations) sí lo necesitan.
 
 ---
 

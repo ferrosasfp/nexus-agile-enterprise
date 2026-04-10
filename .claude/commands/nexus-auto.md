@@ -374,6 +374,11 @@ Si alguna HU fue escalada, incluir el motivo en una sección debajo del dashboar
 
 10. **Dashboard final obligatorio** — el batch no está completo sin el dashboard de §8.
 
+11. **Permisos Bash para background agents** — antes de lanzar F3/F4/DONE en background,
+    verificar que `.claude/settings.json` tenga permisos granulares de Bash configurados
+    (git, npm test, npx tsc, mkdir, etc.). Sin esto, los background agents fallan
+    silenciosamente. Ver Auto-Blindaje "Bash bloqueado" en `subagent_protocol.md`.
+
 ---
 
 ## §10 Relación con pipelines manuales
