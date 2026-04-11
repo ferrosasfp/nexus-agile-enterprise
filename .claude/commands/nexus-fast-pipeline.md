@@ -82,6 +82,7 @@ Task tool:
     INPUT:
     - HU del humano: $ARGUMENTS
     - project-context.md (debe existir)
+    - product-context.md (si existe en la raíz → leerlo para contexto de negocio)
     - doc/sdd/_INDEX.md (para asignar NNN)
 
     OUTPUT:

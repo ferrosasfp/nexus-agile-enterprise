@@ -134,7 +134,8 @@
 
 ## Contexto de Negocio
 
-> Lo minimo necesario para que el Architect tome decisiones correctas.
+> Ver `product-context.md` en la raiz del proyecto para el contexto completo de negocio.
+> Si no existe, lo minimo necesario:
 
 - **Usuarios objetivo**: [quien usa el producto]
 - **Flujo principal**: [que hace el usuario tipicamente]

@@ -23,6 +23,7 @@ description: >
 2. **1 HU = 1 ejecucion** — No mezclar historias. Una historia, un pipeline completo.
 3. **Anti-Alucinacion** — Codebase Grounding obligatorio. Leer codigo real, extraer patrones reales, referenciar archivos existentes. Nunca inventar.
 3b. **Project-Context First** — Antes de cualquier F0, leer `.nexus/project-context.md` (o `project-context.md`). Es la fuente de verdad del stack y las reglas. Si el código difiere del project-context, reportar drift al humano — nunca asumir que el código manda sobre el project-context.
+3c. **Product-Context Awareness** — Si `product-context.md` existe, el analyst lo lee en F0 para entender personas, flujos, y restricciones de negocio. Si no existe, marcar en el work-item. El documento es responsabilidad del humano (PO), NO del agente.
 4. **Agentes Especializados** — Cada fase tiene agentes asignados con roles claros. Los roles NO se mezclan (ver `references/agents_roster.md`).
 5. **Gates Estrictos** — No se avanza sin aprobacion humana explicita en los gates.
    **Entre gates, el pipeline corre solo.** El agente NO pide permiso para pasar de F0→F1, F2→F2.5, F3→AR, AR→CR, CR→QA, QA→Docs. Solo se detiene en los gates formales. Preguntar "¿continuo?" entre fases es un error de proceso.

@@ -26,11 +26,15 @@ Task tool:
     INPUT:
     - HU descrita por el humano: $ARGUMENTS
     - project-context.md: [verificar si existe en la raíz]
+    - product-context.md: [verificar si existe en la raíz — contexto de negocio]
     - _INDEX.md: doc/sdd/_INDEX.md
     - Ticket en Jira/issue tracker (si aplica): consultar mcp__claude_ai_Atlassian__getJiraIssue
 
     TU TAREA:
     1. Si project-context.md no existe → generarlo siguiendo references/project_context_template.md
+    1b. Si product-context.md existe → leerlo. Usar personas, flujos, y restricciones de negocio para informar los ACs y el sizing.
+        Si no existe y es proyecto nuevo → preguntar al humano si quiere crearlo (ofrecer template).
+        Si no existe y es proyecto en curso → continuar, marcar en work-item.
     2. Smart Sizing: clasificar como FAST/LAUNCH/QUALITY
     3. Skills Router: declarar máximo 2 skills relevantes
     4. Generar work-item.md en doc/sdd/NNN-titulo/work-item.md con:
