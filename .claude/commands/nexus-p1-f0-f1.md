@@ -32,9 +32,17 @@ Task tool:
 
     TU TAREA:
     1. Si project-context.md no existe → generarlo siguiendo references/project_context_template.md
-    1b. Si product-context.md existe → leerlo. Usar personas, flujos, y restricciones de negocio para informar los ACs y el sizing.
-        Si no existe y es proyecto nuevo → preguntar al humano si quiere crearlo (ofrecer template).
-        Si no existe y es proyecto en curso → continuar, marcar en work-item.
+    1b. Product Context:
+        Si product-context.md EXISTE → leerlo. Usar personas, flujos, y restricciones de negocio para informar los ACs y el sizing.
+        Si NO existe → preguntar al humano via AskUserQuestion:
+          "No encontré product-context.md. ¿Cómo querés darme el contexto de negocio?"
+          Opciones:
+          (a) "Te lo escribo/dicto acá" → guardar texto completo en doc/prd/prd-raw.md + generar product-context.md (~200 líneas) en la raíz
+          (b) "Te paso un link" → fetchear contenido → guardar en doc/prd/prd-raw.md + generar product-context.md
+          (c) "Ya subí el PRD a doc/prd/" → leer doc/prd/*.md|*.txt|*.pdf → generar product-context.md
+          (d) "Seguí sin contexto de negocio" → continuar, marcar [SIN PRODUCT CONTEXT] en work-item
+        En todos los casos (a/b/c): product-context.md apunta a doc/prd/ en su sección Fuentes.
+        Usar references/product_context_template.md como estructura del documento generado.
     2. Smart Sizing: clasificar como FAST/LAUNCH/QUALITY
     3. Skills Router: declarar máximo 2 skills relevantes
     4. Generar work-item.md en doc/sdd/NNN-titulo/work-item.md con:
@@ -59,7 +67,7 @@ Task tool:
     ## ⛔ PROHIBIDO EN ESTA FASE
     - NO escribir código de producción
     - NO generar SDD ni Story File (eso es Architect en F2)
-    - NO modificar archivos fuera de doc/sdd/NNN-titulo/
+    - NO modificar archivos fuera de doc/sdd/NNN-titulo/, doc/prd/, product-context.md
     - NO inventar requirements
     - NO asumir scope: si dudás, marcar [NEEDS CLARIFICATION]
 ```

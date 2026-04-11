@@ -1,11 +1,14 @@
 # product-context.md — Contexto de Negocio
 
-> Documento escrito por el humano (PO/founder). NO generado por Claude.
-> El analyst lo lee en F0 antes de cada HU para entender el dominio.
-> Actualizar antes de cada sprint o cuando cambie la direccion del producto.
+> Contenido definido por el humano (PO/founder).
+> El analyst lo genera y actualiza a partir de lo que el humano provea
+> (texto libre, link, o archivo PRD en `doc/prd/`).
 >
-> **Limite recomendado: ~200 lineas.** Si el PRD es largo, resumirlo aqui
-> y linkear el documento completo en la seccion "Fuentes".
+> El analyst lo lee en F0 antes de cada HU para entender el dominio.
+> El humano puede pedir actualizarlo en cualquier momento.
+>
+> **Limite: ~200 lineas.** Este documento es siempre un RESUMEN.
+> El PRD completo (si existe) vive en `doc/prd/` y se linkea en "Fuentes".
 
 ---
 
@@ -57,9 +60,10 @@
 
 ## Fuentes
 
-> Links a documentos largos que el analyst puede consultar si necesita mas contexto.
+> El PRD completo y documentos largos viven en `doc/prd/`.
+> El analyst consulta estos links solo si necesita profundizar en una HU especifica.
 
-- PRD completo: [link o path]
+- PRD completo: doc/prd/prd-raw.md
 - Disenos/Figma: [link]
 - Research/interviews: [link]
 
