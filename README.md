@@ -315,9 +315,20 @@ Between gates, the pipeline runs automatically. The agent never asks "shall I co
 
 ## Installation
 
-NexusAgile distributes three things: the **skill** (methodology), the **sub-agents**, and the **slash commands**. You can install them per-project or globally.
+NexusAgile distributes the **skill** (methodology), the **sub-agents**, the **slash commands**, and wires up **persistent memory** (Engram) so the system learns from its own errors across sessions.
 
-### Per-project (recommended for trying it out)
+### One command (recommended)
+
+```bash
+git clone https://github.com/ferrosasfp/nexus-agile-enterprise /tmp/nexus-agile
+cd your-project && /tmp/nexus-agile/setup.sh
+```
+
+`setup.sh` copies the skill + agents + commands, installs the Engram memory engine if it's missing (Homebrew or `go install`), and writes a project `.mcp.json` that exposes `mem_save` / `mem_search` to the pipeline. Restart Claude Code and you're ready.
+
+> **Memory (Engram).** Persistent memory is what powers Auto-Blindaje — every error and fix is saved and recalled on the next HU, so the system improves with use. The engine is [Engram](https://github.com/Gentleman-Programming/engram) by Gentleman Programming (MIT, separate project — NexusAgile integrates it, doesn't vendor it). No Engram? NexusAgile falls back to a manual `MEMORY.md`. See `references/engram_protocol.md`.
+
+### Per-project (manual)
 
 ```bash
 git clone https://github.com/ferrosasfp/nexus-agile-enterprise /tmp/nexus-agile
@@ -325,6 +336,7 @@ mkdir -p your-project/.claude/skills your-project/.claude/agents your-project/.c
 cp -r /tmp/nexus-agile/.claude/skills/nexus-agile/ your-project/.claude/skills/
 cp /tmp/nexus-agile/.claude/agents/nexus-*.md your-project/.claude/agents/
 cp /tmp/nexus-agile/.claude/commands/nexus-*.md your-project/.claude/commands/
+cp /tmp/nexus-agile/.mcp.json your-project/        # engram MCP — merge if you already have one
 rm -rf /tmp/nexus-agile
 ```
 
@@ -503,6 +515,8 @@ NexusFactory includes NexusAgile by default.
 
 Methodology created by [Fernando Rosas](https://github.com/ferrosasfp).
 Merges the Nexus SDD Workflow with agile sprint practices and specialized AI agent roles.
+
+Persistent memory powered by [**Engram**](https://github.com/Gentleman-Programming/engram) — an open-source, agent-agnostic memory engine by [Gentleman Programming](https://github.com/Gentleman-Programming) (MIT). NexusAgile integrates Engram as its reference memory layer; all credit for the engine goes to its authors.
 
 MIT License
 

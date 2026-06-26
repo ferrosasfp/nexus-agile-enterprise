@@ -1,10 +1,14 @@
 # Engram Protocol — NexusAgil (Implementación de referencia)
 
-> **Opcional.** NexusAgil es agnóstico de herramientas de memoria.
-> Este documento es la implementación de referencia usando Engram (Go binary + SQLite + MCP).
-> Alternativas válidas: MEMORY.md manual, cualquier sistema MCP de memoria, claude-mem, etc.
-> Requiere: engram instalado y MCP configurado (`engram mcp` en mcpServers).
-> Repo: https://github.com/Gentleman-Programming/engram
+> **Requerido (con fallback).** La memoria persistente es lo que hace que NexusAgil
+> aprenda de sus propios errores entre sesiones. El motor de referencia es **Engram**
+> (Go binary + SQLite + MCP) y se cablea automáticamente con `./setup.sh`.
+> NexusAgil sigue siendo agnóstico: si no podés instalar el binario, el **fallback**
+> es un `MEMORY.md` manual en la raíz del proyecto (perdés passive capture y búsqueda,
+> pero conservás continuidad básica). Otras alternativas MCP de memoria también sirven.
+> Engram es un proyecto open-source aparte de Gentleman Programming (MIT) — NexusAgil
+> lo integra, no lo incluye en su binario.
+> Setup: `./setup.sh` · Repo de Engram: https://github.com/Gentleman-Programming/engram
 
 ---
 
