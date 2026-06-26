@@ -341,7 +341,7 @@ Sprint 1 establece baseline. No hay targets hasta sprint 2. Las metricas son par
 
 ## La diferencia en numeros
 
-Validado en produccion en **a real AI SaaS** — un SaaS de IA construido desde cero:
+Validado en produccion en un **SaaS de IA real** construido desde cero:
 
 | Metrica | Valor |
 |---------|-------|

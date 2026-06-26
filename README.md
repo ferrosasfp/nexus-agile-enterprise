@@ -418,7 +418,7 @@ README.md
         ├── engram_protocol.md           # Persistent memory protocol for cross-session learning
         ├── roles_matrix.md              # Enterprise: human roles + gate authority
         ├── concurrent_work_protocol.md  # Enterprise: multi-dev branches, PRs
-        ├── metrics.md                   # KPIs, baselines (a real AI SaaS), token analysis, sprint reports
+        ├── metrics.md                   # KPIs, production baselines, token analysis, sprint reports
         ├── onboarding.md                # Enterprise: quick start by role
         ├── governance.md                # Enterprise: scope changes, disputes, incidents
         ├── greenfield_bootstrap.md      # Enterprise: new project from scratch
@@ -451,7 +451,7 @@ NexusAgile Enterprise extends the core methodology for teams of 2+ developers wo
 |---|---|
 | `references/roles_matrix.md` | 5 human roles, gate authority matrix, AI delegation levels, escalation paths, team size configs |
 | `references/concurrent_work_protocol.md` | Branch strategy, PR workflow, HU ownership, conflict prevention, dependency coordination |
-| `references/metrics.md` | 20+ KPIs, production baselines (a real AI SaaS: 53 HUs, 4 days), token analysis script, project report template |
+| `references/metrics.md` | 20+ KPIs, production baselines (53 HUs, 4 days), token analysis script, project report template |
 | `references/onboarding.md` | Role-based quick start, first HU walkthrough, cheat sheet, common mistakes, FAQ |
 
 ### Team Size Configurations
@@ -481,7 +481,7 @@ Real-world development is messy. NexusAgile Enterprise defines protocols for whe
 
 ### Production Validated
 
-NexusAgile has been validated in production on the **a real AI SaaS** project — a full AI SaaS built from scratch:
+NexusAgile has been validated in production on a **real AI SaaS** built from scratch:
 
 | Metric | Value |
 |---|---|

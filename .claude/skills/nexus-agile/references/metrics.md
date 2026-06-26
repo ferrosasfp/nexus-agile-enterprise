@@ -113,7 +113,7 @@
 
 ## Baselines Reales (datos de produccion)
 
-> Datos del proyecto a real AI SaaS: 53 HUs en 4 dias, 256 tests, 0 bugs en prod.
+> Datos de un proyecto real en produccion: 53 HUs en 4 dias, 256 tests, 0 bugs en prod.
 
 ### Tiempos por pipeline (wallclock medido)
 
@@ -184,7 +184,7 @@ for project_dir in glob.glob(base + "*/"):
 
 ## Project Metrics Report — Template
 
-> Formato validado en a real AI SaaS (53 HUs, 4 dias). Usar al cierre de proyecto o sprint largo.
+> Formato validado en produccion (53 HUs, 4 dias). Usar al cierre de proyecto o sprint largo.
 
 ### Seccion 1 — Totales
 
