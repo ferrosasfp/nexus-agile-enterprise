@@ -43,8 +43,9 @@ No es un prompt. No es un template. Es un **sistema completo** que se instala co
 
 - **9 agentes AI especializados** con roles separados (quien especifica NO implementa, quien implementa NO valida)
 - **Anti-alucinacion** como pilar fundamental (Codebase Grounding, Exemplar Pattern, Constraint Directives)
+- **Memoria persistente** — dos contextos vivos (stack + negocio) + aprendizaje de errores entre sesiones: el sistema mejora con cada HU
 - **Adversarial Review** — un agente AI ataca la solucion de otro agente AI antes de que llegue a review
-- **3 modos** adaptados a la complejidad real del cambio (FAST, LAUNCH, QUALITY)
+- **4 modos** adaptados a la complejidad real del cambio (FAST, LAUNCH, QUALITY, AUTO)
 - **Gates estrictos** donde solo texto exacto activa la aprobacion (no "si", no "ok", no "dale")
 - **Release Gate** con checklist pre-produccion (staging, migraciones, env vars, rollback)
 
@@ -98,17 +99,20 @@ DONE -------------------- Documentacion completa, trazable, auditada
 
 ---
 
-## Los 3 modos: no todo necesita el pipeline completo
+## Los 4 modos: no todo necesita el pipeline completo
 
 | Modo | Cuando usarlo | Ejemplo | Tiempo |
 |------|--------------|---------|--------|
 | **FAST** | Cambio trivial: 1-2 archivos, <30 lineas, sin DB, sin logica | Corregir un typo, cambiar un color, actualizar texto | 5-15 min |
 | **LAUNCH** | MVP o prototipo nuevo desde cero | Primera version de una app, demo para inversores | 1-2 dias |
 | **QUALITY** | Feature para produccion | Flujo de pagos, autenticacion, dashboard con DB | 1-3 dias |
+| **AUTO** | Batch de 1-N HUs sin supervision continua | Ejecutar un sprint entero end-to-end | hands-off |
 
 En duda, QUALITY. Es mejor sobre-procesar que dejar pasar un bug a produccion.
 
 FAST no es "sin proceso" — es proceso adaptado. El AI hace triage automatico: si detecta que el cambio toca DB, auth o mas de 2 archivos, auto-escala a QUALITY.
+
+**AUTO** es el mas potente: le pasas una lista de HUs (`/nexus-auto WKH-01 WKH-02 WKH-03`) y Claude orquesta **Y aprueba los gates** con *clinical reviews* (checklists objetivos, no "ok" a ciegas). Si todos los criterios pasan, se auto-aprueba y sigue. Si detecta riesgo que el analisis no vio (auth, pagos, RLS), **sube el rigor solo** — nunca lo baja. Si algo es ambiguo, **te escala con el detalle exacto**. Un backlog completo de punta a punta, interviniendo solo donde de verdad importa.
 
 ---
 
@@ -178,6 +182,29 @@ Esto elimina la clase de errores mas comun del AI: inventar soluciones cuando ya
 
 ---
 
+## Memoria: el sistema que aprende de sus propios errores
+
+Un prompt te ayuda una vez. NexusAgile **mejora con cada HU** porque tiene memoria. Dos piezas:
+
+### Dos contextos vivos
+
+NexusAgile no empieza de cero cada sesion. Mantiene dos archivos que los agentes leen **antes de tocar nada**:
+
+- **`project-context.md` (el stack):** arquitectura de carpetas, patrones de codigo, comandos, exemplars y *guardrails* (que es OBLIGATORIO y que esta PROHIBIDO en tu repo). Generado una vez en F0.
+- **`product-context.md` (el negocio):** producto, personas, flujos, restricciones y decisiones de producto ya tomadas. Lo lee el analyst antes de cada HU.
+
+Por eso los agentes no preguntan lo mismo dos veces ni te imponen un stack ajeno: conocen tu codigo **y** tu dominio.
+
+### Aprende de los errores (Auto-Blindaje + memoria persistente)
+
+Cuando algo falla, no se olvida. El error, su causa y el fix se registran en una tabla de **Auto-Blindaje** (se actualiza en el momento, no al final) y se guardan en **memoria persistente entre sesiones** ([Engram](https://github.com/Gentleman-Programming/engram), open source). La proxima HU arranca sabiendo lo que aprendio la anterior.
+
+> **El sistema que usas hoy es peor que el que vas a tener en 10 features. Mejora solo.**
+
+Engram es agnostico: si no podes instalar el binario, el fallback es un `MEMORY.md` manual. El `setup.sh` lo cablea automaticamente. Credito del motor de memoria a Gentleman Programming (MIT) — NexusAgile lo integra, no lo incluye en su binario.
+
+---
+
 ## Adversarial Review: el AI que ataca al AI
 
 Despues de que el Dev agent implementa, el Adversary agent ataca la solucion con 8 categorias de revision:
@@ -242,15 +269,14 @@ El Case Type no cambia el pipeline — lo enriquece con checks especificos.
 
 ## Como empezar: en 15 minutos
 
-### Paso 1: Instalar el skill
-
-Clona el repositorio dentro de tu proyecto:
+### Paso 1: Instalar el skill (un comando)
 
 ```bash
-# En la raiz de tu proyecto
-mkdir -p .claude/skills
-git clone https://github.com/ferrosasfp/nexus-agile-enterprise.git .claude/skills/nexus-agile
+git clone https://github.com/ferrosasfp/nexus-agile-enterprise /tmp/nexus-agile
+cd tu-proyecto && /tmp/nexus-agile/setup.sh
 ```
+
+`setup.sh` copia el skill + los 6 sub-agentes + los 11 comandos, instala el motor de memoria (Engram) si falta, y cablea el `.mcp.json` del proyecto. Reinicia Claude Code y listo.
 
 ### Paso 2: Generar el contexto de tu proyecto
 
@@ -258,7 +284,7 @@ Abre Claude Code y di:
 
 > "NexusAgile, this is a new project. Read the codebase and generate project-context.md"
 
-El AI escanea tu stack, dependencias, estructura, patrones y comandos. Genera `project-context.md` una vez. De ahi en adelante, todos los agentes conocen tu proyecto.
+El AI escanea tu stack, dependencias, estructura, patrones y comandos. Genera `project-context.md` (el stack) y `product-context.md` (el negocio) una vez. De ahi en adelante, todos los agentes conocen tu proyecto **y** tu dominio.
 
 ### Paso 3: Procesar tu primera HU
 
@@ -293,7 +319,7 @@ Cada rol lee solo lo que necesita. No hay que leer todo.
 - **No es un reemplazo de Scrum** — es una extension que agrega agentes AI al proceso
 - **No es un prompt** — es una metodologia completa con 25+ documentos de referencia
 - **No es dependiente de Claude** — la metodologia es LLM-agnostic, pero esta optimizada y testeada con Claude Code
-- **No es rigido** — tiene 3 modos (FAST/LAUNCH/QUALITY) para adaptar la ceremonia a la complejidad real
+- **No es rigido** — tiene 4 modos (FAST/LAUNCH/QUALITY/AUTO) para adaptar la ceremonia a la complejidad real
 - **No es solo para devs** — POs, QA Leads y Scrum Masters tienen roles definidos
 
 ---
@@ -315,15 +341,29 @@ Sprint 1 establece baseline. No hay targets hasta sprint 2. Las metricas son par
 
 ## La diferencia en numeros
 
-Escenario real simulado: feature de favoritos (DB + API + UI + Auth)
+Validado en produccion en **a real AI SaaS** — un SaaS de IA construido desde cero:
+
+| Metrica | Valor |
+|---------|-------|
+| HUs completadas | 53 |
+| Tiempo de desarrollo | 4 dias |
+| Suite de tests | 256 pasando |
+| Bugs en produccion | 0 |
+| Lineas de codigo | 10.258 TS/TSX + 5.072 de tests |
+| Base de datos | 10 tablas, 29 politicas RLS, 13 migraciones |
+
+Tiempos medidos por pipeline: FAST ~8-15 min · FAST+AR ~15-20 min · QUALITY ~45-90 min.
+
+Y en la practica, feature a feature:
 
 | Sin NexusAgile | Con NexusAgile |
 |----------------|----------------|
 | Dev escribe codigo sin spec | SDD aprobado con exemplars del codebase real |
 | PR sin estructura | PR con checklist, evidencia de AR, evidencia de QA |
 | Review informal | Peer review + Adversarial Review + Drift Detection |
-| "Funciona en mi maquina" | 6/6 ACs verificados con archivo:linea |
+| "Funciona en mi maquina" | ACs verificados con archivo:linea |
 | 0 documentacion | work-item + sdd + story-file + validation + report |
+| El mismo bug se repite cada sesion | Auto-Blindaje + memoria: no se repite |
 | Bug descubierto en produccion | BLOQUEANTE detectado por AR antes del PR |
 
 ---
