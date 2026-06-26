@@ -6,7 +6,7 @@ You describe a feature. Claude writes code confidently, imports a module that do
 
 That's not a Claude problem. That's a structure problem.
 
-**NexusAgile is a software development methodology built for AI agents.** It covers the full lifecycle: sprint planning, feature implementation, adversarial review, QA, and retrospectives — with specialized agents, strict gates, and zero tolerance for hallucination.
+**NexusAgile is a software development methodology built for AI agents.** It covers the full lifecycle: sprint planning, feature implementation, adversarial review, QA, and retrospectives — with specialized agents, strict gates, and zero tolerance for hallucination. It knows your project through two living context files (stack + business) and **learns from its own errors across sessions** via persistent memory.
 
 Stack-agnostic. Installs in minutes as a Claude Code skill. Works with any framework.
 
@@ -21,9 +21,10 @@ npm i  →  No.  Just copy one folder into your project.  Done.
 |---|---|
 | AI invents imports and modules | **Codebase Grounding** — reads real files before generating anything |
 | AI creates inconsistent patterns | **Exemplar Pattern** — references existing files in your codebase |
+| AI doesn't know your stack or your product | **Two living contexts** — `project-context.md` (stack, patterns, guardrails) + `product-context.md` (business, personas, decisions), read before every HU |
 | AI ignores restrictions | **Constraint Directives** — explicit REQUIRED / FORBIDDEN per task |
 | Implementation drifted from the plan | **Drift Detection** — plan vs implementation verified in QA |
-| Errors repeat across sessions | **Auto-Blindaje** — documents errors immediately when they occur |
+| Errors repeat across sessions | **Auto-Blindaje + Engram memory** — every error and fix is saved and recalled on the next HU, so the system improves with use |
 | Context overload → hallucinations | **Sub-Agent Protocol** — each phase starts with a clean context window |
 | Wrong skills loaded for the task | **Skills Router** — loads only the 1-2 skills relevant to each HU |
 | Components talking in incompatible formats | **Integration Contract** — exact request/response format between components |
@@ -203,7 +204,7 @@ Skills can come from your own project-specific skill files or from a shared `ski
 
 ### F0: Bootstrap + Smart Sizing + Skills Router
 
-Checks for `project-context.md`. If not found, reads the codebase from scratch (dependencies, structure, patterns, commands, DB, auth) and generates it — once, reused across every session.
+Checks for `project-context.md`. If not found, reads the codebase from scratch (dependencies, structure, patterns, commands, DB, auth) and generates it — once, reused across every session. It also loads `product-context.md` (the business layer: product, personas, flows, and product decisions already made) so the agents understand not just *how* your code is built, but *what* they're building and *for whom*. Both files are read before every HU and can be updated anytime.
 
 Classifies the HU by SDD_MODE:
 
@@ -351,6 +352,8 @@ cp /tmp/nexus-agile/.claude/commands/nexus-*.md ~/.claude/commands/
 rm -rf /tmp/nexus-agile
 ```
 
+> For a global install, wire the Engram memory once at the user level — install the [Engram plugin](https://github.com/Gentleman-Programming/engram) (recommended, gives the always-on Memory Protocol) or add the `engram` server to your global `~/.claude.json` `mcpServers`. The per-project `.mcp.json` above only applies per project.
+
 Restart Claude Code. The skill, the 6 sub-agents, and the 11 slash commands load automatically. Type `/nexus-` in the prompt to see autocomplete for all commands.
 
 **First session:**
@@ -369,6 +372,10 @@ NexusAgile, sprint planning
 ## Repo Structure
 
 ```
+setup.sh                                 # 🆕 one-command install (skill + agents + commands + Engram memory)
+.mcp.json                                # 🆕 wires the Engram MCP server (mem_save / mem_search) into your project
+README.md
+
 .claude/
 ├── agents/                              # 🆕 6 custom sub-agents (one per pipeline phase)
 │   ├── nexus-analyst.md                 #     F0, F1 — opus
@@ -406,8 +413,9 @@ NexusAgile, sprint planning
         ├── quality_pipeline.md          # QUALITY pipeline detailed flow
         ├── case_types.md                # HU classification and sizing criteria
         ├── sprint_cadence.md            # SM Planning / Status / Retro / Closure
-        ├── project_context_template.md  # Stack-agnostic project-context template
-        ├── engram_protocol.md           # Persistent memory protocol for cross-session context
+        ├── project_context_template.md  # Stack-agnostic project-context template (the stack)
+        ├── product_context_template.md  # Business-context template (product, personas, decisions)
+        ├── engram_protocol.md           # Persistent memory protocol for cross-session learning
         ├── roles_matrix.md              # Enterprise: human roles + gate authority
         ├── concurrent_work_protocol.md  # Enterprise: multi-dev branches, PRs
         ├── metrics.md                   # KPIs, baselines (a real AI SaaS), token analysis, sprint reports
