@@ -466,6 +466,28 @@ git diff main --name-only
 4. **Duplicacion** — Hay codigo duplicado que deberia reutilizarse?
 5. **Imports** — Solo dependencias aprobadas?
 6. **Limites** — Archivos dentro del limite de lineas del proyecto?
+7. **Escala** — El diff real esta dentro del presupuesto declarado en SDD 4.1?
+
+### Check 7 — Escala (contrapeso obligatorio del check 3)
+
+Los checks 3 y 4 empujan hacia MAS estructura: mas funciones, mas modulos, menos duplicacion. Sin
+contrapeso, ese incentivo produce el modo de falla mas caracteristico del codigo asistido por IA:
+**una integracion de 8 lineas devuelta como una capa con puertos, fabricas y adaptadores.** El volumen
+no es senal de esfuerzo; suele ser senal de que no se sabia cual era la linea correcta y se compenso
+con estructura alrededor.
+
+Comparar `git diff --stat` contra el presupuesto de SDD 4.1. Si lo excede **mas de 2x**, el Dev
+justifica o recorta. Y la pregunta que decide, que no es sobre estilo:
+
+> **¿Que parte de esto seguiria existiendo si lo escribiera alguien que YA conoce esta libreria?**
+
+Lo que no sobrevive esa pregunta es andamiaje defensivo alrededor de una API que no se entendio.
+Se recorta.
+
+⚠️ **Excederse NO es automaticamente un rechazo** y el numero solo no decide: una HU puede requerir
+mas de lo estimado por una razon legitima que aparecio al implementar. Lo que el check exige es que
+esa razon quede ESCRITA. Un exceso silencioso es el hallazgo; un exceso justificado es informacion
+para la proxima estimacion.
 
 ### Resultado
 - **APPROVED** — Codigo listo para validacion

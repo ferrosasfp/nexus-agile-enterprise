@@ -78,6 +78,10 @@
 
 ### 4.1 Archivos a crear/modificar
 
+> **Escala esperada**: junto a cada archivo, estimar las lineas de cambio. El total por wave es el
+> presupuesto que el CR va a contrastar contra el diff real (check 7). No es una meta ni un limite
+> duro: es una declaracion previa que hace VISIBLE cuando la implementacion se fue de escala.
+
 | Archivo | Accion | Descripcion | Exemplar |
 |---------|--------|-------------|----------|
 | `[path]` | Crear/Modificar | [que hace] | `[exemplar]` |
@@ -171,6 +175,19 @@
 ## 8. Dependencias
 
 - [Que debe existir antes de implementar]
+
+### 8.1 Librerias externas que toca esta HU (obligatorio si toca alguna)
+
+Una fila por paquete de terceros cuyo API se va a usar. **La version se LEE del lockfile o de
+`node_modules`, no del rango de `package.json`** (`^1.2.0` no dice que hay instalado).
+
+| Paquete | Version INSTALADA | Donde se verifico el API | Simbolos que se usan |
+|---------|-------------------|--------------------------|----------------------|
+| [@scope/pkg] | [1.4.2, leida de package-lock.json] | [node_modules/.../index.d.ts o URL de la doc de ESA version] | [metodo A, tipo B] |
+
+> **Gate del Readiness Check**: si esta HU toca una libreria externa y esta tabla esta vacia, el SDD
+> NO esta listo. Sin la version instalada, el Dev groundea contra su memoria de entrenamiento, que
+> es la causa principal de metodos inventados y config alucinada.
 
 ## 9. Missing Inputs (si aplica)
 

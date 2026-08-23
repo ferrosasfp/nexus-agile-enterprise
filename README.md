@@ -26,6 +26,9 @@ npm i  →  No.  Just copy one folder into your project.  Done.
 | Implementation drifted from the plan | **Drift Detection** — plan vs implementation verified in QA |
 | Errors repeat across sessions | **Auto-Blindaje + Engram memory** — every error and fix is saved and recalled on the next HU, so the system improves with use |
 | Context overload → hallucinations | **Sub-Agent Protocol** — each phase starts with a clean context window |
+| AI recalls an older version of a library | **Installed-version grounding** — the SDD records the version actually installed and where each external symbol was verified. A range like `^1.2.0` does not tell you what is installed |
+| A green sub-gate hides a red gate | **The repo gate runs in F4** — QA runs the project's single gate command once. Running the parts of a gate is not running the gate |
+| AI over-engineers a few-line integration | **Scale budget** — the SDD declares the expected diff size and CR check 7 compares it against the real diff. Volume is usually a sign the API was not understood |
 | Wrong skills loaded for the task | **Skills Router** — loads only the 1-2 skills relevant to each HU |
 | Components talking in incompatible formats | **Integration Contract** — exact request/response format between components |
 | No sprint visibility | **Sprint Cadence** — Planning, Status, and Retrospective built in |
@@ -47,7 +50,7 @@ npm i  →  No.  Just copy one folder into your project.  Done.
   │  F3: Implementation — Waves + Anti-Hallucination    │
   │  AR: Adversarial Review — BLOCKER / MINOR / OK      │
   │  CR: Code Review — pattern compliance               │
-  │  F4: QA — AC evidence file:line + quality gates     │
+  │  F4: QA — runs the repo gate, not just cites it     │
   │  DONE: report + _INDEX.md + issue closed            │
   └─────────────────────────────────────────────────────┘
 
@@ -247,7 +250,7 @@ Output: `story-file.md`
 
 ### F3: Implementation
 
-Dev follows the Anti-Hallucination Protocol before each task: reads the Exemplar, verifies imports exist, follows the project's patterns. No unapproved dependencies. No touching files outside Scope IN.
+Dev follows the Anti-Hallucination Protocol before each task: reads the Exemplar, verifies imports exist, checks external symbols against the installed version's types, follows the project's patterns. No unapproved dependencies. No touching files outside Scope IN.
 
 Work organized in Waves. W0 serial (the foundation). W1+ parallel. Before each wave, Dev re-maps: reads files created or modified in the previous wave to verify what the current wave needs actually exists. Every error documented immediately in Auto-Blindaje.
 

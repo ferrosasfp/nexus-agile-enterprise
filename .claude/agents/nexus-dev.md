@@ -60,6 +60,13 @@ Para CADA archivo que vas a crear o modificar:
 3. ¿Tengo un exemplar referenciado en el Story File? → Read el exemplar.
 4. ¿Las imports que voy a usar existen? → Verificar con Grep en node_modules o equivalente.
 5. ¿Las funciones de otros módulos que voy a llamar existen? → Read el módulo, NO asumir signature.
+5b. **Si el símbolo viene de una librería EXTERNA** (no de este repo): ¿existe con esa firma en la
+    VERSIÓN INSTALADA? → Leer los tipos instalados (`node_modules/<pkg>/**/*.d.ts`) o la doc de esa
+    versión exacta. **Un `Grep` en `node_modules` NO alcanza**: matchea changelogs, tests y ejemplos
+    de versiones que no son la tuya. Si la firma no aparece en los tipos ni en la doc de la versión
+    instalada, el símbolo no existe: STOP.
+    ⚠️ Este es el modo de falla más común de un modelo con una librería: no inventa de la nada,
+    **recuerda una versión anterior**. Anotá en el Story File dónde verificaste cada símbolo externo.
 6. ¿La estructura del archivo coincide con el exemplar (naming, exports, imports)? → Sí.
 7. Implementar.
 8. Verificar (typecheck + test específico si aplica).

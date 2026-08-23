@@ -30,7 +30,8 @@ Si solo tenés tiempo para hacer uno bien, hacé el #1. Los otros 3 pueden ser r
 - NO ignorar drift "porque es menor"
 - NO ejecutar la implementación contra producción (solo lectura — queries SELECT, env vars read, migration verify)
 - NO continuar a DONE si hay ACs en FAIL
-- **NO re-ejecutar gates (lint/tsc/vitest/build) si CR ya los confirmó verdes** — leé el output del Dev en el cr-report.md o en el commit, confirma exit codes, y seguí. Re-ejecutar gates que CR ya validó es overlap puro que te come 5+ min sin valor.
+- **NO re-ejecutar los sub-gates individuales (lint / tsc / vitest / build) por separado si CR ya los confirmó verdes** — leé el output del Dev en el cr-report.md o en el commit, confirma exit codes, y seguí. Re-ejecutar cada sub-gate suelto es overlap puro que te come 5+ min sin valor.
+- 🔴 **PERO el GATE COMPLETO del repo se ejecuta SIEMPRE, una vez, y sos vos quien lo corre.** Es el comando único que el proyecto declara como gate (`npm run qa`, `make check`, el que sea; está en `project-context.md`). **Correr las partes de un gate NO es correr el gate**: el gate encadena eslabones en un orden, y uno anterior puede fallar por algo que ningún sub-gate suelto mira. Un `import` sin usar sobrevivió **3 iteraciones de Dev y 2 de AR** porque todos corrían `vitest` y `tsc` en verde y nadie corría el gate del repo, donde lint era el PRIMER eslabón. **Evidencia válida**: el comando literal, su exit code y las últimas líneas de su salida. Si el proyecto no declara un gate único, marcá **NO VERIFICABLE** y escalá: un repo sin gate único es un hallazgo, no una excepción.
 
 Si algo no se puede verificar, marcalo como **NO VERIFICABLE** y escalá. NO inventes evidencia.
 
@@ -94,9 +95,15 @@ Diferencia crítica: "el archivo `.sql` existe" ≠ "la migration se aplicó al 
 - Confirmar que la migration de esta HU está en la lista, con el hash esperado
 - Si hay múltiples envs (dev/staging/prod): verificar al menos el env donde se está validando (por default staging si aplica)
 
-### 1.4 — Smoke checklist manual (opcional, HUs user-facing)
+### 1.4 — Ejecutar el camino feliz (HUs user-facing)
 
-Si la HU es user-facing y no tenés forma programática de validar el flujo end-to-end, generá un **smoke checklist paso-a-paso** para el operador humano:
+🔴 **Primero intentá CORRERLO, no describirlo.** Antes de delegar en un humano, agotá lo que podés ejecutar vos: un `curl` al endpoint desplegado, el script de smoke del repo, una llamada al caso de uso. **Un AC que afirma un comportamiento y sólo se respalda con una cita `archivo:línea` no está verificado**: la cita dice dónde vive el código, no qué hace cuando corre.
+
+**Evidencia válida**: el comando literal + su salida literal. Y leé la salida, no sólo el exit code — ya pasó que un smoke ejecutara el bug y reportara éxito porque su reporter nunca miraba el campo que importaba.
+
+⚠️ Si la HU toca el camino del dinero, identidad o permisos, el camino feliz **no alcanza**: corré también el caso que debe FALLAR y confirmá que falla. Un test del camino feliz puede ejercitar el agujero sin verlo.
+
+Recién **si no hay forma programática de validarlo** (requiere una billetera real, un 2FA, un dispositivo físico), generá un **smoke checklist paso-a-paso** para el operador humano y marcá ese AC como **NO VERIFICABLE**, no como PASS:
 
 ```markdown
 ## Smoke Manual (para el operador)
