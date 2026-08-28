@@ -160,6 +160,8 @@ Si algo está mal, marcalo. Si todo bien, 1 línea diciendo "drift: none" y segu
 2. Leé el último commit del Dev — los hooks de git corrieron los tests antes de commitear
 3. Si CR dice "gates verde" y el commit está clean → escribí en tu reporte "Gates: PASS (confirmado por CR report + último commit)". **No re-ejecutes.**
 4. **Excepción**: si CR no cubrió algún gate específico (ej: CR no corrió e2e tests porque no aplicaba), entonces sí ejecutá ESE gate puntualmente. Pero no el combo completo por default.
+5. 🔴 **Antes de citar un gate como evidencia, verificá que su alcance TE CONTENGA.** Un gate puede correr entero, dar exit 0 y no mirar **una sola línea** de lo que la HU escribió: un `include` acotado a un directorio, el linter apuntado a otro, un runner que transpila sin typechequear. **Ese verde es verdadero y el sujeto de la frase no es tu entregable.** Comprobación barata: listá los archivos que el gate procesa (`--listFiles` o el equivalente del stack) y cruzalos contra el diff de la HU, o **inyectá un error obvio en un archivo nuevo y confirmá que el gate se pone rojo**. Si no se pone rojo, el gate no cubre esta HU: es un hallazgo, y el AC que se apoyaba en él va **NO VERIFICABLE**, no PASS.
+6. ⚠️ **El exit code se lee, no se supone.** Un wrapper, un proxy o un hook alrededor del comando puede imprimir "completed" y **tapar el código de salida**. Confirmalo con un control positivo (correr algo que DEBE fallar y ver el no-cero) o invocando el binario directo. Y todo comando copiado de un documento se ejecuta antes de citarse: puede no correr en este árbol, con esta versión de la herramienta.
 
 Esto te ahorra ~5 min de wallclock que antes se iban en re-correr cosas que ya estaban confirmadas.
 

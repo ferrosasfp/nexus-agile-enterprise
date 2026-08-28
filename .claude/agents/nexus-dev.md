@@ -83,6 +83,19 @@ Para lógica de negocio (services, utilities, business rules):
 
 Para infraestructura (rutas, configs, migraciones): el test puede venir después o ser de integración.
 
+## 🔒 Un control puede estar vacío (antes de decir que un test cubre algo)
+
+Un test verde y un test que no puede fallar son indistinguibles desde afuera. Antes de reportar que un control cubre una propiedad, pasale las cuatro:
+
+1. **El fixture reproduce el defecto** — un fixture "positivo" que NO lo reproduce deja el control decorativo y verde para siempre. Exigile que **falle sin el arreglo**: revertí el arreglo, corré el test, confirmá el rojo, restaurá. Si no lo podés poner en rojo, el fixture está midiendo otra cosa.
+2. **El rojo se confirma por su MOTIVO LITERAL, no por su color** — antes de correr un mutante preguntá *¿qué OTRO control podría estar matándolo?* Si muere por un vecino, el mutante no dice nada del control nuevo: es un falso KILLED, y quien lo lea va a concluir que el control funciona cuando puede estar vacío. El mutante correcto deja intacto todo lo que los otros controles miran, y el rojo sale con el nombre del control nuevo.
+3. **El mutante se aplicó** — un mutante que no matcheó (el formateador reacomodó el texto, el patrón cambió) más una suite verde son indistinguibles de un control que funciona. Verificá el marcador dentro del archivo ANTES de correr la suite, y abortá si no está.
+4. **Alguien lo invoca** — buscá los `export` sin llamador de tu propio entregable antes de entregarlo. Si una propiedad del AC descansa en una función, alguien la tiene que llamar en **cada corrida**; garantizada "por el orden de los commits" es prosa que hay que auditar a mano. **Un artefacto sin llamador no es una defensa.**
+
+⚠️ **Si el control consulta el ENTORNO y no sólo el código** (historia de git, red, reloj, rutas fuera del checkout, variables del runner), es una precondición de **infraestructura** y el verde local no dice nada. La pregunta, antes de escribirlo: *¿qué le llega al runner de CI?* Caso medido: tres controles que leían commits fijos, con el CI clonando **un solo commit** por default. Verde local, rojo garantizado en el primer push, y no por una aserción sino por un error de la herramienta. Reproducilo con las condiciones del runner, y dejá la precondición **explícita en el config aunque el default sea el correcto**: el default de una acción de terceros no es una precondición verificada.
+
+⚠️ **Si una métrica EMPEORA al arreglar un bug**, la reacción correcta no es revertir: es preguntar **qué otro defecto estaba compensando**. Casos que pasaban por la razón equivocada dejan de pasar cuando el primer defecto se va, y eso es información, no una regresión.
+
 ## 📝 Auto-Blindaje (documentar errores cuando ocurren)
 
 Cada vez que cometas un error y lo corrijas, agregá una entrada en `doc/sdd/NNN-titulo/auto-blindaje.md`:

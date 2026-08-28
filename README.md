@@ -29,6 +29,8 @@ npm i  →  No.  Just copy one folder into your project.  Done.
 | AI recalls an older version of a library | **Installed-version grounding** — the SDD records the version actually installed and where each external symbol was verified. A range like `^1.2.0` does not tell you what is installed |
 | A green sub-gate hides a red gate | **The repo gate runs in F4** — QA runs the project's single gate command once. Running the parts of a gate is not running the gate |
 | AI over-engineers a few-line integration | **Scale budget** — the SDD declares the expected diff size and CR check 7 compares it against the real diff. Volume is usually a sign the API was not understood |
+| A test is green because it cannot fail | **Empty-control checks** — before a control counts, its fixture must fail without the fix, its mutant must die for the literal reason, and something must call it on every run |
+| Numbers in the docs drift away from the code | **Claims need a witness** — CR check 8: every published number is re-derived by the run that publishes it, or dated as a snapshot. Every "this is covered" names the edit that would falsify it |
 | Wrong skills loaded for the task | **Skills Router** — loads only the 1-2 skills relevant to each HU |
 | Components talking in incompatible formats | **Integration Contract** — exact request/response format between components |
 | No sprint visibility | **Sprint Cadence** — Planning, Status, and Retrospective built in |

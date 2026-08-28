@@ -442,6 +442,35 @@ El clarify es informativo, no bloqueante. El humano decide.
 - **INMEDIATAMENTE** cuando el error ocurre, no al final del pipeline.
 - El reporte final (DONE) copia la tabla acumulada — no se reconstruye de memoria.
 
+### Que sube de la HU a la metodologia (criterio de promocion)
+
+Al cerrar la HU, cada entrada del Auto-Blindaje pasa por **las dos** preguntas. Si no pasa las dos,
+se queda en la HU y no sube a ningun lado.
+
+1. **Es del proyecto o del oficio?** *"Mi resolvedor devolvia AMBIGUO sobre ese path"* es de esa HU.
+   *"Un simbolo exportado sin llamador no es una defensa"* le pasa a cualquiera. Descartar sin culpa:
+   **una regla de mas diluye a las que importan.** Una metodologia con 40 reglas no la lee nadie.
+2. **Tiene test ejecutable?** Escribi el comando, el mutante o la pregunta concreta que la falsea. Si
+   no lo podes escribir, la regla es prosa y no entra.
+
+⚠️ **Una regla sin responsable no se aplica.** La que sube va al archivo del rol que la puede cazar
+(`.claude/agents/nexus-*.md`) o a la fase que la ejecuta (`references/quality_pipeline.md`), nunca
+solo aca: esta seccion define el FORMATO del blindaje, no es su catalogo.
+
+⚠️ **El control contra uno mismo**: si al promover una regla escribis que algo "esta medido" sin
+poder pegar la corrida, cometiste el defecto que estas documentando. "Esta medido" es una afirmacion
+falsable, y al corregir un numero sin medicion es facilisimo poner otro numero sin medicion, porque
+el que corrige se siente del lado bueno.
+
+Reglas ya promovidas, y donde vive cada una:
+
+| Regla | Responsable | Como se falsea |
+|-------|-------------|----------------|
+| El gate verde tiene que CONTENER lo que escribiste | `nexus-qa`, paso 4 | inyectar un error en un archivo nuevo: si el gate no se pone rojo, no te cubre |
+| Un control que consulta el entorno se prueba en el entorno del CI | `nexus-dev`, controles | correrlo con las condiciones del runner, no con las de tu disco |
+| Un control puede estar vacio: fixture, mutante, llamador | `nexus-dev`, controles | revertir el arreglo y exigir rojo, con el motivo literal |
+| Afirmaciones sin testigo: numeros, ejemplos, "queda cerrado" | `nexus-adversary` cat. 12 y CR check 8 | la edicion minima que vuelve falsa la frase, con el gate en verde |
+
 ---
 
 ## Enterprise — Equipos y Organizaciones

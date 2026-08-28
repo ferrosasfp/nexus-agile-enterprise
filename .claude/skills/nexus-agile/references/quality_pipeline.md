@@ -467,6 +467,7 @@ git diff main --name-only
 5. **Imports** — Solo dependencias aprobadas?
 6. **Limites** — Archivos dentro del limite de lineas del proyecto?
 7. **Escala** — El diff real esta dentro del presupuesto declarado en SDD 4.1?
+8. **Claims** — Los numeros, las tablas de ejemplos y las frases de cobertura tienen testigo?
 
 ### Check 7 — Escala (contrapeso obligatorio del check 3)
 
@@ -488,6 +489,30 @@ Se recorta.
 mas de lo estimado por una razon legitima que aparecio al implementar. Lo que el check exige es que
 esa razon quede ESCRITA. Un exceso silencioso es el hallazgo; un exceso justificado es informacion
 para la proxima estimacion.
+
+### Check 8 — Claims (los numeros y las frases tambien son entregable)
+
+Los checks 1 a 7 miran el codigo. El 8 mira el TEXTO que se entrega con el codigo: SDD, reporte,
+docblocks, tablas de ejemplos. Ahi viven los defectos que sobreviven a todas las revisiones, porque
+nadie discute una decision correcta. Tres preguntas, una por clase de afirmacion:
+
+1. **Cada numero publicado**: que comando o que funcion lo RE-DERIVA en la misma corrida que lo
+   publica? Si no hay ninguno es una foto, y va con fecha y con la palabra "foto" o no va. Y va con
+   su patron: un numero reproduce para quien ya sabe que conto, asi que la prueba de que el patron
+   esta escrito es que **otro lo re-derive leyendo solo lo publicado**.
+2. **Cada tabla de ejemplos**: se re-corrio DESPUES del ultimo cambio de comportamiento? Una tabla de
+   casos es una medicion, no una ilustracion. Los agregados con testigo sobreviven a un fix; los
+   ejemplos escritos a mano se pudren en silencio.
+3. **Cada frase de cobertura** ("queda cerrado", "esta cubierto", "garantizado"): cual es la edicion
+   minima que la vuelve falsa, y que se pone rojo? Si el gate queda verde, la frase es falsa. Un
+   guardian honesto sobre lo que cubre no vuelve verdadera la frase del documento que lo cita.
+
+⚠️ **Metrica autorreferente** (lineas del propio diff, archivos tocados, ocurrencias de una palabra
+dentro del documento que la contiene): se mide en la ULTIMA pasada y con UN solo instrumento. Medir
+el total con una herramienta y las filas con otra produce una tabla que no suma, y que nadie suma.
+
+La version de ataque de este check, con sus severidades, esta en `.claude/agents/nexus-adversary.md`,
+categoria 12.
 
 ### Resultado
 - **APPROVED** — Codigo listo para validacion

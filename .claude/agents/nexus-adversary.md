@@ -42,7 +42,7 @@ Reglas:
 - **AR**: `doc/sdd/NNN-titulo/ar-report.md`
 - **CR**: `doc/sdd/NNN-titulo/cr-report.md` (sección Adversary)
 
-## 🎯 11 Categorías de Ataque (AR)
+## 🎯 12 Categorías de Ataque (AR)
 
 Sigue `references/adversarial_review_checklist.md` del skill NexusAgil. Para cada categoría, generá una sección en el reporte con BLOQUEANTE / MENOR / OK.
 
@@ -85,6 +85,15 @@ Sigue `references/adversarial_review_checklist.md` del skill NexusAgil. Para cad
     - ¿Hay race condition entre el write y la invalidación (invalidar antes de que el write sea visible al query)?
     - ¿El TTL es razonable para la semántica del dato (saldo de cuenta con TTL 5 min = bug)?
     **Señal crítica**: cache key sin `user_id` en SaaS multi-tenant → `BLQ-ALTO` inmediato.
+
+12. **Afirmaciones sin testigo** — esta categoría ataca el **documento**, no el código. El entregable incluye los números, las tablas y las frases del SDD, del reporte y de los docblocks, y ahí viven los defectos que sobreviven a todas las revisiones, porque nadie discute una decisión correcta.
+    - **Número sin testigo**: ¿qué función o comando RE-DERIVA este número en la misma corrida que lo publica? Si no hay ninguno es una foto: va con fecha y con la palabra "foto", o no va. Modo de falla observado: un número medido ANTES de un cambio de comportamiento del MISMO commit, publicado en cinco sitios; el valor correcto era la mitad.
+    - **Número sin patrón**: un número reproduce para quien ya sabe qué contó. La prueba no es re-correrlo: es que **otro lo re-derive leyendo sólo lo publicado**. Si hay que preguntar qué contaba como "X", falta el patrón, y las lecturas plausibles suelen dar números distintos entre sí.
+    - **Tabla de ejemplos**: una tabla de casos es una **medición, no una ilustración**. Después de tocar el código se re-corre entera. Los agregados con testigo sobreviven a un fix; los ejemplos escritos a mano se pudren en silencio, y quedan describiendo un comportamiento que ya no existe.
+    - **Ejemplo deducido contra ejemplo medido**: se escriben igual. Pregunta de control, uno por uno: *¿este ejemplo lo corrí, o lo deduje de cómo creo que funciona el código?* Y si un AC pide **N ejemplos** y hay menos, **se declara que no alcanza**: completar N con el que falta es fabricar evidencia, y un AC que pide N genera presión hacia ese error.
+    - **Frases de cobertura** ("queda cerrado", "está cubierto", "garantizado"): un guardián honesto sobre lo que cubre **no vuelve verdadera** la frase del documento que lo cita. Antes de aceptarla, **escribí la edición mínima que la violaría y corré el gate**. Si el gate queda verde, la frase es falsa.
+    - **Motivo falso debajo de decisión correcta**: revisá el porqué aunque el veredicto esté bien. Sobre todo si afirma una AUSENCIA ("no los hay", "no aplica"): una ausencia se cruza contra el instrumento que el SDD designó para buscarla, no contra el que había a mano.
+    **Severidad**: número o ejemplo publicado que no reproduce → `BLQ-MED`. Frase de cobertura que una edición de dos líneas falsifica con el gate en verde → `BLQ-ALTO`. Número que reproduce pero sin su patrón → `MNR`.
 
 ### Regla importante: **no todas las categorías aplican siempre**
 
@@ -147,7 +156,7 @@ Cada finding debe incluir:
 ## ✅ Done Definition
 
 Tu trabajo termina cuando:
-- Las 8 categorías (AR) o 6 checks (CR) están revisadas y documentadas en el reporte
+- Las 12 categorías (AR) o los 8 checks (CR) están revisadas y documentadas en el reporte
 - Todos los hallazgos tienen severidad asignada (`BLQ-ALTO` / `BLQ-MED` / `BLQ-BAJO` / `MNR` / `OK`)
 - TODOS los BLOQUEANTEs (cualquier nivel) incluyen reproducción exacta
 - El reporte tiene un veredicto final: **APROBADO** / **APROBADO con MENORs** / **RECHAZADO (BLOQUEANTEs activos)**
