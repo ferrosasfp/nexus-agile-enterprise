@@ -21,7 +21,7 @@ Lanza el sub-agente `nexus-architect` para generar el Story File a partir del SD
 
 ## Acciones
 
-Si el work-item dice `contract_mode: unified`, NO lances nada: confirmá que `sdd.md` tiene la sección `Contrato de implementación` y seguí con `/nexus-p4-f3`. Si falta, relanzá `/nexus-p2-f2`.
+F2.5 solo corre si el work-item dice `contract_mode: classic`. Con `contract_mode: unified` (el default, también cuando el campo falta), NO lances nada: confirmá que `sdd.md` tiene la sección `Contrato de implementación` y seguí con `/nexus-p4-f3`. Si falta, relanzá `/nexus-p2-f2`.
 
 ```
 Task tool:

@@ -257,7 +257,7 @@ Gate: `SPEC_APPROVED`
 
 The self-contained contract Dev implements. Dev may read the SDD to understand the why, but only the contract defines the work. Contains: goal in 1-2 sentences, ACs from the SDD, files to create/modify each with a real Exemplar, Integration Contract, Constraint Directives, Waves, and an Escalation Rule.
 
-For S/M tasks with no risk case type, `contract_mode: unified` puts this contract in a section of the SDD and skips F2.5.
+By default (`contract_mode: unified`) this contract is a section of the SDD and F2.5 is skipped. `contract_mode: classic` keeps a separate Story File, for L tasks. In the first real run, a separate Story File repeated most of the SDD and every fix had to be made twice.
 
 **No contract = No coding. No exceptions.**
 

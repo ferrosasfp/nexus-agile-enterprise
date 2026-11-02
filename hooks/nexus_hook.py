@@ -233,8 +233,9 @@ def check_phase(data, session):
         blocked(f"no existe HU_DIR {hu_dir}")
     pipeline = pipeline_of(hu_dir) if hu_dir.is_dir() else "QUALITY"
     has_spec = pipeline in ("QUALITY",)
-    unified = hu_dir.is_dir() and any(
-        (hu_dir / n).exists() and re.search(r"contract_mode\W{0,6}unified", (hu_dir / n).read_text(encoding="utf-8"))
+    # unified es el default: solo un contract_mode: classic explicito pide Story File.
+    classic = hu_dir.is_dir() and any(
+        (hu_dir / n).exists() and re.search(r"contract_mode\W{0,6}classic", (hu_dir / n).read_text(encoding="utf-8"))
         for n in ("work-item.md", "sdd.md"))
 
     if phase in ("F2", "F3") and hu_dir.is_dir():
@@ -248,18 +249,19 @@ def check_phase(data, session):
     elif phase == "F2.5":
         need("sdd.md")
         require_gate(hu_dir, "SPEC_APPROVED", session, phase, blocked)
-        if unified:
-            blocked("con contract_mode: unified no hay F2.5: el contrato va en sdd.md")
+        if not classic:
+            blocked("sin contract_mode: classic no hay F2.5: el contrato va en la seccion Contrato de implementacion de sdd.md")
     elif phase == "F3":
         need("work-item.md")
         require_gate(hu_dir, "HU_APPROVED", session, phase, blocked)
         if has_spec:
             need("sdd.md")
             require_gate(hu_dir, "SPEC_APPROVED", session, phase, blocked)
-            if not unified:
+            if classic:
                 need("story-file.md")
-            elif "Contrato de implementaci" not in (hu_dir / "sdd.md").read_text(encoding="utf-8"):
-                blocked("sdd.md no tiene la seccion Contrato de implementacion")
+            elif not (hu_dir / "story-file.md").is_file() and "Contrato de implementaci" not in (hu_dir / "sdd.md").read_text(encoding="utf-8"):
+                # Una HU anterior a este default puede traer su story-file.md: sigue valiendo.
+                blocked("sdd.md no tiene la seccion Contrato de implementacion (contract_mode: unified, el default)")
     elif phase == "F4" and pipeline != "FAST":
         for stem in ("ar-report", "cr-report"):
             report = latest(hu_dir, stem)

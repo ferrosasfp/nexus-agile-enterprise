@@ -70,7 +70,7 @@ Los comandos aparecen al escribir `/nexus-`; tabla en `references/reference_deta
 | Gate | Texto exacto | Contexto | Efecto |
 |------|-------------|----------|--------|
 | `HU_APPROVED` | `HU_APPROVED` | Despues de F1 Work Items + propuesta de paralelismo | Architect arranca F2 SDD |
-| `SPEC_APPROVED` | `SPEC_APPROVED` | Despues de F2 SDD | Architect genera Story File (F2.5) |
+| `SPEC_APPROVED` | `SPEC_APPROVED` | Despues de F2 SDD | Dev implementa (F3); con `classic`, antes Architect genera el Story File (F2.5) |
 | `LAUNCH_APPROVED` | `LAUNCH_APPROVED` | Despues de lista de HUs en modo LAUNCH | Architect genera Story Files simplificados |
 | `RELEASE_APPROVED` | `RELEASE_APPROVED` | Despues de F5, solo con `release_gate: true` | Pipeline pasa a DONE. Nunca se autoaprueba |
 | `SPRINT_APPROVED` | `SPRINT_APPROVED` | Despues de Sprint Planning | SM commitea artefactos, Analyst arranca F0 |
@@ -191,7 +191,7 @@ HU (cualquier formato)
 [ GATE 2: SPEC_APPROVED ] ----- Humano escribe texto exacto SPEC_APPROVED
     |
     v
-[ F2.5: Story File ] ---------- Architect genera contrato autocontenido para Dev
+[ F2.5: Story File ] ---------- Solo con contract_mode: classic (tareas L). Por defecto el contrato va en el SDD
     |
     v
 [ F3: Implementacion ] -------- Dev implementa el contrato, en waves, anti-hallucination
@@ -319,7 +319,7 @@ Antes de generar cualquier cosa, el agente debe:
 20. **Smart Sizing**: Usar Quick Flow para cambios triviales, no inflar con ceremonia.
 21. **Re-mapeo ligero**: Antes de Wave N, re-leer archivos tocados en Wave N-1.
 22. **Separacion de roles**: Quien especifica no implementa, quien implementa no valida.
-23. **Contrato de Dev**: Story File, o seccion del SDD con `contract_mode: unified` (S/M sin riesgo). Dev implementa solo eso; lee el SDD solo para entender el porque.
+23. **Contrato de Dev**: la seccion `Contrato de implementacion` del SDD (`contract_mode: unified`, el default), o un Story File con `contract_mode: classic` (tareas L). Dev implementa solo eso; lee el SDD solo para entender el porque.
 24. **Adversarial Review bloqueante**: Hallazgos BLOQUEANTE se verifican con un agente aparte (`blq-verification.md`) y se corrigen antes de avanzar.
 25. **Modelo capaz para fases criticas**: Usar el modelo mas capaz disponible para analisis, implementacion y AR.
 26. **Memoria al inicio**: Cargar contexto de sesiones anteriores al iniciar. Implementacion recomendada: `references/engram_protocol.md`. Sin memoria, la sesion empieza ciega.

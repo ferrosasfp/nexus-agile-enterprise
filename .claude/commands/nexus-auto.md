@@ -337,7 +337,7 @@ Fase 2 — F2 SDD
   El orquestador lee sdd.md y ejecuta clinical review.
   PASS → continuar. FAIL → escalar al humano.
 
-Fase 3 — F2.5 Story File
+Fase 3 — F2.5 Story File (solo con contract_mode: classic; con unified, el default, se salta)
   Prompt: usar el de /nexus-p3-f2-5
   Sub-agente: nexus-architect
   Modelo: opus

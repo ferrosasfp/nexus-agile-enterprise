@@ -37,6 +37,7 @@
 - Antes de un push, el orquestador muestra que dispara (CI, migraciones, preview).
 
 ### Cambiado
+- `contract_mode: unified` es el default: el contrato del Dev va en el SDD y no hay F2.5. `classic` (Story File) queda para tareas L o si la persona lo pide. Una HU con `story-file.md` previo sigue valiendo. En la corrida real, el Story File repitio casi todo el SDD y cada correccion se hizo dos veces.
 - El bloque MCP de Engram paso de `.mcp.json` a `setup/mcp.json`: en la raiz, el plugin arrancaba su propio engram. `setup.sh` lo sigue copiando al proyecto.
 - El arquitecto puede correr la suite en una copia desechable para medir el impacto.
 

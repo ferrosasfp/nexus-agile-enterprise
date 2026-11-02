@@ -2,7 +2,7 @@
 
 > El Story File es el **contrato entre Architect y Dev**.
 > Dev implementa SOLO lo que dice este documento. Puede leer el SDD para entender el porque, pero no agrega alcance.
-> Con `contract_mode: unified` (S/M sin riesgo) no hay Story File: el contrato es una seccion de `sdd.md`.
+> Solo con `contract_mode: classic` (tareas L, o si la persona lo pide). Con `contract_mode: unified`, el default, no hay Story File: el contrato es una seccion de `sdd.md`.
 > Si algo no esta aqui, Dev PARA y escala a Architect.
 
 ---

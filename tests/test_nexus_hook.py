@@ -175,8 +175,23 @@ class Fases(HookCase):
         self.type_gate("SPEC_APPROVED")
 
     def test_f3_quality_sin_contrato(self):
+        # unified es el default: sin campo, el contrato se busca en el SDD.
         self._hasta_spec()
+        self.assertBlocked(self.spawn("F3", "nexus-dev"), "Contrato de implementacion")
+
+    def test_f3_classic_exige_story(self):
+        self.write("work-item.md", "contract_mode: classic\n")
+        self.type_gate("HU_APPROVED")
+        self.write("sdd.md", "## Contrato de implementacion\n")
+        self.type_gate("SPEC_APPROVED")
         self.assertBlocked(self.spawn("F3", "nexus-dev"), "story-file.md")
+
+    def test_f25_solo_con_classic(self):
+        self._hasta_spec()
+        self.assertBlocked(self.spawn("F2.5"), "no hay F2.5")
+        self.write("work-item.md", "contract_mode: classic\n")
+        self.type_gate("HU_APPROVED")
+        self.assertAllowed(self.spawn("F2.5"))
 
     def test_f3_quality_con_story(self):
         self._hasta_spec()

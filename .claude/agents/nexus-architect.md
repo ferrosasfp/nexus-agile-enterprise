@@ -93,7 +93,7 @@ El contrato manda: si algo no está ahí, el Dev no lo va a hacer. El Dev puede 
 
 ## Con `contract_mode: unified`
 
-No hay F2.5. Agregá al SDD la sección `Contrato de implementación` de `$SKILL_DIR/references/sdd_template.md`, con el mismo nivel de detalle que un Story File. Si la HU resulta tener riesgo que el work-item no vio, volvé a `classic` y avisá al orquestador.
+Es el default. No hay F2.5. Agregá al SDD la sección `Contrato de implementación` de `$SKILL_DIR/references/sdd_template.md`, con el mismo nivel de detalle que un Story File. Si la HU resulta ser L, proponé `classic` al orquestador.
 
 ## Tamaño del SDD
 

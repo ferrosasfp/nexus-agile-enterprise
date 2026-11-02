@@ -278,7 +278,7 @@ Escribir en `$NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md`.
 **Agente**: Architect
 **Objetivo**: Generar un contrato autocontenido para que Dev sepa exactamente que implementar.
 
-> **`contract_mode: unified`** (S/M, sin Case Type de riesgo, sin auth, permisos ni pagos): no hay F2.5, y el contrato es una seccion del SDD (`references/sdd_template.md`). Sin el campo, o con `classic`, se genera `story-file.md`. Las tareas L siempre van con Story File.
+> **`contract_mode: unified` es el default**: no hay F2.5, y el contrato es una seccion del SDD (`references/sdd_template.md`). F2.5 solo corre con `contract_mode: classic`, que el analista propone para tareas L o cuando la persona lo pide. Una HU anterior a este cambio que ya tiene `story-file.md` sigue valiendo.
 
 > Template completo en `references/story_file_template.md`.
 

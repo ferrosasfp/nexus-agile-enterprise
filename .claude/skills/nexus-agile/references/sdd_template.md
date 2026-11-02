@@ -362,9 +362,9 @@ Una fila por paquete de terceros cuyo API se va a usar. **La version se LEE del 
 
 ---
 
-## Contrato de implementacion (solo `contract_mode: unified`)
+## Contrato de implementacion (`contract_mode: unified`, el default)
 
-> Va al final del SDD, para tareas S/M sin riesgo. Reemplaza al Story File y lleva su mismo detalle.
+> Va al final del SDD. Reemplaza al Story File y lleva su mismo detalle. Solo se omite con `contract_mode: classic`.
 > Con `classic` no se incluye: el contrato es `story-file.md`.
 
 ```markdown
