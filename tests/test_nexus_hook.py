@@ -316,6 +316,13 @@ class Escritura(HookCase):
         self.assertBlocked(self.write_as("nexus-dev", self.hu / ".gates.jsonl"), "gates")
         self.assertBlocked(self.bash_as("nexus-dev", f"echo x >> {self.hu}/.gates.jsonl"), "gates")
 
+    def test_leer_gates_esta_permitido(self):
+        for command in (f"cat {self.hu}/.gates.jsonl", f"sha256sum {self.hu}/*.md {self.hu}/.gates.jsonl", f"grep SPEC {self.hu}/.gates.jsonl"):
+            with self.subTest(command=command):
+                self.assertAllowed(self.bash_as("nexus-supervisor", command))
+        self.assertBlocked(self.bash_as("nexus-dev", f"sed -i d {self.hu}/.gates.jsonl"), "gates")
+        self.assertBlocked(self.bash_as("", f"rm {self.hu}/.gates.jsonl"), "gates")
+
     def test_bash_de_revisor(self):
         for command in ("echo x > app.ts", "sed -i s/a/b/ app.ts", "rm app.ts", "git reset --hard", "git checkout -- .",
                         "git -C /r clean -fd", "git commit -m x", "git pull", "git stash"):

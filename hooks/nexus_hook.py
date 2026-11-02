@@ -310,7 +310,7 @@ def check_forbidden(command, data):
 
 
 def check_bash(agent, command, data):
-    if ".gates.jsonl" in command:
+    if ".gates.jsonl" in command and (REDIRECT.search(command) or FILE_MUTATION.search(command) or INLINE_WRITE.search(command)):
         deny("los gates solo los registra el hook")
     check_forbidden(command, data)
     if NO_VERIFY.search(command):
