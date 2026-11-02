@@ -27,7 +27,7 @@ Si un hook bloquea algo, **detente y reporta el mensaje literal**. No lo rodees 
 - Cambia lo que ve o puede hacer un usuario, o el alcance o los ACs aprobados.
 - Toca seguridad, permisos, datos, producción o migraciones.
 - Es una prioridad de negocio o un costo desproporcionado frente al tamaño de la HU.
-- Un agente rodeó un bloqueo, aunque lo haya declarado.
+- Un agente rodeó un bloqueo, aunque lo haya declarado. Rodear es lograr el efecto bloqueado por otra vía: escribir en el repo o en un artefacto ajeno con otra herramienta, un intérprete o una ruta disfrazada. Seguir la instrucción del propio mensaje del hook (por ejemplo, reescribir la misma salida con una ruta absoluta en /tmp) no es rodear: compruébalo y continúa.
 - No puedes reunir la evidencia que necesitas.
 
 ## Proporción
