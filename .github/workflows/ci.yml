@@ -1,0 +1,78 @@
+# CI de la metodologia: lo que hoy se corria a mano antes de cada cambio.
+# - checks: sin modelo, en cada push y PR. Debe estar siempre en verde.
+# - eval: con modelo y costo (unos USD 14 por pasada). Solo a mano, y solo si existe el secreto ANTHROPIC_API_KEY.
+name: ci
+
+on:
+  push:
+    branches: [main, "feat/**", "fix/**"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      eval:
+        description: "Correr el eval completo (cuesta dinero)"
+        type: boolean
+        default: false
+      runs:
+        description: "Corridas por caso"
+        default: "3"
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pruebas sin modelo (hook, metricas, scripts)
+        run: |
+          git config --global user.email ci@example.com
+          git config --global user.name ci
+          python -m unittest discover -s tests -p "test_*.py" -v
+      - name: Consistencia de la metodologia
+        run: bash .claude/skills/nexus-agile/scripts/check_consistency.sh
+      - name: Sintaxis de scripts y JSON
+        run: |
+          for f in $(git ls-files '*.sh'); do bash -n "$f"; done
+          for f in .claude-plugin/plugin.json hooks/hooks.json setup/mcp.json; do python -m json.tool "$f" > /dev/null; done
+          python -m py_compile hooks/nexus_hook.py .claude/skills/nexus-agile/scripts/*.py
+
+  eval:
+    if: github.event_name == 'workflow_dispatch' && inputs.eval
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Secreto presente
+        run: test -n "$ANTHROPIC_API_KEY" || { echo "Falta el secreto ANTHROPIC_API_KEY"; exit 1; }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Claude Code y sandbox del eval
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq bubblewrap socat
+          npm install -g @anthropic-ai/claude-code
+          claude --version
+      - name: Validar el plugin
+        run: claude plugin validate .
+      - name: Eval completo
+        run: |
+          claude plugin eval . --runs "${{ inputs.runs }}" --ablation none --scaffold --trust-plugin \
+            --allow-tools Write Edit --threshold 1 --model sonnet --no-publish -j 3 --max-cost-usd 40 \
+            --tag ar gates dev analista seguridad roles plantillas supervisor checklist \
+            --json eval-result.json --report eval-report.html
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval
+          path: |
+            eval-result.json
+            eval-report.html
