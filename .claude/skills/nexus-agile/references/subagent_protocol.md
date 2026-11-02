@@ -341,6 +341,34 @@ Sin `push`, `reset`, `clean` ni `rm` amplios: esos quedan para aprobacion humana
 
 ---
 
+## Worktrees y servicios compartidos
+
+### Worktree por HU
+
+Para F3 en paralelo, cada HU tiene su worktree explicito y su `CODE_ROOT` apunta a el:
+
+```bash
+git worktree add ../[repo]-[hu-id] feat/[hu-id]-titulo
+```
+
+**No usar `isolation: worktree` en `nexus-dev`.** Ese worktree nativo sale por defecto de la rama default, no del branch de la HU, y un branch que parte de otro quedaria mal. Tampoco ve archivos sin commit, como los artefactos dentro del repo. Sirve para una tarea desechable que parte de la rama default; no para implementar una HU.
+
+### Candados
+
+Varios agentes pueden pelear por una misma base local, un puerto o un build pesado. Los comandos que usan un recurso unico van con `flock`, donde exista:
+
+```bash
+flock /tmp/nexus-[proyecto]-db.lock    [comando que usa la base local]
+flock /tmp/nexus-[proyecto]-build.lock [comando de build]
+```
+
+- **Se serializa**: reset de la base local, migraciones, tests que escriben en esa base, builds pesados y el gate completo.
+- **No se serializa**: lecturas, typecheck y tests sin estado compartido.
+- Sin `flock` (por ejemplo, en macOS sin instalarlo): correr esos comandos de a uno.
+- Los recursos se declaran en `Servicios compartidos` de `project-context.md`.
+
+---
+
 ## AUTO Mode — Clinical Review Gate Handling
 
 En modo AUTO (`/nexus-auto`), el orquestador reemplaza `AskUserQuestion` en los gates

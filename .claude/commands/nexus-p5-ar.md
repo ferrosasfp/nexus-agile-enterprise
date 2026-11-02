@@ -32,7 +32,7 @@ Task #1 (AR):
     Eres el agente nexus-adversary de NexusAgil ejecutando AR (Adversarial Review) para la HU [WKH-XX].
 
     INPUT:
-    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (contrato que el Dev debía cumplir)
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (o la sección "Contrato de implementación" de sdd.md si el work-item dice contract_mode: unified): lo que el Dev debía cumplir
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/auto-blindaje.md (errores documentados por el Dev)
     - Archivos modificados: ejecutar `git -C "$CODE_ROOT" diff --name-only main...HEAD` (o el branch base)
     - $SKILL_DIR/references/adversarial_review_checklist.md del skill nexus-agile
@@ -77,7 +77,7 @@ Task #2 (CR — corre en paralelo con #1):
     — el orquestador deduplica al consolidar.
 
     INPUT:
-    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (o la sección "Contrato de implementación" de sdd.md si el work-item dice contract_mode: unified)
     - Archivos modificados: `git -C "$CODE_ROOT" diff main...HEAD`
 
     TU TAREA:
@@ -103,14 +103,51 @@ Task #2 (CR — corre en paralelo con #1):
     - NO ser exigente con cosas no documentadas en el project-context
 ```
 
+## Si hay BLOQUEANTEs: verificación antes del fix-pack
+
+Deduplicá los BLQ de AR y CR, y lanzá UN agente nuevo para confirmarlos. Baja falsos positivos y retrabajo.
+
+```
+Task (verificación, antes de cualquier fix-pack):
+  subagent_type: nexus-adversary
+  description: Verificar BLOQUEANTEs de HU [WKH-XX]
+  prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    Eres nexus-adversary en modo VERIFICACIÓN para la HU [WKH-XX]. No hiciste este AR ni este CR.
+
+    INPUT: solo esta lista, sin los razonamientos ni las conclusiones de los reportes:
+    [por cada BLQ deduplicado: ID, archivo:línea, pasos de reproducción, resultado esperado vs real]
+
+    TU TAREA: intentar reproducir cada BLQ. Si hace falta tocar archivos, usá una copia desechable.
+    Veredicto por BLQ, con el comando y su salida literal:
+    - CONFIRMADO: lo reproduje
+    - NO REPRODUCE: seguí los pasos y el problema no aparece
+    - INDETERMINADO: no se puede ejecutar acá, o la evidencia no alcanza
+
+    OUTPUT: $NEXUS_ROOT/doc/sdd/NNN-titulo/blq-verification.md
+
+    ## ⛔ PROHIBIDO
+    - NO modificar código ni los reportes
+    - NO agregar hallazgos nuevos
+    - NO descartar por razonamiento: NO REPRODUCE requiere haber corrido los pasos
+```
+
+| Veredicto | Acción del orquestador |
+|-----------|------------------------|
+| CONFIRMADO | Va al fix-pack |
+| INDETERMINADO | Va al fix-pack: ante la duda, sigue bloqueando |
+| NO REPRODUCE | Sale del fix-pack y queda registrado. **Excepción**: un BLQ-ALTO, o de las categorías 1, 9, 10 u 11, solo se descarta con decisión humana y Risk Acceptance (`governance.md`), también en AUTO |
+
+Los BLQ ya confirmados no se vuelven a verificar en las siguientes iteraciones.
+
 ## Después de AR + CR — agregación de veredictos
 
 | AR | CR | Acción del orquestador |
 |----|----|------------------------|
 | APROBADO / con MENORs | APROBADO / con MENORs | Lanzar `/nexus-p7-f4` (MENORs como deuda) |
-| RECHAZADO (BLQ-AR) | * | Re-lanzar `/nexus-p4-f3` con findings de **AR + CR combinados**. Después de los fixes, evaluar si hace falta re-correr `/nexus-p6-cr` (ver tradeoff abajo). |
-| * | RECHAZADO (BLQ-CR) | Re-lanzar `/nexus-p4-f3` con findings de CR |
-| RECHAZADO | RECHAZADO | Re-lanzar `/nexus-p4-f3` con findings combinados |
+| RECHAZADO (BLQ-AR) | * | Verificar los BLQ y re-lanzar `/nexus-p4-f3` con los de `blq-verification.md` que sigan en pie (**AR + CR combinados**). Después de los fixes, evaluar si hace falta re-correr `/nexus-p6-cr` (ver tradeoff abajo). |
+| * | RECHAZADO (BLQ-CR) | Verificar los BLQ y re-lanzar `/nexus-p4-f3` con los que sigan en pie |
+| RECHAZADO | RECHAZADO | Verificar los BLQ combinados y re-lanzar `/nexus-p4-f3` con los que sigan en pie |
 
 ## ⚠️ Tradeoff vs ejecución secuencial (leelo una vez)
 

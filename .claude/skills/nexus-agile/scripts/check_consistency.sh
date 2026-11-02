@@ -97,6 +97,28 @@ for f in $C/nexus-*.md; do
 done
 pass "cada prompt recibe sus rutas"
 
+# --- Fase 2: contrato, verificacion, worktrees, effort
+check_absent "Dev puede leer el SDD" 'NO leas el SDD' $A $C
+grep -q 'Contrato de implementacion' $R/sdd_template.md || fail "sdd_template sin Contrato de implementacion"
+for f in nexus-p3-f2-5 nexus-p4-f3 nexus-p5-ar nexus-p6-cr nexus-p7-f4 nexus-p8-done; do
+  grep -q 'contract_mode: \?`\?unified\|contract_mode: unified' "$C/$f.md" || fail "$f no contempla contract_mode"
+done
+for f in nexus-dev nexus-adversary nexus-qa nexus-docs nexus-analyst nexus-architect; do
+  grep -q 'contract_mode' "$A/$f.md" || fail "$f no contempla contract_mode"
+done
+for f in nexus-p5-ar nexus-fast-plus-ar nexus-p6-cr nexus-auto; do
+  grep -qE 'blq-verification|Verificación de BLQ|Verificar los BLQ' "$C/$f.md" || fail "$f sin verificacion de BLQ"
+done
+check_absent "sin isolation en agentes" '^isolation:' $A
+for ag in architect adversary; do
+  [ "$(field "$ag" effort)" = high ] || fail "nexus-$ag sin effort high"
+done
+for ag in architect dev adversary; do
+  field "$ag" tools | grep -q 'LSP' || fail "nexus-$ag sin LSP"
+done
+check_absent "sin IDs de proyecto real" 'LUM-[0-9]|Luma' .claude README.md
+pass "fase 2 revisada"
+
 # --- Evidencia y entorno de validacion
 check_absent "evidencia: archivo:linea ya no alcanza como PASS" 'no puede marcar (CUMPLE|PASS) sin citar' $R $A
 grep -q 'Entorno de validacion' $R/project_context_template.md || fail "plantilla sin Entorno de validacion"

@@ -29,7 +29,7 @@ Task tool:
 
     INPUT:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md (ACs originales en EARS)
-    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (o la sección "Contrato de implementación" de sdd.md si el work-item dice contract_mode: unified)
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md (para drift detection)
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/ar-report.md y cr-report.md (¿hay findings sin resolver?)
     - Archivos modificados: `git -C "$CODE_ROOT" diff main...HEAD`

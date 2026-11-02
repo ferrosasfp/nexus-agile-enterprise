@@ -1,7 +1,8 @@
 # Story File Template — NexusAgil
 
 > El Story File es el **contrato entre Architect y Dev**.
-> Dev lee SOLO este documento para implementar. Nada mas.
+> Dev implementa SOLO lo que dice este documento. Puede leer el SDD para entender el porque, pero no agrega alcance.
+> Con `contract_mode: unified` (S/M sin riesgo) no hay Story File: el contrato es una seccion de `sdd.md`.
 > Si algo no esta aqui, Dev PARA y escala a Architect.
 
 ---
@@ -214,7 +215,7 @@ Situaciones de escalation:
 
 ## Reglas del Story File
 
-1. **Autocontenido**: Dev NO necesita leer ningun otro artefacto
+1. **Autocontenido**: Dev no necesita ningun otro artefacto para saber que hacer. El SDD solo le explica el porque
 2. **Concreto**: Sin ambiguedades. Cada archivo con accion clara y exemplar
 3. **ACs copiados**: Los ACs vienen del SDD aprobado, no se reescriben
 4. **Exemplars reales**: Fragmentos del codebase, no inventados

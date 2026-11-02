@@ -45,7 +45,7 @@ Pipeline compacto para Historias de Usuario que **no justifican** el overhead de
 | **SKIPPED** | p3 (F2.5 Story File) | — | — | El dev usa el work-item como contrato |
 | **SKIPPED** | p5/p6 (AR + CR) | — | — | ⚠️ NO hay adversarial review — riesgo asumido |
 
-**Tiempo real observado** (datos LUM-11 + P3/P4 dev-puro):
+**Tiempo real observado**:
 
 | Métrica | Rango real | Nota |
 |---------|-----------|------|

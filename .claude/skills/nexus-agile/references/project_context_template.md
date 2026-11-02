@@ -102,6 +102,16 @@
 
 ---
 
+## Servicios compartidos (opcional)
+
+> Recursos que los agentes en paralelo no pueden usar a la vez. Ver `references/subagent_protocol.md`.
+
+| Recurso | Comandos que lo usan | Candado |
+|---------|----------------------|---------|
+| [base local, Docker, build] | [comandos] | `/tmp/nexus-[proyecto]-[recurso].lock` |
+
+---
+
 ## Patrones de Codigo
 
 > Extraidos del codebase real en F0. Actualizar si cambian los patrones.

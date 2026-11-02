@@ -35,7 +35,7 @@ Task tool:
     Eres el agente nexus-adversary de NexusAgil ejecutando CR (Code Review) para la HU [WKH-XX].
 
     INPUT:
-    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (o la sección "Contrato de implementación" de sdd.md si el work-item dice contract_mode: unified)
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/ar-report.md (referencia — no repitas hallazgos del AR)
     - Archivos modificados: `git -C "$CODE_ROOT" diff main...HEAD`
 
@@ -68,7 +68,7 @@ Task tool:
 | Veredicto | Acción |
 |-----------|--------|
 | APROBADO / APROBADO con MENORs | Lanzar `/nexus-p7-f4` |
-| RECHAZADO | Re-lanzar `/nexus-p4-f3` con la lista de findings |
+| RECHAZADO | Verificar los BLQ como indica `/nexus-p5-ar` y re-lanzar `/nexus-p4-f3` con los que sigan en pie |
 
 ## ⚠️ Importante
 - Vos sos el ORQUESTADOR. NO revisás vos mismo.

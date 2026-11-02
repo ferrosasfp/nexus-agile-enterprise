@@ -276,11 +276,13 @@ Escribir en `$NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md`.
 ## F2.5: Story File
 
 **Agente**: Architect
-**Objetivo**: Generar un contrato autocontenido para que Dev pueda implementar SIN consultar otros artefactos.
+**Objetivo**: Generar un contrato autocontenido para que Dev sepa exactamente que implementar.
+
+> **`contract_mode: unified`** (S/M, sin Case Type de riesgo, sin auth, permisos ni pagos): no hay F2.5, y el contrato es una seccion del SDD (`references/sdd_template.md`). Sin el campo, o con `classic`, se genera `story-file.md`. Las tareas L siempre van con Story File.
 
 > Template completo en `references/story_file_template.md`.
 
-El Story File es el **unico documento que Dev lee**. Contiene todo lo necesario:
+El Story File es **el contrato de Dev**: lo que no esta ahi, no se hace. Contiene:
 
 1. **Goal** — Que se construye y por que (1-2 oraciones)
 2. **Acceptance Criteria** — EARS format, copiados del SDD
@@ -293,7 +295,7 @@ El Story File es el **unico documento que Dev lee**. Contiene todo lo necesario:
 9. **Escalation Rule** — Si algo no esta en el Story File, Dev PARA y pregunta a Architect
 
 ### Regla Critica
-Dev **NUNCA** lee el SDD ni el Work Item. Solo el Story File. Si el Story File es ambiguo, Dev escala a Architect — no inventa.
+Dev puede leer el SDD solo para entender el porque; nunca agrega alcance. No lee el Work Item. Si el SDD y el contrato difieren, manda el contrato y Dev escala. Si el Story File es ambiguo, Dev escala a Architect: no inventa.
 
 ### ⚠️ Grounding Check obligatorio ANTES de generar el Story File
 
@@ -448,7 +450,7 @@ git -C "$CODE_ROOT" diff [branch-base] --name-only
 | **OK / N/A** | Sin hallazgos, o no aplica con su justificacion | Continuar |
 
 ### Regla
-- Cualquier BLQ bloquea: Dev corrige y Adversary re-revisa.
+- Cualquier BLQ bloquea. Antes del fix-pack, un agente nuevo intenta reproducirlos (`blq-verification.md`, ver `/nexus-p5-ar`). Dev corrige los que sigan en pie y Adversary re-revisa.
 - Solo cuando todo es OK o MENOR se avanza a Code Review.
 
 ---

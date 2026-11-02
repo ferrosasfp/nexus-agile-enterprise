@@ -41,7 +41,7 @@ Si algo no se puede verificar, marcalo como **NO VERIFICABLE** y escalá. NO inv
 
 ## 📥 Input
 
-- `$NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md` (los ACs viven aquí o en el work-item)
+- El contrato: `$NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md`, o la sección `Contrato de implementación` de `sdd.md` con `contract_mode: unified`
 - `$NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md` (ACs originales en formato EARS)
 - `$NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md` (plan vs implementación)
 - `$NEXUS_ROOT/doc/sdd/NNN-titulo/cr-report.md` (¿quedaron hallazgos sin resolver?)

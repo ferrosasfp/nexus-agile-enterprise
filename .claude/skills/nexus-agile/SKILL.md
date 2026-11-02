@@ -44,9 +44,9 @@ NexusAgil distribuye **6 agentes custom** en `.claude/agents/` y **8 slash comma
 | Agente | Fases | Modelo | Tools | Output |
 |--------|-------|--------|-------|--------|
 | `nexus-analyst` | F0, F1 | sonnet (opus en AUTO QUALITY) | Read, Glob, Grep, Bash, Write, WebFetch, lectura de Jira | `project-context.md`, `work-item.md` |
-| `nexus-architect` | F2, F2.5 | opus | Read, Glob, Grep, Write, Edit, Bash | `sdd.md`, `story-file.md` |
-| `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash | código + `auto-blindaje.md` |
-| `nexus-adversary` | AR, CR | opus | Read, Glob, Grep, Bash, Write | `ar-report.md`, `cr-report.md` |
+| `nexus-architect` | F2, F2.5 | opus (effort high) | Read, Glob, Grep, Write, Edit, Bash, LSP | `sdd.md`, `story-file.md` |
+| `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash, LSP | código + `auto-blindaje.md` |
+| `nexus-adversary` | AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `ar-report.md`, `cr-report.md`, `blq-verification.md` |
 | `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
 | `nexus-docs` | DONE | haiku | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
 
@@ -391,8 +391,8 @@ El clarify es informativo, no bloqueante. El humano decide.
 20. **Smart Sizing**: Usar Quick Flow para cambios triviales, no inflar con ceremonia.
 21. **Re-mapeo ligero**: Antes de Wave N, re-leer archivos tocados en Wave N-1.
 22. **Separacion de roles**: Quien especifica no implementa, quien implementa no valida.
-23. **Story File como contrato**: Dev SOLO lee el Story File, nada mas. Para corregir, tambien lee los hallazgos de AR/CR/QA que le pasa el orquestador.
-24. **Adversarial Review bloqueante**: Hallazgos BLOQUEANTE se corrigen antes de avanzar.
+23. **Contrato de Dev**: Story File, o seccion del SDD con `contract_mode: unified` (S/M sin riesgo). Dev implementa solo eso; lee el SDD solo para entender el porque.
+24. **Adversarial Review bloqueante**: Hallazgos BLOQUEANTE se verifican con un agente aparte (`blq-verification.md`) y se corrigen antes de avanzar.
 25. **Modelo capaz para fases criticas**: Usar el modelo mas capaz disponible para analisis, implementacion y AR.
 26. **Memoria al inicio**: Cargar contexto de sesiones anteriores al iniciar. Implementacion recomendada: `references/engram_protocol.md`. Sin memoria, la sesion empieza ciega.
 27. **Memoria al cierre**: Guardar resumen estructurado de la sesion al terminar (Goal / Accomplished / Files / Lessons). Sin esto, la proxima sesion empieza ciega.
@@ -419,6 +419,10 @@ El clarify es informativo, no bloqueante. El humano decide.
 | Quick Flow | Sonnet | Cambios triviales |
 | Hotfix | Opus | Investigacion de causa raiz |
 | Sprint Cadence | Sonnet | Ceremonias estructuradas |
+
+---
+
+El esfuerzo se fija en el agente: `effort: high` en `nexus-architect` y `nexus-adversary`, porque un error ahi se paga en todas las fases siguientes. Los demas usan el de la sesion. La variable `CLAUDE_CODE_EFFORT_LEVEL` tiene prioridad sobre este campo.
 
 ---
 

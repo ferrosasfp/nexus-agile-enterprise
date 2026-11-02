@@ -46,7 +46,7 @@ Tu describes una feature -> AI analiza, disena, implementa, ataca, valida -> Vos
 
 **Lee esto** (20 min):
 1. Este documento — seccion Dev abajo
-2. references/story_file_template.md — esto es lo UNICO que vas a leer para implementar
+2. references/story_file_template.md — tu contrato: lo que no esta ahi no se implementa
 3. references/concurrent_work_protocol.md — seccion "Branch Strategy" y "PR Workflow"
 4. references/roles_matrix.md — seccion "Developer"
 
@@ -176,7 +176,7 @@ METRICAS:  Lead time | BLOQUEANTE rate | Drift rate | Costo/HU | Carry-over rate
 | Error | Por que es malo | Que hacer en su lugar |
 |-------|----------------|----------------------|
 | Decir "si" o "ok" esperando que active un gate | No activa nada. El pipeline no avanza. | Usar el texto exacto: HU_APPROVED, SPEC_APPROVED |
-| Leer el SDD completo como developer | Perdida de tiempo y riesgo de confusion | Leer SOLO el Story File |
+| Tomar el SDD como lista de tareas | Agrega alcance que el contrato no pide | Implementar segun el contrato; leer el SDD solo para entender el porque |
 | Pushear directo a main | Sin review, sin CI, sin audit trail | Siempre PR con review |
 | Trabajar en 2 HUs a la vez | Context switching mata productividad | 1 dev = 1 HU activa |
 | No hacer rebase diario | Conflictos de merge se acumulan | git fetch, git rebase origin/main diario |

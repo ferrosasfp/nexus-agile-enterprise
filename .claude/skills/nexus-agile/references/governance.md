@@ -42,6 +42,7 @@ Cuando un Dev o TL considera que un hallazgo BLOQUEANTE del AR es un falso posit
 
 ### Proceso
 
+0. **Verificacion previa**: un agente nuevo ya intento reproducir el hallazgo (`blq-verification.md`). Un BLQ-ALTO, o de las categorias 1, 9, 10 u 11, que no reproduce llega directo a este protocolo.
 1. **Dev documenta su argumento** con evidencia tecnica (no "creo que no aplica" sino "este endpoint esta detras de VPN + mTLS, request externo es imposible")
 2. **TL evalua** en un maximo de 2 horas (SLA de escalacion)
 3. **TL decide**:

@@ -62,7 +62,7 @@ HUs donde **pocos archivos + scope acotado** coinciden con **superficie de riesg
 **Overhead vs FAST puro**: +5-18 min por AR+CR+fixes+F4 compact.
 
 **Qué ganás con ese overhead extra**:
-- AR caza los bugs que el dev no ve (los 3 ALTO de LUM-6, los 4 CRITs de LUM-10, los 5 BLQs de LUM-8)
+- AR caza los bugs que el dev no ve (en corridas reales encontró de 3 a 5 bloqueantes por HU)
 - CR valida SOLID/naming/DRY sin costo extra de wallclock (corre paralelo con AR)
 - F4 compact verifica runtime state (DB, env parity, migrations) — cosas que CR no puede ver
 - Validation report compacto si todo verde, denso si hay hallazgos
@@ -207,7 +207,7 @@ Task #2 (CR — paralelo):
 
 ### Fase 4 — fix-pack (si hay BLQ)
 
-Si AR o CR reportan **cualquier BLQ** (ALTO, MED o BAJO):
+Si AR o CR reportan **cualquier BLQ** (ALTO, MED o BAJO), primero verificalos como indica `/nexus-p5-ar`, sección "Si hay BLOQUEANTEs": un agente nuevo escribe `blq-verification.md`, y al fix-pack van los que sigan en pie.
 
 ```
 Task tool:
@@ -217,7 +217,7 @@ Task tool:
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Aplicá los fixes de AR + CR combinados. Priorizá BLQ-ALTO primero, luego MED, luego BAJO. Los MENORs quedan como deuda documentada, NO los fixes.
 
-    INPUT: ar-report.md + cr-report.md + código actual
+    INPUT: blq-verification.md + ar-report.md + cr-report.md + código actual. Corregí solo los BLQ que sigan en pie según blq-verification.md
 
     REGLA: NO expandas scope. Si un fix requiere tocar algo fuera de Scope IN → escalá.
 ```
@@ -273,8 +273,8 @@ FAST+AR es **opt-in explícito** — nunca se invoca por accidente. Pero es el s
 
 | HU | Qué pasó con FAST puro (hipotético) | Qué pasaría con FAST+AR |
 |----|-------------------------------------|-------------------------|
-| LUM-50 sidebar (Server Actions con ownership) | Sin test de ownership, race condition en rename/delete | AR habría flagged ownership check ausente como BLQ-ALTO |
-| LUM-58 tags (writes + filter) | Sin per-user filter, leaking de tags entre usuarios | AR habría flagged Security + Data Integrity |
-| LUM-6 Content Library | 3 ALTO: tests sin user_id filter, XSS markdown, typed client — los CACHÓ el AR en la corrida real | FAST+AR habría hecho lo mismo con menos overhead (no SDD, no Story) |
+| HU de sidebar (Server Actions con ownership) | Sin test de ownership, race condition en rename/delete | AR habría flagged ownership check ausente como BLQ-ALTO |
+| HU de etiquetas (writes + filter) | Sin per-user filter, leaking de tags entre usuarios | AR habría flagged Security + Data Integrity |
+| HU de biblioteca de contenido | 3 ALTO: tests sin user_id filter, XSS markdown, typed client — los CACHÓ el AR en la corrida real | FAST+AR habría hecho lo mismo con menos overhead (no SDD, no Story) |
 
 El patrón: **las HUs chicas pero sensibles son exactamente donde AR tiene el mayor ROI porque el overhead del QUALITY completo no se justifica**.

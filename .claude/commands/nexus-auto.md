@@ -186,11 +186,11 @@ Fase 4: HUs dependientes esperan que su blocker haga merge antes de arrancar F3
 - **Default: serial** — un F3 a la vez sobre el mismo repo
   (Auto-Blindaje WKH-6/WKH-7: sub-agentes F3 paralelos sobre el mismo directorio
   causan commits mezclados entre branches)
-- **Opt-in: worktrees** — si el repo soporta git worktrees y el humano lo pidió:
+- **Opt-in: worktrees**: si el repo soporta git worktrees y el humano lo pidió. No usar `isolation: worktree` en el Dev (ver `subagent_protocol.md`):
   ```bash
   git worktree add ../[repo]-[hu-id] -b feat/[hu-id]-titulo
   ```
-  Cada sub-agente F3 recibe su propio `cwd`. Al terminar, limpiar worktrees.
+  Cada sub-agente F3 recibe su propio `CODE_ROOT`. Los servicios compartidos van con candado. Al terminar, limpiar worktrees.
 
 ---
 
@@ -275,6 +275,7 @@ Fase 3 — AR + CR paralelo
   Modelo: opus
 
   Si BLQ encontrados:
+    Fase 3a — Verificación de BLQ (ver /nexus-p5-ar)
     Fase 3b — Fix-pack
     Prompt: usar el de /nexus-fast-plus-ar "Fase 4 — fix-pack"
     Sub-agente: nexus-dev
@@ -333,6 +334,7 @@ Fase 5 — AR + CR paralelo
   Modelo: opus
 
   Si BLQ encontrados:
+    Fase 5a — Verificación de BLQ (ver /nexus-p5-ar)
     Fase 5b — Fix-pack (dev corrige, re-AR)
     Loop: máx 3 iteraciones (→ escalar §6 regla #2)
 
@@ -379,7 +381,7 @@ Antes de lanzar fix-pack, el orquestador DEBE:
 ```
 
 **Por qué importa:** sin deduplicación, el dev del fix-pack puede aplicar 2 fixes
-contradictorios al mismo archivo. La tabla consolidada es el input del fix-pack.
+contradictorios al mismo archivo. La tabla consolidada es el input de la verificación de `/nexus-p5-ar`, y al fix-pack van los BLQ que sigan en pie. Descartar un BLQ-ALTO o de las categorías 1, 9, 10 u 11 siempre requiere al humano.
 
 **Métrica:** "AR encontró N BLOQUEANTEs → fix-pack → N resueltos" se incluye en el
 completion report (§8.2). Cuando AR encuentra BLQs reales, documenta:

@@ -48,6 +48,7 @@ Task tool:
        - Exemplars verificados (paths reales con line ranges)
        - Plan de tests
        - Readiness Check final
+       - Si el work-item dice contract_mode: unified: la sección "Contrato de implementación" de sdd_template.md
 
     OUTPUT ESPERADO:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md
@@ -62,7 +63,7 @@ Task tool:
 ```
 
 4. Cuando el sub-agente entregue el SDD, presentalo al humano con resumen ejecutivo y esperá `SPEC_APPROVED`.
-5. NO continúes a F2.5 hasta recibir el gate.
+5. NO continúes hasta recibir el gate. Después sigue F2.5, o directo F3 con `contract_mode: unified`.
 
 ## ⚠️ Importante
 - Vos sos el ORQUESTADOR. NO escribas el SDD vos mismo.

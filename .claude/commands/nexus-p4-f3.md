@@ -17,12 +17,12 @@ Lanza el sub-agente `nexus-dev` para implementar la HU desde el Story File.
 Antes de lanzar el sub-agente Dev, verificá:
 
 ```
-[ ] story-file.md existe en $NEXUS_ROOT/doc/sdd/NNN-titulo/
+[ ] El contrato existe: story-file.md, o la sección "Contrato de implementación" de sdd.md con contract_mode: unified
 [ ] El branch base (main/develop) está actualizado
 [ ] El branch feature de la HU existe y está checked out
 [ ] Las env vars necesarias están configuradas
 [ ] No hay otro sub-agente Dev corriendo sobre el mismo directorio
-    → Si paralelismo necesario: usar git worktree
+    → Si paralelismo necesario: un worktree por HU, con CODE_ROOT apuntando a él (ver subagent_protocol.md)
 ```
 
 Si algún check falla: avisá al humano antes de lanzar.
@@ -37,19 +37,19 @@ Task tool:
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres el agente nexus-dev de NexusAgil ejecutando F3 (implementation) para la HU [WKH-XX].
 
-    INPUT ÚNICO:
-    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md
+    CONTRATO:
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (o la sección "Contrato de implementación" de sdd.md si el work-item dice contract_mode: unified)
 
-    NO leas el SDD, NO leas el work-item, NO leas el historial de chat.
-    El Story File es autocontenido. Si algo falta, ESCALÁ al orquestador (NO inventes).
+    Podés leer sdd.md solo para entender el porqué. No agrega alcance; si difiere del contrato, manda el contrato y escalás. NO leas el work-item ni el historial de chat.
+    El contrato es autocontenido. Si algo falta, ESCALÁ al orquestador (NO inventes).
 
     TU TAREA:
-    Implementar las waves del Story File en orden:
+    Implementar las waves del contrato en orden:
     - W0 (serial): contratos, tipos, migraciones
     - W1+ (paralelo si la wave lo permite): lógica, servicios, rutas, UI
 
     Para cada archivo:
-    1. Verificar que está en Scope IN del Story File
+    1. Verificar que está en Scope IN del contrato
     2. Re-mapeo ligero antes de cada wave (re-leer archivos de la wave anterior)
     3. Anti-Hallucination Protocol: verificar exemplars, imports, signatures
     4. Implementar
@@ -63,10 +63,10 @@ Task tool:
     - Reporte al orquestador: archivos creados/modificados, comandos ejecutados, output de typecheck/tests
 
     ## ⛔ PROHIBIDO EN ESTA FASE
-    - NO tocar archivos fuera del Scope IN del Story File
+    - NO tocar archivos fuera del Scope IN del contrato
     - NO crear archivos no listados
     - NO expandir scope (no refactors, no "mejoras")
-    - NO usar librerías que no estén en el Story File o project-context
+    - NO usar librerías que no estén en el contrato o project-context
     - NO inventar APIs ni signatures
     - NO hacer commits sin validar la wave
     - NO marcar la HU como DONE — eso es trabajo de Docs en F4/DONE
@@ -79,4 +79,4 @@ El pipeline continúa automático: lanzá `/nexus-p5-ar` inmediatamente con la m
 ## ⚠️ Importante
 - Vos sos el ORQUESTADOR. NO escribas código vos mismo.
 - Si el Dev reporta scope drift o hallazgos no resueltos: re-lanzá con instrucciones específicas.
-- Si el Dev pide info que no está en el Story File: escalá al Architect (re-lanzá F2.5 con corrección).
+- Si el Dev pide info que no está en el contrato: escalá al Architect (relanzá F2.5, o F2 con `contract_mode: unified`, con la corrección).

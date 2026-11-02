@@ -362,6 +362,40 @@ Una fila por paquete de terceros cuyo API se va a usar. **La version se LEE del 
 
 ---
 
+## Contrato de implementacion (solo `contract_mode: unified`)
+
+> Va al final del SDD, para tareas S/M sin riesgo. Reemplaza al Story File y lleva su mismo detalle.
+> Con `classic` no se incluye: el contrato es `story-file.md`.
+
+```markdown
+## Contrato de implementacion
+
+### Files to Modify/Create
+| # | Archivo | Accion | Que hacer | Exemplar |
+|---|---------|--------|-----------|----------|
+
+### Exemplars
+[Por archivo: patron de imports, exports, naming y errores, con rangos de lineas reales]
+
+### Constraint Directives
+[OBLIGATORIO / PROHIBIDO]
+
+### Test Expectations
+| Test | ACs que cubre | Tipo |
+|------|--------------|------|
+
+### Waves
+[Wave -1 de entorno, W0 serial, W1+ con verificacion incremental]
+
+### Out of Scope
+[Que no tocar]
+
+### Escalation Rule
+Si algo no esta en este contrato, Dev para y escala. El resto del SDD explica el porque, pero no agrega alcance.
+```
+
+---
+
 ## Implementation Readiness Check
 
 > Architect ejecuta este check ANTES de presentar el SDD al humano en GATE 2.
@@ -377,6 +411,7 @@ READINESS CHECK:
 [ ] Si hay BD: tablas verificadas que existen
 [ ] Flujo principal (Happy Path) esta completo
 [ ] Flujo de error esta definido (al menos 1 caso)
+[ ] Con contract_mode: unified: seccion Contrato de implementacion completa
 ```
 
 Si falla cualquier check: corregir ANTES de presentar al humano.

@@ -95,6 +95,7 @@ Sigue el template de `$SKILL_DIR/references/quality_pipeline.md` (sección F1). 
 ## Sizing
 - SDD_MODE: full / mini / bugfix
 - Estimación: S / M / L
+- contract_mode: classic / unified (ver regla abajo)
 - Branch sugerido: feat/NNN-titulo
 
 ## Acceptance Criteria (EARS)
@@ -120,6 +121,10 @@ Sigue el template de `$SKILL_DIR/references/quality_pipeline.md` (sección F1). 
 ## Análisis de paralelismo
 - ¿Esta HU bloquea otras? ¿Puede ir en paralelo con WKH-Y?
 ```
+
+## 📎 contract_mode
+
+Proponé `unified` solo si la estimación es S o M y la HU no tiene ningún Case Type de riesgo (DB-MIGRATION, CONTRACT-CHANGE, SECURITY-INCIDENT, DATA-BACKFILL) ni toca auth, permisos o pagos. En cualquier otro caso, o si dudás: `classic`. Sin este campo, la HU es `classic`.
 
 ## 🎯 EARS Format (obligatorio para ACs)
 

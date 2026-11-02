@@ -26,7 +26,7 @@ El prompt trae `NEXUS_ROOT` (artefactos y contextos), `CODE_ROOT` (el repo) y `S
 Todos los artefactos en `$NEXUS_ROOT/doc/sdd/NNN-titulo/`:
 - `work-item.md`
 - `sdd.md`
-- `story-file.md`
+- `story-file.md` (no existe con `contract_mode: unified`)
 - `auto-blindaje.md` (si existe)
 - `ar-report.md`
 - `cr-report.md`
@@ -52,7 +52,7 @@ Y el índice histórico: `$NEXUS_ROOT/doc/sdd/_INDEX.md`.
 - F0: project-context cargado/generado
 - F1: work-item.md (gate: HU_APPROVED el [fecha])
 - F2: sdd.md (gate: SPEC_APPROVED el [fecha])
-- F2.5: story-file.md
+- F2.5: story-file.md (o "unified: contrato dentro del SDD")
 - F3: implementación en N waves, M archivos tocados
 - AR: [veredicto del ar-report]
 - CR: [veredicto del cr-report]

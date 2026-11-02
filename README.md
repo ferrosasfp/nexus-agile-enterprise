@@ -48,7 +48,7 @@ npm i  →  No.  Just copy one folder into your project.  Done.
   │  ⛔ HU_APPROVED                                     │
   │  F2: Codebase Grounding + SDD + Adversary Review    │
   │  ⛔ SPEC_APPROVED                                   │
-  │  F2.5: Story File (the only thing Dev reads)        │
+  │  F2.5: Story File (Dev's contract)                  │
   │  F3: Implementation — Waves + Anti-Hallucination    │
   │  AR: Adversarial Review — BLOCKER / MINOR / OK      │
   │  CR: Code Review — pattern compliance               │
@@ -120,9 +120,9 @@ Six specialized Claude Code agents — one per pipeline phase — with the role,
 | Agent | Phases | Model | Tools | Output |
 |---|---|---|---|---|
 | `nexus-analyst` | F0, F1 | sonnet (opus in AUTO QUALITY) | Read, Glob, Grep, Bash, Write, WebFetch, Jira read | `project-context.md`, `work-item.md` |
-| `nexus-architect` | F2, F2.5 | opus | Read, Glob, Grep, Write, Edit, Bash | `sdd.md`, `story-file.md` |
-| `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash | code + `auto-blindaje.md` |
-| `nexus-adversary` | AR, CR | opus | Read, Glob, Grep, Bash, Write | `ar-report.md`, `cr-report.md` |
+| `nexus-architect` | F2, F2.5 | opus (effort high) | Read, Glob, Grep, Write, Edit, Bash, LSP | `sdd.md`, `story-file.md` |
+| `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash, LSP | code + `auto-blindaje.md` |
+| `nexus-adversary` | AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `ar-report.md`, `cr-report.md`, `blq-verification.md` |
 | `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
 | `nexus-docs` | DONE | haiku | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
 
@@ -244,9 +244,11 @@ Gate: `SPEC_APPROVED`
 
 ### F2.5: Story File
 
-The autocontained contract Dev reads — and **only** this document. Contains: goal in 1-2 sentences, ACs from the SDD, files to create/modify each with a real Exemplar, Integration Contract, Constraint Directives, Waves, and an Escalation Rule.
+The self-contained contract Dev implements. Dev may read the SDD to understand the why, but only the contract defines the work. Contains: goal in 1-2 sentences, ACs from the SDD, files to create/modify each with a real Exemplar, Integration Contract, Constraint Directives, Waves, and an Escalation Rule.
 
-**No Story File = No coding. No exceptions.**
+For S/M tasks with no risk case type, `contract_mode: unified` puts this contract in a section of the SDD and skips F2.5.
+
+**No contract = No coding. No exceptions.**
 
 Output: `story-file.md`
 
@@ -262,7 +264,7 @@ Incremental typecheck: passes after every wave. Fails → fix before continuing.
 
 A separate agent attacks the implementation across 12 categories: security, error handling, data integrity, performance, integration, type safety, test coverage, scope drift, destructive migrations, SECURITY DEFINER functions, cache invalidation, and claims without a witness.
 
-BLOCKER findings must be fixed before continuing. Adversary re-reviews after each fix.
+Each BLOCKER is first checked by a separate agent that tries to reproduce it (`blq-verification.md`), which cuts false positives and rework. Confirmed or undecided BLOCKERs must be fixed before continuing. Adversary re-reviews after each fix.
 
 ### F4: QA
 
@@ -292,7 +294,7 @@ doc/sdd/_INDEX.md         ← history of every closed HU
 | **Architect** | Codebase Grounding, Context Map, Exemplars, SDD, Story File | F0, F1, F2, F2.5 |
 | **UX** | Microcopy, user flows, accessibility — only when the HU has UI | F1 (UI only) |
 | **Adversary** | Attacks SDD (F2) and implementation (AR) across 12 categories. Sole owner of Code Review (8 checks). Never implements. | F2, AR, CR |
-| **Dev** | Reads ONLY the Story File. Implements in Waves. Anti-Hallucination Protocol always on. | F3, post-AR fixes |
+| **Dev** | Implements only the contract, in Waves, reading the SDD only for the why. Anti-Hallucination Protocol always on. | F3, post-AR fixes |
 | **SM** | Sprint Planning, Status Meeting, Retrospective, Sprint Closure Checklist | Sprint cadence |
 | **QA** | Drift Detection, AC evidence as command + output, repo gate, Validation Report | F4 |
 | **Triage** | Evaluates if a change qualifies for FAST. Escalates if it grows beyond scope. | FAST flow |

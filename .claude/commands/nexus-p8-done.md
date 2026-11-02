@@ -16,7 +16,7 @@ Lanza el sub-agente `nexus-docs` para cerrar la HU: reporte final, actualizació
 
 - F4 completado con veredicto APROBADO PARA DONE
 - Todos los artefactos en `$NEXUS_ROOT/doc/sdd/NNN-titulo/`:
-  - work-item.md, sdd.md, story-file.md
+  - work-item.md, sdd.md, story-file.md (no existe con contract_mode: unified)
   - ar-report.md, cr-report.md, validation.md
   - auto-blindaje.md (si hubo errores)
 
@@ -32,7 +32,8 @@ Task tool:
 
     INPUT:
     Todos los artefactos en $NEXUS_ROOT/doc/sdd/NNN-titulo/:
-    - work-item.md, sdd.md, story-file.md
+    - work-item.md, sdd.md, story-file.md (no existe con contract_mode: unified)
+    - blq-verification.md (si existe)
     - ar-report.md, cr-report.md, validation.md
     - auto-blindaje.md (si existe)
     Y el índice histórico: $NEXUS_ROOT/doc/sdd/_INDEX.md

@@ -1,5 +1,23 @@
 # Changelog — NexusAgil
 
+## Sin publicar — Fase 2: modernizacion
+
+### Agregado
+- `contract_mode: unified`: en tareas S/M sin riesgo, el contrato de implementacion va dentro del SDD y no hay F2.5. Sin el campo, todo sigue como `classic`.
+- Verificacion de BLOQUEANTEs: antes del fix-pack, un agente nuevo intenta reproducirlos y escribe `blq-verification.md`. Ante la duda, siguen bloqueando. Descartar un BLQ-ALTO o de las categorias 1, 9, 10 u 11 requiere al humano.
+- Worktrees por HU y candados con `flock` para recursos compartidos.
+- LSP opcional en arquitecto, dev y adversario, con Grep como alternativa.
+- `effort: high` en arquitecto y adversario.
+
+### Cambiado
+- El Dev puede leer el SDD para entender el porque. El contrato sigue definiendo el trabajo y, si difieren, manda el contrato.
+
+### Decidido
+- No se usa `isolation: worktree` en `nexus-dev`: sale por defecto de la rama default y no ve archivos sin commit.
+
+### Quitado
+- IDs de un proyecto real en ejemplos y comandos.
+
 ## Sin publicar — Fase 1: errores y seguridad
 
 ### Seguridad
