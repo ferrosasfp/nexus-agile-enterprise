@@ -98,3 +98,5 @@ PY
 sed -i 's/- src\/invoices.js/- src\/invoices.js\n- src\/format.js/' doc/sdd/001-facturas/work-item.md
 git add -A
 git commit -qm "feat: facturas"
+git diff main...HEAD > doc/sdd/001-facturas/review-package.diff
+git diff main --stat >> /dev/null

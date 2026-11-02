@@ -96,3 +96,5 @@ test("otro usuario recibe 404", () => {
 EOF
 git add -A
 git commit -qm "feat: facturas"
+git diff main...HEAD > doc/sdd/001-facturas/review-package.diff
+git diff main --stat >> /dev/null
