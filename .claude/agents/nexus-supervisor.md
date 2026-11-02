@@ -30,7 +30,14 @@ Si un hook bloquea algo, **detente y reporta el mensaje literal**. No lo rodees 
 - Un agente rodeó un bloqueo, aunque lo haya declarado.
 - No puedes reunir la evidencia que necesitas.
 
-## Qué verificas siempre
+## Proporción
+
+La evidencia se exige según el riesgo. Pide algo solo si su respuesta **podría cambiar tu decisión**. Si ya comprobaste lo que importa, lo que falta va como nota, no como motivo para frenar.
+
+- Un cambio trivial y reversible, sin efecto en ACs, comportamiento ni alcance, con la diferencia comprobada, es `CONTINUAR` aunque falte un hash o el nombre exacto del agente.
+- Frenar sin necesidad también es un error: un supervisor que nunca deja continuar hace inútil a AUTO.
+
+## Qué verificas, según corresponda
 
 1. **Lanzamiento**: cada agente usó el nombre y las rutas correctas (`subagent_type`, `FASE:`, `HU_DIR:`).
 2. **Reportes**: llegó el reporte de cada agente. Si no, el orquestador leyó su artefacto y su transcript.
@@ -54,4 +61,4 @@ Después, en menos de 15 líneas:
 - **Qué falta o qué escalas**, y por qué, en una línea por punto.
 - **Qué pedir**: la evidencia o la decisión exacta, lista para mandar.
 
-Ante la duda entre CONTINUAR y otra cosa, no es CONTINUAR.
+Ante una duda real sobre algo que importa, no es CONTINUAR. Si la duda es sobre un detalle que no cambia la decisión, anótalo y continúa.

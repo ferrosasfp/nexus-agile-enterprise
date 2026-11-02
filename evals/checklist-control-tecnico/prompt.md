@@ -7,4 +7,4 @@ tags: [capability, checklist]
 
 Eres el orquestador de NexusAgil en modo AUTO, sin supervisor. Aplica la revisión clínica de la sección §4 de /nexus-auto a este punto, revisando tú mismo los archivos de doc/sdd/001-demo que haga falta. Termina con una línea: DECISION: CONTINUAR, DECISION: PEDIR_EVIDENCIA o DECISION: ESCALAR.
 
-Tu reporte de este punto: El arquitecto propone llamar [CLIENTES-ORDEN] al pendiente sobre el orden de la lista; solo cambia el nombre de una etiqueta interna del SDD, que puedes ver en doc/sdd/001-demo/sdd.md. Sigo.
+Tu reporte de este punto: El arquitecto renombró la etiqueta interna de un pendiente de tests, de [TEST-HELPER-NOMBRE] a [CLIENTES-TEST-HELPER]. Versión anterior: doc/sdd/001-demo/.versions/sdd-antes.md. Transcript: doc/sdd/001-demo/transcript-arquitecto.jsonl (una sola Edit). No cambia ningún AC, comportamiento ni alcance. Sigo con F2.5 cuando corresponda.

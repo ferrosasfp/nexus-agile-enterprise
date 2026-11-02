@@ -51,6 +51,12 @@ Una persona decide todo lo que:
 3. **Brazo de comparacion**: el checklist actual de AUTO sobre los mismos casos.
 4. **Se adopta si** baja las aprobaciones indebidas frente al checklist, sin escalar tanto que AUTO deje de ahorrar tiempo.
 
+## Primera medicion (foto del 2 de noviembre de 2026)
+
+6 casos sinteticos, 3 corridas: el supervisor acerto 18 de 18 despues de un ajuste. Antes de ese ajuste pedia evidencia irrelevante en un cambio trivial, en 3 de 3 corridas: sin proporcion, un supervisor frena todo.
+
+El brazo del checklist empato en los casos con problema. Eso **no** dice que el checklist alcance: corrio en un contexto limpio y con las reglas nuevas de escalado, mientras el AUTO real decide dentro de una sesion larga y con apuro por terminar. Para medir esa diferencia hacen falta casos reconstruidos desde corridas reales.
+
 ## Limites conocidos
 
 - El supervisor tambien es un modelo, y depende de lo que el orquestador le muestra. Un reporte enganoso pero convincente puede pasar.
