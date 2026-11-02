@@ -72,6 +72,8 @@ Task tool:
 - Presentá el resumen ejecutivo al humano
 - Si hay spinoffs (tickets nuevos como WKH-33): mencionalos
 - El humano decide cuándo mergear el PR y cerrar el ticket en Jira
+- **Antes de un push o de abrir el PR**, mostrale a la persona qué va a disparar, leyendo los workflows completos (no buscando palabras): cada job de CI que corre con ese push o PR y qué hace (por ejemplo, migraciones sobre una base desechable), y si hay deploy de preview. Pedí la autorización con esa lista. En una corrida real, el push disparó un job de migraciones y un preview que nadie había anticipado
+- Si la base de la HU no existe en el remoto (HU apilada), la descripción del PR lo dice y trae el enlace de comparación contra `BASE_REF`
 
 ## Si Claude Code rechaza la escritura del artefacto
 
