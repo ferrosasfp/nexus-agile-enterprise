@@ -352,6 +352,27 @@ class Escritura(HookCase):
             with self.subTest(command=command):
                 self.assertBlocked(self.run_hook("gate", agent_type="nexus-adversary", tool_name="Bash", cwd="/home/x/repo", tool_input={"command": command}))
 
+    def test_variable_asignada_en_el_mismo_comando(self):
+        # Falso bloqueo real: el QA de SCRUM-545 escribia en $S/start con S apuntando a su scratchpad.
+        qa = lambda c: self.run_hook("gate", agent_type="nexus-qa", tool_name="Bash", cwd="/home/x/repo", tool_input={"command": c})
+        for command in ("S=/tmp/claude-1/s/qa545; mkdir -p $S && date > $S/start", "export S=\"/tmp/s\" && npm test > ${S}/log.txt 2>&1"):
+            with self.subTest(command=command):
+                self.assertAllowed(qa(command))
+        for command in ("S=/tmp/../home/x/repo; echo x > $S/a.ts", "S=/tmp/s; S=/home/x/repo; echo x > $S/a.ts",
+                        "S=/tmp/s; S=$(pwd); echo x > $S/a.ts", "echo x > $S/a.ts"):
+            with self.subTest(command=command):
+                self.assertBlocked(qa(command))
+
+    def test_mayor_que_entre_comillas_no_es_redireccion(self):
+        # Falso bloqueo real: un grep de solo lectura con '>' dentro del patron.
+        for command in ("grep -n '<nav aria-label=\"Páginas\">' src/a.tsx", "grep -E \"=> |->\" src/a.ts | head",
+                        "cat > /tmp/s/a.ts <<'EOF'\nconst f = () => 1 > 0\nEOF"):
+            with self.subTest(command=command):
+                self.assertAllowed(self.bash_as("nexus-adversary", command))
+        for command in ("echo x >\"/home/x/repo/a.ts\"", "grep x a > 'src/salida.txt'", "cat > src/a.ts <<'EOF'\nx\nEOF"):
+            with self.subTest(command=command):
+                self.assertBlocked(self.bash_as("nexus-adversary", command))
+
     def test_repo_bajo_tmp_no_es_desechable(self):
         self.assertTrue(str(self.repo).startswith(("/tmp", tempfile.gettempdir())))
         self.assertBlocked(self.bash_as("nexus-adversary", f"echo x > {self.repo}/app.ts"))

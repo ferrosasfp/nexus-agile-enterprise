@@ -278,6 +278,30 @@ def disposable(path, data):
     return path.startswith("/tmp/") and not path.startswith(cwd.rstrip("/") + "/")
 
 
+QUOTED = re.compile(r"'[^']*'|\"(?:[^\"\\]|\\.)*\"")
+HEREDOC = re.compile(r"<<-?\s*(['\"]?)(\w+)\1[^\n]*\n.*?\n\s*\2\b", re.S)
+ASSIGN = re.compile(r"(?:^|[;&|]\s*|\bexport\s+)([A-Za-z_]\w*)=(['\"]?)(/[^\s'\"$`;&|]*)\2(?=\s*(?:$|[;&|]))")
+
+
+def expand_vars(command):
+    """Expande $X y ${X} cuando el mismo comando asigna X a una ruta literal. Lo que viene de otra llamada no se adivina."""
+    literal = ASSIGN.findall(command)
+    values = {name: os.path.normpath(value) for name, _, value in literal}
+    for name, value in values.items():
+        if len(re.findall(r"\b" + name + r"=", command)) != sum(1 for n, _, _ in literal if n == name) or \
+                len({os.path.normpath(v) for n, _, v in literal if n == name}) != 1:
+            continue  # se reasigna con otro valor o con algo no literal: no se adivina
+        command = re.sub(r"\$\{" + name + r"\}|\$" + name + r"\b", lambda _: value, command)
+    return command
+
+
+def redirect_targets(command):
+    """Destinos de > y >> reales: ignora los que estan dentro de comillas o en el cuerpo de un heredoc."""
+    masked = HEREDOC.sub(lambda m: m.group(0)[: m.group(0).index("\n")] + re.sub(r"[^\n]", "x", m.group(0)[m.group(0).index("\n"):]), command)
+    masked = QUOTED.sub(lambda m: m.group(0)[0] + "x" * (len(m.group(0)) - 2) + m.group(0)[-1], masked)
+    return [command[m.start(1):m.end(1)].strip("'\"") for m in REDIRECT.finditer(masked)]
+
+
 def leading_cd(command):
     """Directorio de un `cd /ruta &&` inicial, si es el unico cd del comando. Sin el, una ruta relativa queda sin resolver."""
     found = re.match(r"\s*cd\s+(['\"]?)(/[^'\"\s;&|]+)\1\s*(&&|;)", command)
@@ -333,12 +357,13 @@ def check_bash(agent, command, data):
         return
     if GIT_DESTRUCTIVE.search(command) or GIT_WRITE.search(command):
         deny(f"{agent} no modifica el repo con git: {command[:80]}")
+    command = expand_vars(command)
     if INLINE_WRITE.search(command) and not any(disposable(w.strip("'\"()"), data) for w in re.split(r"[\s,]+", command)):
         deny(f"{agent} no escribe con un interprete en linea. Si necesita un cambio, usa Write o Edit donde su rol lo permite, o reportalo")
     base = leading_cd(command)
-    for target in REDIRECT.findall(command):
+    for target in redirect_targets(command):
         if not (target == "/dev/null" or disposable(absolute(target, base), data) or target.startswith(("$TMPDIR", "${TMPDIR"))):
-            deny(f"{agent} no escribe archivos por Bash ({target}). Usa una copia en /tmp")
+            deny(f"{agent} no escribe archivos por Bash ({target}). Usa una ruta absoluta en /tmp, escrita en el mismo comando")
     if base:
         # Dentro de un cd a /tmp, toda ruta absoluta tambien debe ser desechable, y nada sube con "..".
         rest = command.split("&&", 1)[-1] if "&&" in command else command.split(";", 1)[-1]
