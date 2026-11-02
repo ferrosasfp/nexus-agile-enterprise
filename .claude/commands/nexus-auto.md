@@ -333,6 +333,10 @@ Fase 2 — F2 SDD
   Sub-agente: nexus-architect
   Modelo: opus
 
+  SPEC_VERIFY (QUALITY, salvo spec_verify: false)
+  Sub-agente: nexus-adversary, FASE: SPEC_VERIFY, contexto nuevo.
+  Con falsas: el arquitecto corrige solo esas y se verifica de nuevo. El gate no pasa con falsas abiertas.
+
   GATE — SPEC_APPROVED (clinical review §4.2)
   El orquestador lee sdd.md y ejecuta clinical review.
   PASS → continuar. FAIL → escalar al humano.

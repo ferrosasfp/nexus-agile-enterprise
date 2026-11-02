@@ -26,15 +26,15 @@ GATES = ("HU_APPROVED", "SPEC_APPROVED", "RELEASE_APPROVED")
 GATE_DOC = {"HU_APPROVED": "work-item.md", "SPEC_APPROVED": "sdd.md"}
 READ_ONLY_BASH = {"nexus-adversary", "nexus-qa", "nexus-analyst", "nexus-architect", "nexus-docs", "nexus-supervisor"}
 INLINE_WRITE = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b.*(open\(|write|unlink|rename|remove|rmtree|copy|move|mkdir|>)", re.S)
-PHASES = ("F0F1", "F1", "F2", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE", "SUPERVISION")
+PHASES = ("F0F1", "F1", "F2", "SPEC_VERIFY", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE", "SUPERVISION")
 PHASE_OUTPUT = {
     "F0F1": "work-item.md", "F1": "work-item.md", "F2": "sdd.md", "F2.5": "story-file.md",
-    "AR": "ar-report.md", "CR": "cr-report.md", "VERIFY": "blq-verification.md",
+    "AR": "ar-report.md", "CR": "cr-report.md", "VERIFY": "blq-verification.md", "SPEC_VERIFY": "sdd-verification.md",
     "F4": "validation.md", "DONE": "report.md",
 }
 WRITE_RULES = {
     "nexus-supervisor": r"(?!)",
-    "nexus-adversary": r"/(ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?)\.md$",
+    "nexus-adversary": r"/(ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?|sdd-verification(-\d+)?)\.md$",
     "nexus-qa": r"/validation(-\d+)?\.md$",
     "nexus-docs": r"/(report\.md|_INDEX\.md)$",
     "nexus-architect": r"/doc/sdd/[^/]+/[^/]+\.md$",
@@ -174,6 +174,33 @@ def require_gate(hu_dir, gate, session, phase, consume_override):
         consume_override(f"{doc} cambio despues de {gate}. Pidele a la persona que lo revise y vuelva a escribir {gate}")
 
 
+def spec_verify_required(data, session):
+    """QUALITY verifica el SDD contra el codigo salvo que el proyecto declare spec_verify: false."""
+    bases = [session.get("nexus_root"), data.get("cwd"), os.environ.get("NEXUS_ROOT")]
+    for base in filter(None, bases):
+        for sub in (".nexus", ".", "docs"):
+            path = Path(base) / sub / "project-context.md"
+            if path.is_file():
+                return not re.search(r"spec_verify\W{0,6}false", path.read_text(encoding="utf-8"))
+    return True
+
+
+def spec_verification_problem(hu_dir):
+    report = latest(hu_dir, "sdd-verification")
+    if report is None:
+        return "QUALITY requiere sdd-verification.md (FASE: SPEC_VERIFY) antes de F3"
+    text = report.read_text(encoding="utf-8")
+    status = re.search(r"^STATUS:\s*(.+)$", text, re.M)
+    if status is None:
+        return f"{report.name} no tiene la linea STATUS:"
+    if re.search(r"falsas=[1-9]", status.group(1)):
+        return f"{report.name} tiene afirmaciones falsas sin corregir: {status.group(1)}"
+    verified = re.search(r"^SDD_SHA256:\s*([0-9a-f]{64})", text, re.M)
+    if verified is None or verified.group(1) != sha(hu_dir / "sdd.md"):
+        return f"{report.name} verifico otra version de sdd.md: verifica la aprobada"
+    return None
+
+
 def check_skill_dir(prompt):
     """Con el plugin, SKILL_DIR debe apuntar al plugin: en la prueba real apuntaba a la version vieja de ~/.claude."""
     root = os.environ.get("CLAUDE_PLUGIN_ROOT")
@@ -246,6 +273,9 @@ def check_phase(data, session):
     if phase == "F2":
         need("work-item.md")
         require_gate(hu_dir, "HU_APPROVED", session, phase, blocked)
+    elif phase == "SPEC_VERIFY":
+        need("sdd.md")
+        require_gate(hu_dir, "HU_APPROVED", session, phase, blocked)
     elif phase == "F2.5":
         need("sdd.md")
         require_gate(hu_dir, "SPEC_APPROVED", session, phase, blocked)
@@ -257,6 +287,10 @@ def check_phase(data, session):
         if has_spec:
             need("sdd.md")
             require_gate(hu_dir, "SPEC_APPROVED", session, phase, blocked)
+            if spec_verify_required(data, session):
+                problem = spec_verification_problem(hu_dir)
+                if problem:
+                    blocked(problem)
             if classic:
                 need("story-file.md")
             elif not (hu_dir / "story-file.md").is_file() and "Contrato de implementaci" not in (hu_dir / "sdd.md").read_text(encoding="utf-8"):
@@ -607,7 +641,7 @@ def cmd_stop(data):
         report = latest(hu_dir, stem)
         if report is None:
             problems.append(f"falta {hu_dir / expected}")
-        elif spawn["phase"] in ("AR", "CR", "F4") and not re.search(r"^STATUS:", report.read_text(encoding="utf-8"), re.M):
+        elif spawn["phase"] in ("AR", "CR", "F4", "SPEC_VERIFY") and not re.search(r"^STATUS:", report.read_text(encoding="utf-8"), re.M):
             problems.append(f"{report.name} no tiene la linea STATUS:")
     if spawn["phase"] in ("F0F1", "F1") and (hu_dir / "work-item.md").is_file() and questions_section(hu_dir) is None:
         problems.append("work-item.md no tiene la seccion PREGUNTAS PARA EL HUMANO. Agregala, aunque diga Ninguna")

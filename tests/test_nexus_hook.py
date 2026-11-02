@@ -168,6 +168,35 @@ class Fases(HookCase):
         self.run_hook("prompt", prompt="ok")
         self.assertBlocked(self.spawn("F2"), "HU_APPROVED")
 
+    def verify(self, status="VERIFICADO falsas=0 no_verificables=0", sha=None):
+        import hashlib
+        digest = sha or hashlib.sha256((self.hu / "sdd.md").read_bytes()).hexdigest()
+        self.write("sdd-verification.md", f"STATUS: {status}\nSDD_SHA256: {digest}\n")
+
+    def test_f3_quality_exige_verificacion_del_sdd(self):
+        self.write("work-item.md")
+        self.type_gate("HU_APPROVED")
+        self.write("sdd.md", "## Contrato de implementacion\n")
+        self.type_gate("SPEC_APPROVED")
+        self.assertBlocked(self.spawn("F3", "nexus-dev"), "sdd-verification.md")
+        self.verify("CON_FALSAS falsas=2 no_verificables=0")
+        self.assertBlocked(self.spawn("F3", "nexus-dev"), "falsas")
+        self.verify(sha="0" * 64)
+        self.assertBlocked(self.spawn("F3", "nexus-dev"), "otra version")
+        self.verify()
+        self.assertAllowed(self.spawn("F3", "nexus-dev"))
+
+    def test_spec_verify_se_puede_apagar(self):
+        (self.repo / "project-context.md").write_text("| spec_verify | false |\n")
+        self.write("work-item.md")
+        self.type_gate("HU_APPROVED")
+        self.write("sdd.md", "## Contrato de implementacion\n")
+        self.type_gate("SPEC_APPROVED")
+        self.assertAllowed(self.spawn("F3", "nexus-dev"))
+
+    def test_spec_verify_necesita_sdd_y_hu(self):
+        self.assertBlocked(self.spawn("SPEC_VERIFY", "nexus-adversary"), "sdd.md")
+
     def _hasta_spec(self):
         self.write("work-item.md")
         self.type_gate("HU_APPROVED")
@@ -177,6 +206,7 @@ class Fases(HookCase):
     def test_f3_quality_sin_contrato(self):
         # unified es el default: sin campo, el contrato se busca en el SDD.
         self._hasta_spec()
+        self.verify()
         self.assertBlocked(self.spawn("F3", "nexus-dev"), "Contrato de implementacion")
 
     def test_f3_classic_exige_story(self):
@@ -184,6 +214,7 @@ class Fases(HookCase):
         self.type_gate("HU_APPROVED")
         self.write("sdd.md", "## Contrato de implementacion\n")
         self.type_gate("SPEC_APPROVED")
+        self.verify()
         self.assertBlocked(self.spawn("F3", "nexus-dev"), "story-file.md")
 
     def test_f25_solo_con_classic(self):
@@ -196,6 +227,7 @@ class Fases(HookCase):
     def test_f3_quality_con_story(self):
         self._hasta_spec()
         self.write("story-file.md")
+        self.verify()
         self.assertAllowed(self.spawn("F3", "nexus-dev"))
 
     def test_f3_unified_exige_seccion(self):
@@ -203,6 +235,7 @@ class Fases(HookCase):
         self.type_gate("HU_APPROVED")
         self.write("sdd.md")
         self.type_gate("SPEC_APPROVED")
+        self.verify()
         self.assertBlocked(self.spawn("F3", "nexus-dev"), "Contrato")
 
     def test_f3_unified_con_seccion(self):
@@ -210,6 +243,7 @@ class Fases(HookCase):
         self.type_gate("HU_APPROVED")
         self.write("sdd.md", "## Contrato de implementacion\n")
         self.type_gate("SPEC_APPROVED")
+        self.verify()
         self.assertAllowed(self.spawn("F3", "nexus-dev"))
 
     def test_f25_con_unified_bloquea(self):

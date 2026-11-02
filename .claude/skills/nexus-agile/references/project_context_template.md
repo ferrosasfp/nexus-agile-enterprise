@@ -100,6 +100,7 @@
 | **remote_access** | ninguno / solo-lectura |
 | **env_vars_check** | [comando que lista variables del destino; o `manual`] |
 | **release_gate** | true / false (default false). Con true, corre F5 y `RELEASE_APPROVED` antes de DONE |
+| **spec_verify** | true / false (default true). En QUALITY, un agente aparte verifica el SDD contra el codigo antes de `SPEC_APPROVED` |
 | **mutation_cmd** | [opcional: mutacion limitada al diff, para HUs de alto riesgo] |
 | **network_policy** | [opcional: dominios que los agentes pueden usar. Ver `references/security.md`] |
 | **forbidden_commands** | [opcional: expresion regular entre comillas invertidas, que el hook bloquea para todos, incluida la sesion principal; ej: `supabase db push\|prisma migrate deploy\|vercel .*--prod`] |

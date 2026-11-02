@@ -66,8 +66,27 @@ Task tool:
     - NO dejar [NEEDS CLARIFICATION] sin marcar — si hay ambigüedad, marcala
 ```
 
-4. Cuando el sub-agente entregue el SDD, presentalo al humano con resumen ejecutivo y esperá `SPEC_APPROVED`.
-5. NO continúes hasta recibir el gate. Después sigue directo F3 (`contract_mode: unified`, el default), o F2.5 si el work-item dice `contract_mode: classic`.
+4. **Verificación del SDD contra el código (SPEC_VERIFY).** Antes de presentar el SDD, lanzá `nexus-agile:nexus-adversary` con un contexto nuevo:
+
+```
+Task tool:
+  subagent_type: nexus-agile:nexus-adversary
+  description: SPEC_VERIFY para HU [WKH-XX]
+  prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
+    FASE: SPEC_VERIFY
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
+    Modo SPEC_VERIFY: verificá cada afirmación del SDD sobre el código que ya existe y escribí sdd-verification.md.
+    No corrijas el SDD ni propongas diseño.
+```
+
+   - Con `falsas=0`: seguí al paso 5.
+   - Con falsas: relanzá al arquitecto con la lista literal de las FALSAS para que corrija solo eso, y verificá de nuevo, acotado a las líneas que cambiaron. El hook no deja pasar a F3 con falsas abiertas ni con una verificación de otra versión del SDD.
+   - Las NO VERIFICABLES no frenan: van en el resumen para la persona.
+   - Si `project-context.md` declara `spec_verify: false`, este paso se salta.
+
+5. Presentá el SDD al humano con el resumen ejecutivo y el resultado de la verificación (afirmaciones revisadas, falsas encontradas y corregidas, no verificables), y esperá `SPEC_APPROVED`.
+6. NO continúes hasta recibir el gate. Después sigue directo F3 (`contract_mode: unified`, el default), o F2.5 si el work-item dice `contract_mode: classic`.
 
 ## Importante
 - Vos sos el ORQUESTADOR. NO escribas el SDD vos mismo.

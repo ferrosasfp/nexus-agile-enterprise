@@ -67,7 +67,7 @@ jobs:
         run: |
           claude plugin eval . --runs "${{ inputs.runs }}" --ablation none --scaffold --trust-plugin \
             --allow-tools Write Edit --threshold 1 --model sonnet --no-publish -j 3 --max-cost-usd 40 \
-            --tag ar gates dev analista seguridad roles plantillas supervisor checklist \
+            --tag ar gates dev analista seguridad roles plantillas supervisor checklist verificacion \
             --json eval-result.json --report eval-report.html
       - if: always()
         uses: actions/upload-artifact@v4
