@@ -39,6 +39,8 @@ si todos los criterios pasan. Si alguno falla, escala al humano con detalle.
 
 Parsear `$ARGUMENTS` para extraer la lista de HU-IDs y el flag `--user` si existe.
 
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+
 ---
 
 ## §3 Pipeline selection (Analyst propone, orquestador valida)
@@ -201,7 +203,7 @@ El orquestador **PARA** y usa `AskUserQuestion` cuando:
 | 1 | Clinical review FAIL en cualquier criterio | Mostrar checklist completo con el FAIL resaltado |
 | 2 | Fix-pack ≥3 iteraciones sin resolver BLQs | Reportar hallazgos persistentes, sugerir escalar a QUALITY |
 | 3 | Analyst aborta (scope too large, no FAST, ambigüedad) | Reportar razón del abort, pedir reclasificación |
-| 4 | `[NEEDS CLARIFICATION]` que requiere conocimiento de dominio | Presentar la pregunta del agente al humano |
+| 4 | `[NEEDS CLARIFICATION]` o `PREGUNTAS PARA EL HUMANO` de cualquier sub-agente | Presentar las preguntas al humano y relanzar al agente con las respuestas. Las demás HUs del batch siguen |
 | 5 | Dev necesita archivos fuera de Scope IN | Listar archivos requeridos vs Scope IN, pedir autorización |
 | 6 | Dependencia circular entre HUs del batch | Mostrar el grafo circular, pedir al humano que rompa el ciclo |
 | 7 | Sub-agente crashea o retorna output vacío | Reportar error, ofrecer re-lanzar o abortar |
@@ -298,7 +300,8 @@ Fase 5 — DONE
 Fase 1 — F0+F1 Analyst
   Prompt: usar el de /nexus-p1-f0-f1
   Sub-agente: nexus-analyst
-  Modelo: opus
+  Modelo: opus (pasar `model: opus` al lanzar: su default es sonnet porque un humano revisa el
+          work-item en el gate, y en AUTO ese humano no está)
 
   GATE — HU_APPROVED (clinical review §4.1)
   El orquestador lee work-item.md y ejecuta clinical review.
@@ -346,7 +349,7 @@ Fase 7 — F4 QA
 Fase 8 — DONE
   Prompt: usar el de /nexus-p8-done
   Sub-agente: nexus-docs
-  Modelo: sonnet
+  Modelo: haiku
 ```
 
 **Diferencias vs manual:**
@@ -617,4 +620,4 @@ El humano siempre puede:
 - Interrumpir un AUTO en curso y tomar control manual del gate
 - Rechazar un self-approval cuando el orquestador escala por FAIL
 
-**Los 6 agents y los 10 commands existentes no cambian.** AUTO los orquesta, no los modifica.
+**Los 6 agents y los otros 10 commands no cambian.** AUTO los orquesta, no los modifica.

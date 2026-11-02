@@ -34,7 +34,7 @@ Buscar en este orden hasta encontrar:
 
 1. **Leer `project-context.md`** (ver Paso 0 arriba — BLOQUEANTE)
 2. **Codebase Grounding inicial**: Explorar la estructura del proyecto con Glob/Grep
-3. **Leer `doc/sdd/_INDEX.md`** para siguiente NNN. Si no existe, crearlo.
+3. **Leer `$NEXUS_ROOT/doc/sdd/_INDEX.md`** para siguiente NNN. Si no existe, crearlo.
 4. **Smart Sizing** — Clasificar la HU:
 
 | Tipo | Senales | SDD_MODE |
@@ -92,7 +92,7 @@ Si hay ambiguedades criticas: preguntar al humano (max 3 preguntas) antes de con
 ### Proceso
 
 1. **Leer la HU** tal como viene (texto libre, bullets, imagenes, mezcla)
-2. **Asignar numero secuencial** desde `doc/sdd/_INDEX.md`
+2. **Asignar numero secuencial** desde `$NEXUS_ROOT/doc/sdd/_INDEX.md`
 3. **Si hay imagenes**: producir "Image Notes" (3-6 bullets)
 4. **Analyst extrae y normaliza** el Work Item:
 
@@ -174,7 +174,7 @@ Presentar Work Item al humano. Esperar el texto exacto **HU_APPROVED**.
 - NO avanzar sin el texto exacto.
 
 ### Persistencia F1
-Escribir en `doc/sdd/NNN-titulo/work-item.md`.
+Escribir en `$NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md`.
 
 ---
 
@@ -269,7 +269,7 @@ Presentar SDD al humano. Esperar el texto exacto **SPEC_APPROVED**.
 - NO avanzar sin el texto exacto.
 
 ### Persistencia F2
-Escribir en `doc/sdd/NNN-titulo/sdd.md`.
+Escribir en `$NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md`.
 
 ---
 
@@ -300,8 +300,8 @@ Dev **NUNCA** lee el SDD ni el Work Item. Solo el Story File. Si el Story File e
 El Architect DEBE ejecutar esto antes de escribir el Story File:
 
 ```bash
-# 1. Traer estado actual del codebase
-git pull origin main
+# 1. Traer el estado remoto sin mover el arbol de trabajo
+git fetch origin
 
 # 2. Verificar que cada archivo del Scope IN existe
 # (reemplazar con los archivos del SDD)
@@ -320,7 +320,7 @@ grep -r "from '[ruta]'" src/ | head -3
 > Origen: Auto-Blindaje 2026-04-02 — WKH-7 Story File referenció `discover.ts` pero el código real estaba en `discovery.ts`. WKH-6 usó `FastifyPreHandlerHookHandler` que no existe en Fastify v4.
 
 ### Persistencia F2.5
-Escribir en `doc/sdd/NNN-titulo/story-file.md`.
+Escribir en `$NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md`.
 
 ---
 
@@ -418,51 +418,51 @@ Si hay errores durante implementacion:
 
 > Checklist completo en `references/adversarial_review_checklist.md`.
 
-### ⚠️ Paso 0 Obligatorio — Sincronizar branch antes de revisar
+### Paso 0 — Confirmar que se revisa el branch correcto
 
 ```bash
-git fetch origin
-git checkout [branch-de-la-HU]
-git reset --hard origin/[branch-de-la-HU]
-git log --oneline -5
-git diff main --name-only
+git -C "$CODE_ROOT" fetch origin
+git -C "$CODE_ROOT" status --short --branch
+git -C "$CODE_ROOT" log --oneline -5
+git -C "$CODE_ROOT" diff [branch-base] --name-only
 ```
 
 **Confirmar antes de continuar:**
 - El branch tiene commits de F3 (no está vacío)
 - El diff vs main muestra SOLO los archivos del Scope IN
-- Si el branch está vacío → reportar al orquestador, NO continuar con el AR
+- Si el branch está vacío, o el local difiere del remoto → reportar al orquestador y NO continuar.
+- **Nunca** `git reset --hard`, `git checkout --`, `git clean` ni `git pull` desde un revisor: el arbol puede tener trabajo de F3 sin commit, y borrarlo no se puede deshacer.
 
 > Origen: Auto-Blindaje 2026-04-02 — AR de WKH-7 reportó AR_FAIL porque el Adversary no hizo `git fetch`. El branch local estaba vacío mientras el remoto tenía todos los commits.
 
 ### Proceso
 
 1. Adversary revisa TODO el codigo generado en F3
-2. Ejecuta checklist de 8 categorias de ataque
+2. Ejecuta las 12 categorias de `references/adversarial_review_checklist.md` (N/A con una linea si no aplica)
 3. Clasifica hallazgos:
 
 | Severidad | Significado | Accion |
 |-----------|-------------|--------|
-| **BLOQUEANTE** | Falla critica de seguridad, datos o logica | Dev DEBE corregir antes de continuar |
-| **MENOR** | Mejora recomendada, no critica | Documentar, corregir si es rapido |
-| **OK** | Sin hallazgos en esta categoria | Continuar |
+| **BLQ-ALTO / BLQ-MED / BLQ-BAJO** | Rompe un AC, expone una vulnerabilidad o causa data loss, en orden de gravedad | Dev DEBE corregir antes de continuar. El nivel solo ordena el fix-pack |
+| **MENOR** | Mejora recomendada, no rompe nada | Documentar, corregir si es rapido |
+| **OK / N/A** | Sin hallazgos, o no aplica con su justificacion | Continuar |
 
 ### Regla
-- El AR es **BLOQUEANTE**: si hay hallazgos BLOQUEANTE, Dev corrige y Adversary re-revisa.
+- Cualquier BLQ bloquea: Dev corrige y Adversary re-revisa.
 - Solo cuando todo es OK o MENOR se avanza a Code Review.
 
 ---
 
 ## Code Review (CR)
 
-**Agentes**: Adversary (seguridad) + QA (calidad)
+**Agente**: Adversary (unico responsable; quien escribio la especificacion no la revisa)
 **Objetivo**: Revisar calidad de codigo, separado del Adversarial Review.
 
 ### Checks
 
 1. **Patrones** — Se siguieron los exemplars del Story File?
 2. **Naming** — Consistente con convenciones del proyecto?
-3. **Complejidad** — Funciones cortas, responsabilidad unica?
+3. **Complejidad** — Funciones cortas, responsabilidad unica? SOLID como lente, no como checklist: solo con impacto concreto
 4. **Duplicacion** — Hay codigo duplicado que deberia reutilizarse?
 5. **Imports** — Solo dependencias aprobadas?
 6. **Limites** — Archivos dentro del limite de lineas del proyecto?
@@ -511,19 +511,19 @@ nadie discute una decision correcta. Tres preguntas, una por clase de afirmacion
 dentro del documento que la contiene): se mide en la ULTIMA pasada y con UN solo instrumento. Medir
 el total con una herramienta y las filas con otra produce una tabla que no suma, y que nadie suma.
 
-La version de ataque de este check, con sus severidades, esta en `.claude/agents/nexus-adversary.md`,
+La version de ataque de este check, con sus severidades, esta en el agente `nexus-adversary`,
 categoria 12.
 
 ### Resultado
-- **APPROVED** — Codigo listo para validacion
-- **CHANGES_REQUESTED** — Dev corrige, Adversary+QA re-revisan
+- **APROBADO / APROBADO con MENORs** — Codigo listo para validacion
+- **RECHAZADO** — Dev corrige, Adversary re-revisa
 
 ---
 
 ## F4: QA / Validacion
 
 **Agente**: QA
-**Objetivo**: Verificar ACs con evidencia, detectar drift, ejecutar quality gates.
+**Objetivo**: Verificar ACs con evidencia literal, detectar drift y correr el gate del repo, en el entorno de validacion declarado en `project-context.md`.
 
 > Template completo en `references/validation_report_template.md`.
 
@@ -546,27 +546,19 @@ Si hay DRIFT grave: alertar al humano.
 ### Fase 2: Verificacion de ACs
 
 ```markdown
-| AC | Resultado | Evidencia | Test | Metodo |
-|----|-----------|-----------|------|--------|
-| AC1: WHEN... SHALL... | PASS/FAIL | [archivo:linea] | [test o N/A] | auto/manual |
+| AC | Resultado | Comando | Salida literal |
+|----|-----------|---------|----------------|
+| AC1: WHEN... SHALL... | PASS / FAIL / NO VERIFICABLE | [comando corrido] | [lo relevante de su salida] |
 ```
 
-Cada AC con evidencia concreta citando `archivo:linea` — no "se ve bien".
+**Evidencia valida**: el comando que se corrio y su salida literal (test, query, curl, log).
+**Evidencia insuficiente**: "se ve bien", o una cita `archivo:linea` sola: sirve para ubicar el codigo, pero no dice que hace cuando corre.
 
-**Formato obligatorio de evidencia:**
-- `CUMPLE` — `src/components/X.tsx:42` (implementado y verificado)
-- `NO CUMPLE` — no encontrado en codebase
-- `PARCIAL` — `src/components/X.tsx:42` (implementado pero sin test)
-
-QA no puede marcar CUMPLE sin citar `archivo:linea` como evidencia.
+Si no se puede ejecutar, el AC va **NO VERIFICABLE** con el motivo, y nunca PASS.
 
 ### Fase 3: Quality Gates
 
-Ejecutar los comandos definidos en `project-context.md` del proyecto:
-- typecheck
-- tests
-- build (si cambios significativos)
-- lint
+Correr UNA vez el comando unico de gate declarado en `project-context.md`, con comando literal, exit code y ultimas lineas de salida. No se corren sus partes por separado. Antes de citarlo, confirmar que su alcance contiene los archivos de la HU (ver agente `nexus-qa`, paso 4).
 
 ### Fase 4: Si hay FAIL
 - Volver a F3 para corregir
@@ -574,7 +566,7 @@ Ejecutar los comandos definidos en `project-context.md` del proyecto:
 - Auto-Blindaje si el error es nuevo
 
 ### Persistencia F4
-Escribir en `doc/sdd/NNN-titulo/validation.md`.
+Escribir en `$NEXUS_ROOT/doc/sdd/NNN-titulo/validation.md`.
 
 ---
 
@@ -655,7 +647,7 @@ PRE-RELEASE CHECKLIST — HU-NNN
 
 ### Persistencia F5
 
-Agregar al `doc/sdd/NNN-titulo/report.md`:
+Agregar al `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md`:
 ```markdown
 ## Release Gate
 - Checklist: [PASS/FAIL por item]
@@ -684,8 +676,8 @@ Agregar al `doc/sdd/NNN-titulo/report.md`:
    - AR/CR summary
    - Auto-Blindaje acumulado
    - **Release Gate status** (si F5 aplica)
-2. Escribir en `doc/sdd/NNN-titulo/report.md`
-3. Actualizar `doc/sdd/_INDEX.md` con status DONE
+2. Escribir en `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md`
+3. Actualizar `$NEXUS_ROOT/doc/sdd/_INDEX.md` con status DONE
 4. Cerrar en el issue tracker del proyecto (Linear, GitHub Issues, Jira, o el configurado en `project-context.md`) — mover el issue a Done/Closed
 5. Si la HU generó nuevas reglas de proceso → actualizar `project-context.md` o el SKILL.md relevante
 6. Si usó Engram → persistir métricas: `engram save "HU done" "sprint:N hu:ID bloqueantes:N menores:N auto-blindajes:N" --scope project`

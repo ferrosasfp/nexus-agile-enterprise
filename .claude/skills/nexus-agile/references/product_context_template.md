@@ -2,13 +2,13 @@
 
 > Contenido definido por el humano (PO/founder).
 > El analyst lo genera y actualiza a partir de lo que el humano provea
-> (texto libre, link, o archivo PRD en `doc/prd/`).
+> (texto libre, link, o archivo PRD en `$NEXUS_ROOT/doc/prd/`).
 >
 > El analyst lo lee en F0 antes de cada HU para entender el dominio.
 > El humano puede pedir actualizarlo en cualquier momento.
 >
 > **Limite: ~200 lineas.** Este documento es siempre un RESUMEN.
-> El PRD completo (si existe) vive en `doc/prd/` y se linkea en "Fuentes".
+> El PRD completo (si existe) vive en `$NEXUS_ROOT/doc/prd/` y se linkea en "Fuentes".
 
 ---
 
@@ -60,10 +60,10 @@
 
 ## Fuentes
 
-> El PRD completo y documentos largos viven en `doc/prd/`.
+> El PRD completo y documentos largos viven en `$NEXUS_ROOT/doc/prd/`.
 > El analyst consulta estos links solo si necesita profundizar en una HU especifica.
 
-- PRD completo: doc/prd/prd-raw.md
+- PRD completo: $NEXUS_ROOT/doc/prd/prd-raw.md
 - Disenos/Figma: [link]
 - Research/interviews: [link]
 

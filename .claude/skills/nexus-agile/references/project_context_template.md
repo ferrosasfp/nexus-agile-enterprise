@@ -68,6 +68,40 @@
 
 ---
 
+## Rutas NexusAgil (opcional)
+
+> Ver `references/paths.md`. Omitir si los artefactos viven dentro del repo.
+
+| Campo | Valor |
+|-------|-------|
+| **NEXUS_ROOT** | [carpeta con project-context.md, product-context.md y doc/; default: raiz del repo] |
+| **CODE_ROOT** | [raiz git del codigo; default: el repo del directorio actual] |
+
+---
+
+## Gate unico
+
+| Campo | Valor |
+|-------|-------|
+| **gate_command** | [comando que encadena lint, typecheck, tests y build; ej: `npm run qa`] |
+
+---
+
+## Entorno de validacion
+
+> Donde valida QA. Si falta esta seccion, QA no consulta remotos y escala.
+
+| Campo | Valor |
+|-------|-------|
+| **validation_env** | local / ci / staging / preview |
+| **migrations_policy** | aplicadas-en-entorno / ventana-manual / sin-migraciones |
+| **migrations_build_cmd** | [arma una base desde cero con todas las migraciones; para ventana-manual] |
+| **migrations_check** | [comando que lista lo aplicado en el entorno, si aplica] |
+| **remote_access** | ninguno / solo-lectura |
+| **env_vars_check** | [comando que lista variables del destino; o `manual`] |
+
+---
+
 ## Patrones de Codigo
 
 > Extraidos del codebase real en F0. Actualizar si cambian los patrones.

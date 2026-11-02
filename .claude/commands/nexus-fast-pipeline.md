@@ -10,6 +10,8 @@ Pipeline compacto para Historias de Usuario que **no justifican** el overhead de
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX`)
 
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+
 ## ⚠️ Cuándo usar FAST y cuándo NO
 
 ### ✅ FAST está diseñado para
@@ -69,6 +71,7 @@ Task tool:
   subagent_type: nexus-analyst
   description: F1 FAST para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres nexus-analyst en MODO FAST para la HU [WKH-XX].
 
     DIFERENCIAS vs modo normal:
@@ -83,10 +86,10 @@ Task tool:
     - HU del humano: $ARGUMENTS
     - project-context.md (debe existir)
     - product-context.md (si existe en la raíz → leerlo para contexto de negocio)
-    - doc/sdd/_INDEX.md (para asignar NNN)
+    - $NEXUS_ROOT/doc/sdd/_INDEX.md (para asignar NNN)
 
     OUTPUT:
-    - doc/sdd/NNN-titulo/work-item.md compacto que dobla como story-file (porque el dev lo va a leer directo en F3)
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md compacto que dobla como story-file (porque el dev lo va a leer directo en F3)
     - Reporte al orquestador: path del work-item + 3 líneas explicando qué se va a hacer
 
     REGLA CRÍTICA: si al revisar el alcance ves que NO califica como FAST (>5 archivos, código nuevo no trivial, security-critical, sin tests existentes), ABORTÁ con el mensaje: "Esta HU NO es FAST — usar /nexus-p1-f0-f1 (pipeline QUALITY)". El humano decide si reclasifica.
@@ -115,6 +118,7 @@ Task tool:
   subagent_type: nexus-dev
   description: F3 FAST para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres nexus-dev en MODO FAST para la HU [WKH-XX].
 
     DIFERENCIAS vs modo normal:
@@ -124,7 +128,7 @@ Task tool:
     - Auto-Blindaje sigue siendo obligatorio si cometés errores.
 
     INPUT:
-    - doc/sdd/NNN-titulo/work-item.md (usar Scope IN como límite estricto)
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md (usar Scope IN como límite estricto)
     - project-context.md (stack y convenciones)
 
     OUTPUT:
@@ -146,6 +150,7 @@ Task tool:
   subagent_type: nexus-qa
   description: F4 FAST para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres nexus-qa en MODO FAST para la HU [WKH-XX].
 
     DIFERENCIAS vs modo normal:
@@ -154,11 +159,11 @@ Task tool:
     - FOCUS: ejecutar quality gates del stack (typecheck, tests, build, lint) y reportar resultados.
 
     INPUT:
-    - doc/sdd/NNN-titulo/work-item.md (los ACs viven acá en FAST mode)
-    - Archivos modificados por el dev: `git diff main...HEAD`
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md (los ACs viven acá en FAST mode)
+    - Archivos modificados por el dev: `git -C "$CODE_ROOT" diff main...HEAD`
 
     OUTPUT:
-    - doc/sdd/NNN-titulo/validation.md COMPACTO con:
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/validation.md COMPACTO con:
       - Quality gates: PASS/FAIL con output
       - ACs: PASS/FAIL a alto nivel (sin evidencia detallada por AC)
       - Veredicto final: APROBADO / RECHAZADO
@@ -173,6 +178,7 @@ Task tool:
   subagent_type: nexus-docs
   description: DONE FAST para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres nexus-docs en MODO FAST para la HU [WKH-XX].
 
     DIFERENCIAS vs modo normal:
@@ -181,10 +187,10 @@ Task tool:
     - Si hubo Auto-Blindaje, conservá el archivo original sin consolidar (en FAST no se hace consolidación).
 
     INPUT:
-    - doc/sdd/NNN-titulo/{work-item.md, validation.md, auto-blindaje.md}
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/{work-item.md, validation.md, auto-blindaje.md}
 
     OUTPUT:
-    1. doc/sdd/NNN-titulo/report.md (compacto, formato:
+    1. $NEXUS_ROOT/doc/sdd/NNN-titulo/report.md (compacto, formato:
        ```
        # Report — HU WKH-XX [Título] (FAST mode)
 
@@ -205,7 +211,7 @@ Task tool:
        ## Riesgo asumido por usar FAST
        [1 línea: qué cobertura no se hizo y por qué se asumió OK]
        ```
-    2. doc/sdd/_INDEX.md actualizado con la fila de la HU en status DONE
+    2. $NEXUS_ROOT/doc/sdd/_INDEX.md actualizado con la fila de la HU en status DONE
     3. Reporte al orquestador: 3 líneas resumen
 ```
 

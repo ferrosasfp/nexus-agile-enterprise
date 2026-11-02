@@ -27,7 +27,7 @@
 > Tipo: feature | improvement
 > SDD_MODE: full
 > Branch: [tipo/NNN-titulo-kebab]
-> Artefactos: doc/sdd/NNN-titulo/
+> Artefactos: $NEXUS_ROOT/doc/sdd/NNN-titulo/
 
 ---
 
@@ -389,7 +389,7 @@ Si falla cualquier check: corregir ANTES de presentar al humano.
 # Plan — SDD #NNN: [titulo]
 
 > PLAN_APPROVED: no
-> SDD: doc/sdd/NNN-titulo/sdd.md
+> SDD: $NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md
 > Fecha: YYYY-MM-DD
 
 ---

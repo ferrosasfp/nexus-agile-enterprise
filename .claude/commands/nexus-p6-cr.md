@@ -16,6 +16,8 @@ Lanza el sub-agente `nexus-adversary` (en modo CR) para revisar calidad de códi
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX`)
 
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+
 ## Pre-requisitos
 
 - F3 (o re-F3) completado, código en disco
@@ -29,32 +31,29 @@ Task tool:
   subagent_type: nexus-adversary
   description: CR para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres el agente nexus-adversary de NexusAgil ejecutando CR (Code Review) para la HU [WKH-XX].
 
     INPUT:
-    - doc/sdd/NNN-titulo/story-file.md
-    - doc/sdd/NNN-titulo/ar-report.md (referencia — no repitas hallazgos del AR)
-    - Archivos modificados: `git diff main...HEAD`
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/ar-report.md (referencia — no repitas hallazgos del AR)
+    - Archivos modificados: `git -C "$CODE_ROOT" diff main...HEAD`
 
     TU TAREA:
-    Revisar calidad de código (NO seguridad — eso fue AR). 6 checks:
-    1. Naming consistency con el proyecto
-    2. Complejidad (funciones >50 líneas, ciclomática alta)
-    3. DRY violations (código duplicado evitable)
-    4. SOLID — evaluá cada principio como PASS / MENOR / BLQ-BAJO / BLQ-MED / BLQ-ALTO:
-       - **S (SRP)**: ¿alguna clase/función tiene >1 responsabilidad clara? Señales: nombre con "y" (UserAndEmailService), >300 líneas, importa librerías de dominios no relacionados.
-       - **O (OCP)**: ¿hay if/switch hardcodeado sobre tipo/categoría que requeriría editar para agregar un caso nuevo? (Solo flag si la variación ya apareció ≥2 veces; YAGNI > OCP prematuro.)
-       - **L (LSP)**: ¿algún override de subclase rompe el contrato del padre? (Excepciones nuevas, postcondiciones más débiles, precondiciones más estrictas, throws de UnsupportedOperation.)
-       - **I (ISP)**: ¿alguna interface fuerza a clientes a depender de métodos que no usan? (Implementaciones con NotImplemented o que devuelven null por método irrelevante.)
-       - **D (DIP)**: ¿algún módulo de alto nivel (lógica de negocio/dominio) importa implementaciones concretas de bajo nivel (drivers, librerías de infra) en lugar de abstracciones? (Test de humo: ¿podés mockear esto en un unit test sin tocar archivos del dominio?)
-       REGLA: aplicá SOLID como **lente, no como checklist ritual**. Si el proyecto tiene un estilo pragmático que rompe un principio conscientemente (ej: YAGNI sobre OCP, framework constraints), marcalo OK con nota explicativa. NO sobre-abstracts.
-    5. Tests: cobertura, claridad, asserts significativos
-    6. Documentación inline (JSDoc/comments donde la lógica no es obvia)
+    Revisar calidad de código (NO seguridad — eso fue AR). Los 8 checks de quality_pipeline.md, sección Code Review:
+    1. Patrones: ¿se siguieron los exemplars?
+    2. Naming: consistente con el proyecto
+    3. Complejidad: funciones cortas y responsabilidad única. SOLID como lente, no como checklist: solo se reporta con impacto concreto, y YAGNI gana a una abstracción prematura. Comentarios solo donde la lógica no es obvia
+    4. Duplicación evitable
+    5. Imports: solo dependencias aprobadas
+    6. Límites de archivo del proyecto
+    7. Escala: `git -C "$CODE_ROOT" diff --stat` contra el presupuesto del SDD 4.1; un exceso sin justificar es hallazgo
+    8. Claims: números, tablas de ejemplos y frases de cobertura deben tener testigo
 
     Clasificar hallazgos como BLQ-ALTO / BLQ-MED / BLQ-BAJO / MENOR / OK (cualquier BLQ bloquea el gate).
 
     OUTPUT ESPERADO:
-    - doc/sdd/NNN-titulo/cr-report.md
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/cr-report.md
     - Veredicto final
     - Resumen al orquestador
 

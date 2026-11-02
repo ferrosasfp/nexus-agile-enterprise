@@ -91,7 +91,7 @@ Triage presenta al humano. Si el humano aprueba, continuar.
 
 ### Paso 4: Cerrar
 
-1. Actualizar `doc/sdd/_INDEX.md`:
+1. Actualizar `$NEXUS_ROOT/doc/sdd/_INDEX.md`:
 
 ```markdown
 | NNN | YYYY-MM-DD | [titulo] | patch | quick-flow | DONE | patch/NNN-titulo |
@@ -218,9 +218,9 @@ AR es **siempre obligatorio** en Hotfix. Un bug en produccion ya demostro que al
 
 | El fix toca... | AR | Nivel de AR |
 |----------------|-----|------------|
-| Auth, permisos, sesiones | **Obligatorio** | Completo (8 categorias) |
-| Datos de usuario, BD, queries | **Obligatorio** | Completo (8 categorias) |
-| Pagos, transacciones | **Obligatorio** | Completo (8 categorias) |
+| Auth, permisos, sesiones | **Obligatorio** | Completo (12 categorias) |
+| Datos de usuario, BD, queries | **Obligatorio** | Completo (12 categorias) |
+| Pagos, transacciones | **Obligatorio** | Completo (12 categorias) |
 | Solo UI sin logica | **Obligatorio** | Reducido (3 categorias: imports fantasma, drift, regression) |
 | Solo texto/copy | **Obligatorio** | Reducido (3 categorias: imports fantasma, drift, regression) |
 
@@ -236,7 +236,7 @@ QA verifica DOS cosas:
 
 #### Paso 5: Push
 
-- Actualizar `doc/sdd/_INDEX.md` con tipo `hotfix` y mode `hotfix`
+- Actualizar `$NEXUS_ROOT/doc/sdd/_INDEX.md` con tipo `hotfix` y mode `hotfix`
 - Status: `DONE` si es fix definitivo, `BANDAID` si es fix temporal (requiere follow-up)
 - Branch semantico: `hotfix/NNN-titulo-kebab`
 

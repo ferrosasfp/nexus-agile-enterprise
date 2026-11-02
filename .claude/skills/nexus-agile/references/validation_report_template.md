@@ -10,7 +10,7 @@
 
 - **Fase**: F4 (QA/Validacion)
 - **Quien lo genera**: QA (QA Engineer)
-- **Donde se persiste**: `doc/sdd/NNN-titulo/validation.md`
+- **Donde se persiste**: `$NEXUS_ROOT/doc/sdd/NNN-titulo/validation.md`
 
 ---
 
@@ -45,49 +45,41 @@
 
 ## 2. Validacion de AC
 
-> Cada AC del Work Item/SDD verificado con evidencia concreta.
+> Cada AC del Work Item/SDD verificado con evidencia literal: comando + salida.
 
-| # | AC | Resultado | Evidencia (archivo:linea) | Test | Metodo |
-|---|----|-----------|---------------------------|------|--------|
-| 1 | WHEN [trigger], THE [sistema] SHALL [accion] | CUMPLE/NO CUMPLE/PARCIAL | `src/path/file.tsx:42` | `[test.ts]` o N/A | auto/manual |
-| 2 | WHILE [condicion], THE [sistema] SHALL [comp] | CUMPLE/NO CUMPLE/PARCIAL | `src/path/file.tsx:85` | `[test.ts]` o N/A | auto/manual |
-| 3 | IF [condicion], THEN THE [sistema] SHALL [resp] | CUMPLE/NO CUMPLE/PARCIAL | `src/path/file.tsx:120` | `[test.ts]` o N/A | auto/manual |
-
-### Formato obligatorio de evidencia
-
-QA **no puede marcar CUMPLE sin citar archivo:linea** como evidencia.
-
-| Resultado | Formato | Ejemplo |
-|-----------|---------|---------|
-| **CUMPLE** | `archivo:linea` | `src/components/FilterBar.tsx:42` |
-| **NO CUMPLE** | "no encontrado en codebase" | No encontrado en codebase |
-| **PARCIAL** | `archivo:linea` + razon | `src/components/FilterBar.tsx:42` (implementado pero sin test) |
+| # | AC | Resultado | Comando | Salida literal |
+|---|----|-----------|---------|----------------|
+| 1 | WHEN [trigger], THE [sistema] SHALL [accion] | PASS/FAIL/NO VERIFICABLE | `[comando corrido]` | `[lo relevante de la salida]` |
 
 ### Tipos de evidencia valida
-- **Codigo**: "`src/path/file.tsx:42` — implementa [que]"
-- **Test automatizado**: "Test `[nombre]` en `[archivo:linea]` pasa — verifica [que]"
-- **Screenshot/Visual**: "Screenshot muestra [que se ve] en [donde]"
-- **Log/Output**: "Console output muestra [resultado]"
-- **Manual verification**: "Navegando a [URL], al hacer [accion], se observa [resultado]"
+- **Test corrido**: comando + nombre del test + resultado
+- **Query**: consulta + filas devueltas
+- **Llamada**: `curl` u otro comando + respuesta
+- **Log**: linea literal + donde se obtuvo
 
 ### Tipos de evidencia NO valida
 - "Se ve bien"
 - "Deberia funcionar"
 - "Es el mismo patron que X"
-- Sin citar archivo:linea
+- Una cita `archivo:linea` sola: ubica el codigo, pero no dice que hace cuando corre
 - Sin evidencia
+
+Si no se puede ejecutar, el AC va **NO VERIFICABLE** con su motivo y el paso manual para el humano.
 
 ## 3. Quality Gates
 
-> Ejecutar los comandos definidos en `project-context.md` del proyecto.
+> Correr UNA vez el comando unico de gate de `project-context.md`. No correr sus partes por separado.
 
-| Check | Comando | Resultado | Notas |
-|-------|---------|-----------|-------|
-| Typecheck | [comando del proyecto] | PASS/FAIL | |
-| Tests | [comando del proyecto] | PASS/FAIL | N passed, N failed |
-| Build | [comando del proyecto] | PASS/FAIL/SKIP | Solo si cambios significativos |
-| Lint | [comando del proyecto] | PASS/FAIL/SKIP | |
-| Limites de archivo | [limite del proyecto] | PASS/FAIL | [archivos que exceden] |
+| Gate | Comando | Exit code | Ultimas lineas de salida |
+|------|---------|-----------|--------------------------|
+| Gate del repo | [comando unico] | [codigo] | [salida literal] |
+
+## 3b. Entorno de validacion
+
+| Dato | Valor |
+|------|-------|
+| Entorno usado | [segun project-context.md] |
+| Migraciones | [corridas en entorno / NO VERIFICABLE hasta ventana manual, con comando] |
 
 ## 4. Adversarial Review Summary
 
@@ -95,7 +87,7 @@ QA **no puede marcar CUMPLE sin citar archivo:linea** como evidencia.
 
 | Resultado AR | Hallazgos BLOQUEANTE | Hallazgos MENOR | Status |
 |-------------|---------------------|-----------------|--------|
-| APPROVED/APPROVED with notes/BLOCKED | N | N | Resuelto/Pendiente |
+| APROBADO/APROBADO con MENORs/RECHAZADO | N | N | Resuelto/Pendiente |
 
 ### BLOQUEANTE resueltos (si hubo)
 | # | Hallazgo | Fix aplicado | Verificado |
@@ -104,11 +96,11 @@ QA **no puede marcar CUMPLE sin citar archivo:linea** como evidencia.
 
 ## 5. Code Review Summary
 
-> Resumen del CR de Adversary+QA.
+> Resumen del CR de Adversary.
 
 | Resultado CR | Status |
 |-------------|--------|
-| APPROVED/CHANGES_REQUESTED | [estado] |
+| APROBADO/APROBADO con MENORs/RECHAZADO | [estado] |
 
 ### Cambios solicitados (si hubo)
 | # | Cambio | Aplicado | Verificado |
@@ -130,7 +122,7 @@ QA **no puede marcar CUMPLE sin citar archivo:linea** como evidencia.
 | Criterio | Status |
 |----------|--------|
 | Todos los ACs PASS | Si/No |
-| Quality Gates PASS | Si/No |
+| Gate del repo PASS | Si/No |
 | AR resuelto | Si/No |
 | CR aprobado | Si/No |
 | Sin drift grave | Si/No |
@@ -149,10 +141,10 @@ QA **no puede marcar CUMPLE sin citar archivo:linea** como evidencia.
 
 ## Reglas de Validacion
 
-1. **Evidencia con archivo:linea obligatoria**: Cada AC debe citar `archivo:linea` donde se cumple. QA no puede marcar CUMPLE sin esta referencia.
-2. **ACs no verificables automaticamente**: Describir verificacion manual paso a paso.
+1. **Evidencia literal obligatoria**: Cada AC debe mostrar comando y salida. QA no puede marcar PASS sin eso.
+2. **ACs no verificables**: Van NO VERIFICABLE, con la verificacion manual paso a paso para el humano.
 3. **Drift grave es bloqueante**: Archivos fuera de scope o dependencias no aprobadas requieren aprobacion del humano.
-4. **Quality Gates del proyecto**: Usar los comandos definidos en `project-context.md`, no defaults.
+4. **Gate del proyecto**: Usar el comando unico definido en `project-context.md`, no defaults.
 5. **AR integrado**: El reporte de validacion incluye resumen del AR, no lo reemplaza.
 6. **FAIL = volver a F3**: QA no "aprueba con reservas". Si falla, se corrige.
 7. **Auto-Blindaje copiado**: Los errores de F3 se copian tal cual, no se reconstruyen de memoria.

@@ -10,15 +10,17 @@ Lanza el sub-agente `nexus-architect` para generar el SDD a partir del work-item
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX`)
 
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+
 ## Pre-requisitos
 
 - El gate `HU_APPROVED` debe haber sido confirmado por el humano para esta HU
-- `doc/sdd/NNN-titulo/work-item.md` debe existir
+- `$NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md` debe existir
 - Verificá ambos antes de lanzar el sub-agente
 
 ## Acciones
 
-1. Identificá el directorio `doc/sdd/NNN-titulo/` correspondiente a la HU.
+1. Identificá el directorio `$NEXUS_ROOT/doc/sdd/NNN-titulo/` correspondiente a la HU.
 2. Verificá que `work-item.md` exista. Si no, abortá y avisá al humano.
 3. Lanzá el sub-agente:
 
@@ -27,17 +29,18 @@ Task tool:
   subagent_type: nexus-architect
   description: F2 SDD para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres el agente nexus-architect de NexusAgil ejecutando F2 (SDD generation) para la HU [WKH-XX].
 
     INPUT:
-    - doc/sdd/NNN-titulo/work-item.md (contrato aprobado por HU_APPROVED)
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md (contrato aprobado por HU_APPROVED)
     - project-context.md (fuente de verdad del stack)
-    - references/sdd_template.md del skill nexus-agile
+    - $SKILL_DIR/references/sdd_template.md del skill nexus-agile
 
     TU TAREA:
     1. Codebase Grounding: leé el work-item completo, project-context, y 1-3 archivos similares al feature
     2. Verificar exemplars con Glob — todos los paths que vayas a referenciar deben existir
-    3. Generar sdd.md en doc/sdd/NNN-titulo/sdd.md con:
+    3. Generar sdd.md en $NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md con:
        - Context Map (qué leíste y por qué)
        - Decisiones técnicas (DT-N) heredadas del work-item + nuevas del SDD
        - Constraint Directives (CD-N) — heredados + nuevos
@@ -47,12 +50,12 @@ Task tool:
        - Readiness Check final
 
     OUTPUT ESPERADO:
-    - doc/sdd/NNN-titulo/sdd.md
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md
     - Resumen ejecutivo al orquestador con: nº waves, archivos a tocar, decisiones críticas, exemplars usados
 
     ## ⛔ PROHIBIDO EN ESTA FASE
     - NO escribir código de producción
-    - NO modificar archivos fuera de doc/sdd/NNN-titulo/
+    - NO modificar archivos fuera de $NEXUS_ROOT/doc/sdd/NNN-titulo/
     - NO inventar paths, librerías, APIs — verificá todo con Glob/Read/Grep
     - NO asumir un stack distinto al definido en project-context.md
     - NO dejar [NEEDS CLARIFICATION] sin marcar — si hay ambigüedad, marcala

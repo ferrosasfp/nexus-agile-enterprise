@@ -11,7 +11,7 @@
 - **Fase**: F2.5 (despues de GATE 2: SPEC_APPROVED)
 - **Quien lo genera**: Architect
 - **Quien lo consume**: Dev
-- **Donde se persiste**: `doc/sdd/NNN-titulo/story-file.md`
+- **Donde se persiste**: `$NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md`
 
 ---
 
@@ -20,7 +20,7 @@
 ```markdown
 # Story File — #NNN: [Titulo]
 
-> SDD: doc/sdd/NNN-titulo/sdd.md
+> SDD: $NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md
 > Fecha: YYYY-MM-DD
 > Branch: [tipo/NNN-titulo-kebab]
 

@@ -119,14 +119,14 @@ Six specialized Claude Code agents — one per pipeline phase — with the role,
 
 | Agent | Phases | Model | Tools | Output |
 |---|---|---|---|---|
-| `nexus-analyst` | F0, F1 | opus | Read, Glob, Grep, Write, AskUserQuestion | `project-context.md`, `work-item.md` |
-| `nexus-architect` | F2, F2.5, CR | opus | Read, Glob, Grep, Write, Edit, Bash | `sdd.md`, `story-file.md` |
+| `nexus-analyst` | F0, F1 | sonnet (opus in AUTO QUALITY) | Read, Glob, Grep, Bash, Write, WebFetch, Jira read | `project-context.md`, `work-item.md` |
+| `nexus-architect` | F2, F2.5 | opus | Read, Glob, Grep, Write, Edit, Bash | `sdd.md`, `story-file.md` |
 | `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash | code + `auto-blindaje.md` |
-| `nexus-adversary` | AR, CR | opus | Read, Glob, Grep, Bash | `ar-report.md`, `cr-report.md` |
-| `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash | `validation.md` |
-| `nexus-docs` | DONE | sonnet | Read, Write, Edit, Glob, Bash | `report.md`, `_INDEX.md` |
+| `nexus-adversary` | AR, CR | opus | Read, Glob, Grep, Bash, Write | `ar-report.md`, `cr-report.md` |
+| `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
+| `nexus-docs` | DONE | haiku | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
 
-`nexus-adversary` and `nexus-qa` have **no Edit/Write tools** for source files — they physically cannot modify code, only read and report. Same for `nexus-docs` regarding source. The role isn't a suggestion, it's enforced at the tool level.
+`nexus-adversary` and `nexus-qa` have no Edit tool. They have Write for their own report and Bash to run things, so they could technically change code: the role rule forbids it, and Drift Detection catches it.
 
 ### Slash Commands (`.claude/commands/`)
 
@@ -260,13 +260,13 @@ Incremental typecheck: passes after every wave. Fails → fix before continuing.
 
 ### Adversarial Review
 
-A separate agent attacks the implementation across 8 categories: authorization, input validation, injection, secret exposure, race conditions, data exposure, mock data in production, and DB security.
+A separate agent attacks the implementation across 12 categories: security, error handling, data integrity, performance, integration, type safety, test coverage, scope drift, destructive migrations, SECURITY DEFINER functions, cache invalidation, and claims without a witness.
 
 BLOCKER findings must be fixed before continuing. Adversary re-reviews after each fix.
 
 ### F4: QA
 
-Drift Detection: files created vs expected, files modified vs expected, new dependencies, files outside scope. Every AC verified with `file:line` evidence. No evidence = not done. Quality gates: typecheck + lint + build clean.
+Drift Detection: files created vs expected, files modified vs expected, new dependencies, files outside scope. Every AC verified with the literal command and its output. No evidence = not done. The repo's single gate runs once, in the validation environment the project declares.
 
 Output: `validation.md`
 
@@ -289,12 +289,12 @@ doc/sdd/_INDEX.md         ← history of every closed HU
 | Agent | Role | Active in |
 |---|---|---|
 | **Analyst** | Interprets input, normalizes into Work Item, writes EARS ACs, defines scope | F0, F1 |
-| **Architect** | Codebase Grounding, Context Map, Exemplars, SDD, Story File, Code Review | F0, F1, F2, F2.5, CR |
+| **Architect** | Codebase Grounding, Context Map, Exemplars, SDD, Story File | F0, F1, F2, F2.5 |
 | **UX** | Microcopy, user flows, accessibility — only when the HU has UI | F1 (UI only) |
-| **Adversary** | Attacks SDD (F2) and implementation (AR) across 8 categories. Never implements. | F2, AR, CR |
+| **Adversary** | Attacks SDD (F2) and implementation (AR) across 12 categories. Sole owner of Code Review (8 checks). Never implements. | F2, AR, CR |
 | **Dev** | Reads ONLY the Story File. Implements in Waves. Anti-Hallucination Protocol always on. | F3, post-AR fixes |
 | **SM** | Sprint Planning, Status Meeting, Retrospective, Sprint Closure Checklist | Sprint cadence |
-| **QA** | Drift Detection, AC evidence file:line, quality gates, Validation Report | F4, CR |
+| **QA** | Drift Detection, AC evidence as command + output, repo gate, Validation Report | F4 |
 | **Triage** | Evaluates if a change qualifies for FAST. Escalates if it grows beyond scope. | FAST flow |
 | **Docs** | Compiles report, updates `_INDEX.md`, verifies all artifacts, closes issue | DONE |
 
@@ -383,12 +383,12 @@ README.md
 
 .claude/
 ├── agents/                              # 🆕 6 custom sub-agents (one per pipeline phase)
-│   ├── nexus-analyst.md                 #     F0, F1 — opus
-│   ├── nexus-architect.md               #     F2, F2.5, CR — opus
+│   ├── nexus-analyst.md                 #     F0, F1 — sonnet
+│   ├── nexus-architect.md               #     F2, F2.5 — opus
 │   ├── nexus-dev.md                     #     F3 — opus
-│   ├── nexus-adversary.md               #     AR, CR — opus (read-only tools)
-│   ├── nexus-qa.md                      #     F4 — sonnet (read-only tools)
-│   └── nexus-docs.md                    #     DONE — sonnet
+│   ├── nexus-adversary.md               #     AR, CR — opus
+│   ├── nexus-qa.md                      #     F4 — sonnet
+│   └── nexus-docs.md                    #     DONE — haiku
 │
 ├── commands/                            # 11 slash commands
 │   ├── nexus-p1-f0-f1.md                #     /nexus-p1-f0-f1 — bootstrap + work-item
@@ -411,7 +411,8 @@ README.md
         ├── skills_router.md             # Selective skill loading — clean context per HU
         ├── sdd_template.md              # SDD templates: FULL / BUGFIX / MINI
         ├── story_file_template.md       # Architect-Dev contract + Integration Contract
-        ├── adversarial_review_checklist.md  # 8 attack categories for the Adversary
+        ├── adversarial_review_checklist.md  # 12 attack categories for the Adversary
+        ├── paths.md                     # NEXUS_ROOT / CODE_ROOT: keep artifacts outside the repo
         ├── validation_report_template.md    # QA: drift + ACs + quality gates
         ├── launch_flow.md               # Detailed LAUNCH/QUALITY mode pipeline
         ├── quick_flow.md                # Detailed FAST mode pipeline

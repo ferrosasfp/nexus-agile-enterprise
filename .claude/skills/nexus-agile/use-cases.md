@@ -51,7 +51,7 @@
        ─── pipeline corre solo hasta DONE ───
 09:29  [AUTO] F2.5: Story File
 09:45  [AUTO] F3: Implementacion (3 waves + anti-hallucination)
-09:48  [AUTO] AR: 8 categorias (0 BLOQUEANTES, 1 MENOR resuelto)
+09:48  [AUTO] AR: 12 categorias (0 BLOQUEANTES, 1 MENOR resuelto)
 09:50  [AUTO] CR: Code Review
 09:53  [AUTO] F4: QA (drift 0%, 6/6 ACs con evidencia)
 09:54  [AUTO] DONE: artefactos + _INDEX.md

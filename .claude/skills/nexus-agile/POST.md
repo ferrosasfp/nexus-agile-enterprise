@@ -207,7 +207,7 @@ Engram es agnostico: si no podes instalar el binario, el fallback es un `MEMORY.
 
 ## Adversarial Review: el AI que ataca al AI
 
-Despues de que el Dev agent implementa, el Adversary agent ataca la solucion con 8 categorias de revision:
+Despues de que el Dev agent implementa, el Adversary agent ataca la solucion con 12 categorias de revision:
 
 1. **Imports fantasma** — importa algo que no existe?
 2. **Regression** — rompe funcionalidad existente?

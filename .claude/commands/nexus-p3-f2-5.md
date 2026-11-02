@@ -10,10 +10,12 @@ Lanza el sub-agente `nexus-architect` para generar el Story File a partir del SD
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX`)
 
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+
 ## Pre-requisitos
 
 - El gate `SPEC_APPROVED` debe haber sido confirmado para esta HU
-- `doc/sdd/NNN-titulo/sdd.md` debe existir
+- `$NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md` debe existir
 
 ## Acciones
 
@@ -22,12 +24,13 @@ Task tool:
   subagent_type: nexus-architect
   description: F2.5 Story File para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres el agente nexus-architect de NexusAgil ejecutando F2.5 (Story File generation) para la HU [WKH-XX].
 
     INPUT:
-    - doc/sdd/NNN-titulo/sdd.md (aprobado por SPEC_APPROVED)
-    - doc/sdd/NNN-titulo/work-item.md (referencia)
-    - references/story_file_template.md del skill nexus-agile
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md (aprobado por SPEC_APPROVED)
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md (referencia)
+    - $SKILL_DIR/references/story_file_template.md del skill nexus-agile
 
     TU TAREA:
     Generar story-file.md autocontenido para que el Dev (nexus-dev) pueda implementar SIN leer nada más.
@@ -42,7 +45,7 @@ Task tool:
     - Done Definition
 
     OUTPUT ESPERADO:
-    - doc/sdd/NNN-titulo/story-file.md
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md
     - Resumen al orquestador
 
     ## ⛔ PROHIBIDO EN ESTA FASE

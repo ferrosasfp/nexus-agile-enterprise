@@ -97,7 +97,7 @@ W1 (paralelo): [tareas independientes]
 Sin SDD completo. Sin Constraint Directives extensas.
 El Codebase Grounding va dentro del Story File como tabla de Exemplars.
 
-Guardar en: `doc/sdd/launch/story-[titulo-kebab].md`
+Guardar en: `$NEXUS_ROOT/doc/sdd/launch/story-[titulo-kebab].md`
 
 ---
 

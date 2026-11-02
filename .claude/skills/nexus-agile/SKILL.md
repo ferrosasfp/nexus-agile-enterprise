@@ -43,12 +43,12 @@ NexusAgil distribuye **6 agentes custom** en `.claude/agents/` y **8 slash comma
 
 | Agente | Fases | Modelo | Tools | Output |
 |--------|-------|--------|-------|--------|
-| `nexus-analyst` | F0, F1 | opus | Read, Glob, Grep, Write, AskUserQuestion | `project-context.md`, `work-item.md` |
-| `nexus-architect` | F2, F2.5, CR | opus | Read, Glob, Grep, Write, Edit, Bash | `sdd.md`, `story-file.md` |
+| `nexus-analyst` | F0, F1 | sonnet (opus en AUTO QUALITY) | Read, Glob, Grep, Bash, Write, WebFetch, lectura de Jira | `project-context.md`, `work-item.md` |
+| `nexus-architect` | F2, F2.5 | opus | Read, Glob, Grep, Write, Edit, Bash | `sdd.md`, `story-file.md` |
 | `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash | código + `auto-blindaje.md` |
-| `nexus-adversary` | AR, CR | opus | Read, Glob, Grep, Bash | `ar-report.md`, `cr-report.md` |
-| `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash | `validation.md` |
-| `nexus-docs` | DONE | sonnet | Read, Write, Edit, Glob, Bash | `report.md`, `_INDEX.md` |
+| `nexus-adversary` | AR, CR | opus | Read, Glob, Grep, Bash, Write | `ar-report.md`, `cr-report.md` |
+| `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
+| `nexus-docs` | DONE | haiku | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
 
 Cada agente tiene su bloque `⛔ PROHIBIDO EN ESTA FASE` integrado en el system prompt. El orquestador no puede olvidar incluirlo porque ya está en el archivo del agente.
 
@@ -87,7 +87,7 @@ Después de instalar, los slash commands aparecen con autocomplete al escribir `
 
 1. **El rol está en el archivo del agente** — el orquestador solo escribe `Task(subagent_type="nexus-architect")` y el bloque PROHIBIDO viene incluido. No puede olvidarlo.
 2. **Los slash commands son atajos** — `/nexus-p2-f2 WKH-29` expande a un Task tool completo. Menos fricción = más uso = menos saltos al modo "yo lo hago acá mismo".
-3. **Tools restringidas por agente** — `nexus-adversary` no tiene `Edit` ni `Write` sobre `src/`, así que no puede modificar código aunque quiera.
+3. **Tools acotadas por agente**: revisores y QA no tienen `Edit`. Tienen `Write` para su reporte y `Bash` para ejecutar, así que técnicamente podrían modificar código: lo impide la regla de rol, y la Drift Detection lo detecta.
 4. **Pre-requisitos explícitos en cada command** — el slash command verifica que el gate previo esté cumplido antes de lanzar.
 
 ---
@@ -191,7 +191,7 @@ Si el usuario no especifica modo → Claude pregunta cual de los 3 modos.
 | Agente | Rol | Fases |
 |--------|-----|-------|
 | **Analyst** | Business Analyst — Extrae requisitos, normaliza HU, define ACs EARS | F0, F1 |
-| **Architect** | Software Architect — Codebase Grounding, SDD, Story File, Code Review | F0, F1, F2, F2.5, CR |
+| **Architect** | Software Architect — Codebase Grounding, SDD, Story File | F0, F1, F2, F2.5 |
 | **UX** | UX Designer — Microcopy, flujos de usuario, accesibilidad | F1 |
 | **Adversary** | Security & Quality Adversary — AR, CR, seguridad | AR, CR |
 | **Dev** | Senior Developer — Implementa SOLO desde Story File, waves, test-first | F3 |
@@ -241,7 +241,7 @@ HU (cualquier formato)
 [ Adversarial Review ] -------- Adversary ataca la solucion (BLOQUEANTE/MENOR/OK)
     |                              ↓ AUTOMATICO
     v
-[ Code Review ] --------------- Adversary+QA: calidad de codigo
+[ Code Review ] --------------- Adversary: calidad de codigo
     |                              ↓ AUTOMATICO
     v
 [ F4: QA/Validacion ] --------- QA: drift detection + ACs con evidencia + quality gates
@@ -256,7 +256,7 @@ HU (cualquier formato)
 [ Build + Push ] --------------- Docs documenta + actualiza _INDEX.md
     |
     v
-DONE -> Persistir en doc/sdd/NNN-titulo/
+DONE -> Persistir en $NEXUS_ROOT/doc/sdd/NNN-titulo/
 ```
 
 > **Proceso detallado de cada fase:** `references/quality_pipeline.md`
@@ -274,8 +274,8 @@ Cuando ejecutas una HU en modo QUALITY, lee `references/quality_pipeline.md` par
 | F2: SDD | `references/quality_pipeline.md` + `references/sdd_template.md` | Context Map, SDD, Constraint Directives, Readiness Check |
 | F2.5: Story File | `references/quality_pipeline.md` + `references/story_file_template.md` | Contrato autocontenido Architect→Dev |
 | F3: Implementacion | `references/quality_pipeline.md` | Waves, Anti-Hallucination Protocol, Re-mapeo, Auto-Blindaje |
-| AR | `references/quality_pipeline.md` + `references/adversarial_review_checklist.md` | 8 categorias de ataque, BLOQUEANTE/MENOR/OK |
-| CR | `references/quality_pipeline.md` | 6 checks de calidad de codigo |
+| AR | `references/quality_pipeline.md` + `references/adversarial_review_checklist.md` | 12 categorias de ataque, BLQ-ALTO/MED/BAJO, MENOR, OK |
+| CR | `references/quality_pipeline.md` | 8 checks de calidad de codigo |
 | F4: QA | `references/quality_pipeline.md` + `references/validation_report_template.md` | Drift Detection, AC Verification, Quality Gates |
 | F5: Release | `references/quality_pipeline.md` | Pre-release checklist, staging verification, RELEASE_APPROVED gate |
 | Case Types | `references/case_types.md` | Modificadores de pipeline: DB-MIGRATION, CONTRACT-CHANGE, INFRA-ENV, SECURITY-INCIDENT, DATA-BACKFILL |
@@ -295,8 +295,10 @@ Despues del Smart Sizing en F0, el Architect ejecuta el Skills Router:
 
 ## Persistencia de Artefactos
 
+> Los artefactos pueden vivir fuera del repo: `$NEXUS_ROOT` y `$CODE_ROOT` se definen en `references/paths.md`. Sin configurar, `$NEXUS_ROOT` es la raiz del repo y todo queda como siempre.
+
 ```
-doc/sdd/
+$NEXUS_ROOT/doc/sdd/
 +-- _INDEX.md                          # Registro historico de HUs procesadas
 +-- NNN-titulo-corto/                  # Ej: 001-filtro-categorias/
     +-- work-item.md                   # F1: Work Item normalizado
@@ -308,8 +310,8 @@ doc/sdd/
 ```
 
 ### Reglas de persistencia
-1. **F0**: Leer `doc/sdd/_INDEX.md` para siguiente NNN. Si no existe, crear directorio y archivo.
-2. **Cada fase**: Escribir artefacto en `doc/sdd/NNN-titulo/`.
+1. **F0**: Leer `$NEXUS_ROOT/doc/sdd/_INDEX.md` para siguiente NNN. Si no existe, crear directorio y archivo.
+2. **Cada fase**: Escribir artefacto en `$NEXUS_ROOT/doc/sdd/NNN-titulo/`.
 3. **_INDEX.md**: Actualizar al completar pipeline (o abortar).
 4. **Inmutabilidad**: Artefactos aprobados no se modifican. Si hay cambios post-gate, crear version (`sdd-v2.md`).
 
@@ -375,7 +377,7 @@ El clarify es informativo, no bloqueante. El humano decide.
 6. **Cambios minimos**: No tocar lo que no esta en scope.
 7. **Max 3 preguntas** en F1 para completar DoR.
 8. **Conservador**: Si hay duda, NO expandir alcance.
-9. **Persistencia**: Cada fase escribe su artefacto en `doc/sdd/NNN-titulo/`.
+9. **Persistencia**: Cada fase escribe su artefacto en `$NEXUS_ROOT/doc/sdd/NNN-titulo/`, bajo NEXUS_ROOT (ver `references/paths.md`).
 10. **Test-first**: Para logica de negocio en F3.
 11. **Uncertainty markers**: `[NEEDS CLARIFICATION]` bloquea; `[TBD]` se resuelve en F2.
 12. **Waves**: Paralelizacion con W0/W1/W2+ en F3.
@@ -389,7 +391,7 @@ El clarify es informativo, no bloqueante. El humano decide.
 20. **Smart Sizing**: Usar Quick Flow para cambios triviales, no inflar con ceremonia.
 21. **Re-mapeo ligero**: Antes de Wave N, re-leer archivos tocados en Wave N-1.
 22. **Separacion de roles**: Quien especifica no implementa, quien implementa no valida.
-23. **Story File como contrato**: Dev SOLO lee el Story File, nada mas.
+23. **Story File como contrato**: Dev SOLO lee el Story File, nada mas. Para corregir, tambien lee los hallazgos de AR/CR/QA que le pasa el orquestador.
 24. **Adversarial Review bloqueante**: Hallazgos BLOQUEANTE se corrigen antes de avanzar.
 25. **Modelo capaz para fases criticas**: Usar el modelo mas capaz disponible para analisis, implementacion y AR.
 26. **Memoria al inicio**: Cargar contexto de sesiones anteriores al iniciar. Implementacion recomendada: `references/engram_protocol.md`. Sin memoria, la sesion empieza ciega.
@@ -398,7 +400,7 @@ El clarify es informativo, no bloqueante. El humano decide.
 29. **Skills Router en F0**: Despues del Smart Sizing, cargar 1-2 skills de dominio relevantes. Max 2. Ver `references/skills_router.md`.
 30. **Skills max 200 lineas**: Cada skill de dominio no supera 200 lineas. Si crece, dividir en 2 skills mas especificas.
 31. **Orquestador sin trabajo real**: Si el orquestador empieza a generar codigo, SDDs o analisis → error de proceso. Solo coordina y maneja gates.
-32. **Artefactos como canal**: Los archivos en `doc/sdd/NNN-titulo/` son el canal de comunicacion entre sub-agentes. Cada sub-agente lee el artefacto de la fase anterior, no el historial de chat.
+32. **Artefactos como canal**: Los archivos en `$NEXUS_ROOT/doc/sdd/NNN-titulo/` son el canal de comunicacion entre sub-agentes. Cada sub-agente lee el artefacto de la fase anterior, no el historial de chat.
 
 ---
 
@@ -406,12 +408,14 @@ El clarify es informativo, no bloqueante. El humano decide.
 
 | Fase | Modelo | Razon |
 |------|--------------------|-------|
-| F0-F2 (analisis, SDD) | Opus | Razonamiento profundo |
+| F0-F1 (analisis) | Sonnet | Lo revisa un humano en el gate. En AUTO QUALITY, Opus: ahi no hay humano |
+| F2 (SDD) | Opus | Razonamiento profundo |
 | F2.5 (Story File) | Opus | Contrato critico |
 | F3 (implementacion) | Opus | Anti-alucinacion |
 | AR | Opus | Seguridad requiere el modelo mas capaz |
-| CR | Opus/Sonnet | Menos critico que AR |
-| F4 (QA) | Opus/Sonnet | Parcialmente mecanico |
+| CR | Opus | Mismo agente que AR |
+| F4 (QA) | Sonnet | Parcialmente mecanico |
+| DONE | Haiku | Compilacion mecanica |
 | Quick Flow | Sonnet | Cambios triviales |
 | Hotfix | Opus | Investigacion de causa raiz |
 | Sprint Cadence | Sonnet | Ceremonias estructuradas |
@@ -434,7 +438,7 @@ El clarify es informativo, no bloqueante. El humano decide.
 
 | Alcance | Donde |
 |---------|-------|
-| Solo esta HU | `doc/sdd/NNN-titulo/report.md` seccion Auto-Blindaje |
+| Solo esta HU | `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md` seccion Auto-Blindaje |
 | Multiples features | Archivo de reglas del proyecto |
 | Todo el proyecto | `project-context.md` o equivalente |
 

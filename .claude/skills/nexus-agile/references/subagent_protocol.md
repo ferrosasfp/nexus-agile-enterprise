@@ -85,8 +85,8 @@ SCOPE:
 | Fase | PROHIBIDO (copiar literal en el prompt) |
 |------|-----------------------------------------|
 | **F0** | NO modificar código. NO crear work-item. NO implementar. Solo leer y generar `project-context.md` si no existe. |
-| **F1** | NO escribir código de producción. NO modificar archivos fuera de `doc/sdd/NNN-titulo/`. NO ejecutar tests. NO hacer commits. Entregable único: `work-item.md`. |
-| **F2** | NO escribir código de producción. NO implementar. NO modificar archivos fuera de `doc/sdd/NNN-titulo/`. Entregable único: `sdd.md`. |
+| **F1** | NO escribir código de producción. NO modificar archivos fuera de `$NEXUS_ROOT/doc/sdd/NNN-titulo/`. NO ejecutar tests. NO hacer commits. Entregable único: `work-item.md`. |
+| **F2** | NO escribir código de producción. NO implementar. NO modificar archivos fuera de `$NEXUS_ROOT/doc/sdd/NNN-titulo/`. Entregable único: `sdd.md`. |
 | **F2.5** | NO escribir código de producción. NO implementar. Entregable único: `story-file.md`. |
 | **F3** | NO tocar archivos fuera del Scope IN del Story File. NO crear archivos no listados en el Story File. NO expandir scope. Si algo no está en el Story File → parar y escalar. |
 | **AR** | NO modificar código. Solo reportar hallazgos. Entregable único: `ar-report.md`. |
@@ -97,7 +97,7 @@ SCOPE:
 ### Regla del orquestador sobre outputs inesperados
 
 Si un sub-agente reporta que hizo trabajo de una fase diferente a la asignada (ej: un F1 que dice "también implementé el código"), el orquestador DEBE:
-1. Revertir los cambios no autorizados (`git checkout -- .` sobre los archivos modificados fuera de `doc/`)
+1. NO revertir nada: listar los archivos fuera de alcance (`git -C "$CODE_ROOT" status --short`) y pedir decision al humano. Un `git checkout -- .` puede borrar trabajo ajeno
 2. Registrar como Auto-Blindaje
 3. Re-lanzar la fase correcta si el artefacto esperado no fue generado correctamente
 
@@ -112,8 +112,8 @@ Si un sub-agente reporta que hizo trabajo de una fase diferente a la asignada (e
 | F2 | Architect + Adversary | work-item.md + project-context.md | sdd.md |
 | F2.5 | Architect | sdd.md | story-file.md |
 | F3 | Dev | story-file.md | código en disco + auto-blindaje |
-| AR | Adversary | story-file.md + archivos modificados | reporte adversarial |
-| CR | Adversary + QA | story-file.md + archivos modificados | reporte code review |
+| AR | Adversary | story-file.md + archivos modificados | ar-report.md |
+| CR | Adversary | story-file.md + archivos modificados | cr-report.md |
 | F4 | QA | story-file.md + archivos modificados | validation.md |
 | DONE | Docs | todos los artefactos anteriores | report.md + _INDEX.md |
 
@@ -139,7 +139,7 @@ Si no hay soporte de paralelismo: correr en secuencia, mismo resultado.
 
 ## Comunicación entre fases
 
-Los artefactos en disco (`doc/sdd/NNN-titulo/`) son el canal de comunicación entre sub-agentes:
+Los artefactos en disco (`$NEXUS_ROOT/doc/sdd/NNN-titulo/`) son el canal de comunicación entre sub-agentes:
 
 ```
 sub-agente F1 → escribe work-item.md
@@ -194,8 +194,8 @@ El orquestador ejecuta esto ANTES de lanzar cualquier sub-agente Dev:
     → Si SÍ: esperar a que termine, o crear git worktree separado
     → git worktree add ../[repo]-[hu-id] -b feat/[hu-id]-titulo
 
-[ ] ¿El branch base es main actualizado?
-    → git checkout main && git pull origin main
+[ ] ¿El branch de la HU parte de la base correcta?
+    → git -C "$CODE_ROOT" fetch origin y comparar; no cambiar de branch en un arbol compartido
 
 [ ] ¿El Story File fue aprobado con SPEC_APPROVED?
     → Verificar que el gate fue respetado antes de lanzar
@@ -307,13 +307,12 @@ Orquestador lanza sub-agente F3→DONE
 {
   "permissions": {
     "allow": [
-      "Bash(git *)",
+      "Bash(git status*)", "Bash(git diff*)", "Bash(git log*)", "Bash(git add*)", "Bash(git commit*)", "Bash(git fetch*)", "Bash(git checkout -b*)",
       "Bash(npm test*)",
       "Bash(npm run *)",
       "Bash(npx tsc*)",
       "Bash(npx vitest*)",
       "Bash(mkdir *)",
-      "Bash(rm src/*)",
       "Bash(rm -rf node_modules/.cache*)",
       "Bash(cat *)",
       "Bash(ls *)",
@@ -322,6 +321,8 @@ Orquestador lanza sub-agente F3→DONE
   }
 }
 ```
+
+Sin `push`, `reset`, `clean` ni `rm` amplios: esos quedan para aprobacion humana.
 
 ### Regla obligatoria para el orquestador:
 
@@ -336,7 +337,7 @@ Orquestador lanza sub-agente F3→DONE
 - El error menciona "tool not allowed" o "permission denied" para Bash
 - El sub-agente fue lanzado con `run_in_background: true`
 
-**Alcance:** aplica a CUALQUIER sub-agente en background que necesite Bash, no solo F3. AR/CR generalmente no necesitan Bash (solo Read/Glob/Grep), pero F3, F4 (quality gates), y DONE (git operations) sí lo necesitan.
+**Alcance:** aplica a CUALQUIER sub-agente en background que necesite Bash, no solo F3. AR y CR usan Bash para `git diff` y para reproducir hallazgos; F3, F4 (gate del repo) y DONE (git) tambien lo necesitan.
 
 ---
 

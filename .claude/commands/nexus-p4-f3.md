@@ -10,12 +10,14 @@ Lanza el sub-agente `nexus-dev` para implementar la HU desde el Story File.
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX` o `WKH-XX W1`)
 
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+
 ## Pre-requisitos (Pre-flight checks obligatorios)
 
 Antes de lanzar el sub-agente Dev, verificá:
 
 ```
-[ ] story-file.md existe en doc/sdd/NNN-titulo/
+[ ] story-file.md existe en $NEXUS_ROOT/doc/sdd/NNN-titulo/
 [ ] El branch base (main/develop) está actualizado
 [ ] El branch feature de la HU existe y está checked out
 [ ] Las env vars necesarias están configuradas
@@ -32,10 +34,11 @@ Task tool:
   subagent_type: nexus-dev
   description: F3 Implementación para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres el agente nexus-dev de NexusAgil ejecutando F3 (implementation) para la HU [WKH-XX].
 
     INPUT ÚNICO:
-    - doc/sdd/NNN-titulo/story-file.md
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md
 
     NO leas el SDD, NO leas el work-item, NO leas el historial de chat.
     El Story File es autocontenido. Si algo falta, ESCALÁ al orquestador (NO inventes).
@@ -51,7 +54,7 @@ Task tool:
     3. Anti-Hallucination Protocol: verificar exemplars, imports, signatures
     4. Implementar
     5. Verificación incremental: typecheck + tests específicos del archivo
-    6. Si falla: documentar Auto-Blindaje en doc/sdd/NNN-titulo/auto-blindaje.md, corregir, re-verificar
+    6. Si falla: documentar Auto-Blindaje en $NEXUS_ROOT/doc/sdd/NNN-titulo/auto-blindaje.md, corregir, re-verificar
 
     OUTPUT ESPERADO:
     - Código en disco según Scope IN

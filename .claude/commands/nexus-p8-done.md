@@ -10,10 +10,12 @@ Lanza el sub-agente `nexus-docs` para cerrar la HU: reporte final, actualizació
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX`)
 
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+
 ## Pre-requisitos
 
 - F4 completado con veredicto APROBADO PARA DONE
-- Todos los artefactos en `doc/sdd/NNN-titulo/`:
+- Todos los artefactos en `$NEXUS_ROOT/doc/sdd/NNN-titulo/`:
   - work-item.md, sdd.md, story-file.md
   - ar-report.md, cr-report.md, validation.md
   - auto-blindaje.md (si hubo errores)
@@ -25,17 +27,18 @@ Task tool:
   subagent_type: nexus-docs
   description: DONE para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres el agente nexus-docs de NexusAgil ejecutando la fase DONE (closure) para la HU [WKH-XX].
 
     INPUT:
-    Todos los artefactos en doc/sdd/NNN-titulo/:
+    Todos los artefactos en $NEXUS_ROOT/doc/sdd/NNN-titulo/:
     - work-item.md, sdd.md, story-file.md
     - ar-report.md, cr-report.md, validation.md
     - auto-blindaje.md (si existe)
-    Y el índice histórico: doc/sdd/_INDEX.md
+    Y el índice histórico: $NEXUS_ROOT/doc/sdd/_INDEX.md
 
     TU TAREA:
-    1. Compilar report.md final consolidado en doc/sdd/NNN-titulo/report.md con:
+    1. Compilar report.md final consolidado en $NEXUS_ROOT/doc/sdd/NNN-titulo/report.md con:
        - Resumen ejecutivo
        - Pipeline ejecutado (gates, fechas)
        - AC results del validation.md
@@ -44,12 +47,12 @@ Task tool:
        - Archivos modificados
        - Decisiones diferidas a backlog (spinoffs)
        - Lecciones para próximas HUs
-    2. Actualizar doc/sdd/_INDEX.md con status final (DONE/ABORTED/BLOCKED), fecha, branch, link al report
+    2. Actualizar $NEXUS_ROOT/doc/sdd/_INDEX.md con status final (DONE/ABORTED/BLOCKED), fecha, branch, link al report
     3. Verificar que el validation.md tiene veredicto APROBADO. Si no → marcar BLOCKED.
 
     OUTPUT ESPERADO:
-    - doc/sdd/NNN-titulo/report.md
-    - doc/sdd/_INDEX.md actualizado
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/report.md
+    - $NEXUS_ROOT/doc/sdd/_INDEX.md actualizado
     - Resumen ejecutivo (5-10 líneas) al orquestador
 
     ## ⛔ PROHIBIDO EN ESTA FASE

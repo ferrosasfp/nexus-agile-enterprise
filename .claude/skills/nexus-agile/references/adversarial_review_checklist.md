@@ -1,132 +1,129 @@
 # Adversarial Review Checklist — NexusAgil
 
-> Adversary ejecuta este checklist DESPUES de F3 (Implementacion).
-> Su objetivo: encontrar fallas antes de que lleguen a produccion.
-> Clasificacion: BLOQUEANTE (corregir antes de avanzar) / MENOR (documentar) / OK (sin hallazgos).
+> Detalle de las **12 categorias** de ataque del agente `nexus-adversary`, que se ejecutan despues de F3.
+> Severidades: BLQ-ALTO / BLQ-MED / BLQ-BAJO (cualquiera bloquea el gate) / MENOR / OK / N/A.
+> Una categoria que no aplica se marca N/A con una linea. Nunca se omite.
 
 ---
 
 ## Cuando se ejecuta
 
 - **Fase**: Adversarial Review (AR), despues de F3
-- **Quien lo ejecuta**: Adversary (Security & Quality Adversary)
-- **Quien corrige**: Dev (Developer)
-- **Bloqueante**: Si hay hallazgos BLOQUEANTE, Dev corrige y Adversary re-revisa
+- **Quien lo ejecuta**: Adversary
+- **Quien corrige**: Dev
+- **Bloqueante**: Con cualquier BLQ, Dev corrige y Adversary re-revisa
 
 ---
 
 ## Categorias de Ataque
 
-### 1. Autenticacion y Autorizacion (AuthZ)
+### 1. Security
 
-| Check | Que buscar | Severidad si falla |
-|-------|-----------|-------------------|
-| Rutas nuevas verifican auth | Rutas publicas que deberian ser privadas | BLOQUEANTE |
-| Acciones protegidas | Server actions/APIs sin verificacion de sesion | BLOQUEANTE |
-| Roles respetados | Acceso a datos de otros usuarios | BLOQUEANTE |
-| Tokens/sesiones | Sesiones sin expiracion, tokens en localStorage | MENOR |
+| Area | Que buscar | Severidad si falla |
+|------|-----------|-------------------|
+| AuthN/AuthZ | Rutas publicas que deberian ser privadas; acciones o APIs sin verificar sesion | BLQ |
+| Roles | Acceso a datos de otros usuarios; escalada de privilegios | BLQ |
+| Sesiones | Sesiones sin expiracion, tokens en localStorage | MENOR |
+| Inputs | Formularios sin validacion server-side; uploads sin validar tipo o tamano | BLQ |
+| Inputs | Tipos asumidos sin validar, strings sin limite | MENOR |
+| Inyeccion | SQL por concatenacion, XSS, command injection, path traversal | BLQ |
+| Secretos | Keys en el codigo o en logs; env vars de servidor expuestas al cliente | BLQ |
+| Configuracion | Defaults inseguros (CORS abierto, debug en prod) | MENOR |
+| Datos | PII visible donde no deberia | BLQ |
+| Datos | APIs que devuelven de mas; errores verbosos; IDs enumerables | MENOR |
+| BD | Tablas nuevas sin RLS si el stack lo soporta; operaciones sin verificar ownership | BLQ |
 
-**Preguntas de ataque**:
-- Puede un usuario no autenticado acceder a esta ruta/accion?
-- Puede un usuario ver/modificar datos de otro usuario?
-- Hay escalacion de privilegios posible?
+**Preguntas de ataque**: ¿Puede un usuario no autenticado llegar aca? ¿Puede ver o modificar datos de otro? ¿Que pasa con un string donde se espera un numero, un payload de 10MB o unicode? ¿Algun input termina concatenado en una query, un comando o un path?
 
-### 2. Validacion de Inputs
+### 2. Error Handling
 
-| Check | Que buscar | Severidad si falla |
-|-------|-----------|-------------------|
-| Entrada de usuario validada | Formularios sin validacion server-side | BLOQUEANTE |
-| Tipos verificados | Inputs que asumen tipo sin validar | MENOR |
-| Limites de longitud | Strings sin limite que pueden desbordar | MENOR |
-| Archivos subidos | Uploads sin validacion de tipo/tamano | BLOQUEANTE |
+| Que buscar | Severidad si falla |
+|-----------|-------------------|
+| Errores silenciados o fallbacks que esconden una falla critica | BLQ |
+| Try/catch incompleto en caminos de dinero, identidad o datos | BLQ |
+| Mensajes confusos o falta de log en caminos no criticos | MENOR |
 
-**Preguntas de ataque**:
-- Que pasa si envio un string donde espera un numero?
-- Que pasa si envio un payload de 10MB?
-- Que pasa si envio caracteres especiales/unicode?
+### 3. Data Integrity
 
-### 3. Inyeccion
+| Que buscar | Severidad si falla |
+|-----------|-------------------|
+| Operaciones no atomicas que pueden dejar datos corruptos | BLQ |
+| Escrituras concurrentes sin control; duplicados en operaciones que deben ser idempotentes | BLQ si afecta datos, si no MENOR |
+| Double-submit; endpoints publicos sin rate limit | MENOR |
 
-| Check | Que buscar | Severidad si falla |
-|-------|-----------|-------------------|
-| SQL Injection | Queries con concatenacion de strings | BLOQUEANTE |
-| XSS | innerHTML/dangerouslySetInnerHTML sin sanitizar | BLOQUEANTE |
-| Command Injection | Ejecucion de comandos con input de usuario | BLOQUEANTE |
-| Path Traversal | Acceso a archivos con input de usuario sin sanitizar | BLOQUEANTE |
+**Preguntas de ataque**: ¿Que pasa con dos clicks rapidos? ¿Y con dos usuarios a la vez?
 
-**Preguntas de ataque**:
-- Hay algun lugar donde input de usuario se concatena en una query?
-- Hay renderizado de HTML no sanitizado?
-- Se construyen paths de archivo con input de usuario?
+### 4. Performance
 
-### 4. Secretos y Configuracion
+| Que buscar | Severidad si falla |
+|-----------|-------------------|
+| N+1 o full table scan en un camino comun, con impacto demostrable | BLQ |
+| Indices faltantes, loops innecesarios, operaciones bloqueantes de menor impacto | MENOR |
 
-| Check | Que buscar | Severidad si falla |
-|-------|-----------|-------------------|
-| Secrets hardcodeados | API keys, passwords, tokens en codigo | BLOQUEANTE |
-| Secrets en logs | Informacion sensible logueada | BLOQUEANTE |
-| Secrets en cliente | Env vars de servidor expuestas al cliente | BLOQUEANTE |
-| Configuracion segura | Defaults inseguros (CORS abierto, debug en prod) | MENOR |
+### 5. Integration
 
-**Preguntas de ataque**:
-- Hay algun secret visible en el codigo fuente?
-- Se loguea informacion que podria ser sensible?
-- Hay variables de entorno de servidor accesibles desde el cliente?
+| Que buscar | Severidad si falla |
+|-----------|-------------------|
+| Contratos rotos o breaking changes sin versionar | BLQ |
+| Datos de prueba que pueden llegar a produccion | BLQ |
+| URLs de desarrollo o valores magicos sin parametrizar | MENOR |
 
-### 5. Race Conditions y Concurrencia
+### 6. Type Safety
 
-| Check | Que buscar | Severidad si falla |
-|-------|-----------|-------------------|
-| Double-submit | Formularios/acciones sin proteccion contra doble envio | MENOR |
-| Estado inconsistente | Operaciones no atomicas que pueden dejar datos corruptos | BLOQUEANTE |
-| Rate limiting | Endpoints publicos sin limite de requests | MENOR |
-| Idempotencia | Operaciones que generan duplicados si se ejecutan dos veces | MENOR |
+| Que buscar | Severidad si falla |
+|-----------|-------------------|
+| Casting o `any` que esconde un bug reproducible; NaN o null que se propagan a datos | BLQ |
+| `any` injustificado sin bug demostrable | MENOR |
 
-**Preguntas de ataque**:
-- Que pasa si el usuario hace click dos veces rapido?
-- Que pasa si dos usuarios ejecutan la misma accion simultaneamente?
-- Hay proteccion contra abuso de endpoints?
+### 7. Test Coverage
 
-### 6. Exposicion de Datos
+| Que buscar | Severidad si falla |
+|-----------|-------------------|
+| AC sin test, o un test que no puede fallar | BLQ |
+| Camino de dinero, identidad o permisos sin caso negativo | BLQ |
+| Asserts vagos o edge cases raros sin cubrir | MENOR |
 
-| Check | Que buscar | Severidad si falla |
-|-------|-----------|-------------------|
-| Datos excesivos | APIs que devuelven mas datos de los necesarios | MENOR |
-| PII expuesta | Informacion personal visible donde no deberia | BLOQUEANTE |
-| Errores verbosos | Stack traces o errores internos expuestos al usuario | MENOR |
-| Enumeracion | IDs secuenciales que permiten enumerar recursos | MENOR |
+### 8. Scope Drift
 
-**Preguntas de ataque**:
-- La API devuelve campos que el cliente no necesita?
-- Se expone informacion personal de otros usuarios?
-- Los mensajes de error revelan detalles internos?
+| Que buscar | Severidad si falla |
+|-----------|-------------------|
+| Archivos fuera de Scope IN o dependencias no aprobadas | BLQ |
+| Refactors menores no pedidos | MENOR |
 
-### 7. Datos Mock y Hardcoded
+### 9. Destructive Migrations
 
-| Check | Que buscar | Severidad si falla |
-|-------|-----------|-------------------|
-| Mock data en produccion | Datos de prueba que no se reemplazaron | BLOQUEANTE |
-| URLs hardcodeadas | URLs de desarrollo que no se parametrizaron | MENOR |
-| Valores magicos | Numeros o strings hardcodeados que deberian ser configurables | MENOR |
+| Que buscar | Severidad si falla |
+|-----------|-------------------|
+| `DROP`, `TRUNCATE` o cambio de tipo con perdida, sin respaldo ni rollback | BLQ-ALTO |
+| `ADD COLUMN NOT NULL` sin default sobre filas existentes; `UPDATE` masivo mal acotado; rename sin compatibilidad | BLQ-MED si es reversible, si no BLQ-ALTO |
+| Migracion sin transaccion | BLQ-MED |
 
-**Preguntas de ataque**:
-- Hay datos de prueba que podrian llegar a produccion?
-- Hay URLs que apuntan a ambientes de desarrollo?
-- Hay valores que deberian venir de configuracion?
+### 10. RPC con SECURITY DEFINER
 
-### 8. Seguridad de Base de Datos
+| Que buscar | Severidad si falla |
+|-----------|-------------------|
+| Sin `SET search_path` | BLQ-ALTO |
+| Sin verificar ownership o identidad dentro de la funcion | BLQ-ALTO |
+| SQL dinamico sin sanitizar | BLQ-ALTO |
+| Expuesta sin GRANT restringido | BLQ |
 
-| Check | Que buscar | Severidad si falla |
-|-------|-----------|-------------------|
-| RLS/Policies | Tablas nuevas sin Row Level Security (si el stack lo soporta) | BLOQUEANTE |
-| Permisos | Operaciones que no verifican ownership | BLOQUEANTE |
-| Migraciones | Migraciones que podrian perder datos | BLOQUEANTE |
-| Indices | Queries sin indices que podrian ser lentas | MENOR |
+### 11. Cache Invalidation Logic
 
-**Preguntas de ataque**:
-- Un usuario puede consultar/modificar filas de otro usuario?
-- Las migraciones son reversibles sin perder datos?
-- Hay queries que podrian ser N+1 o full table scan?
+| Que buscar | Severidad si falla |
+|-----------|-------------------|
+| Cache key sin `user_id` u organizacion en multi-tenant | BLQ-ALTO |
+| Invalidacion que dispara antes de que el write sea visible; TTL que contradice el dato | BLQ |
+| Invalidacion solo local cuando importa entre dispositivos | MENOR o BLQ segun el dato |
+
+### 12. Afirmaciones sin testigo
+
+Ataca el documento, no el codigo. Detalle en el agente `nexus-adversary`.
+
+| Que buscar | Severidad si falla |
+|-----------|-------------------|
+| Frase de cobertura que una edicion minima falsifica con el gate en verde | BLQ-ALTO |
+| Numero o ejemplo publicado que no reproduce | BLQ-MED |
+| Numero que reproduce pero sin su patron | MENOR |
 
 ---
 
@@ -142,42 +139,38 @@
 
 | Categoria | Resultado | Hallazgos |
 |-----------|-----------|-----------|
-| 1. AuthZ | OK/BLOQUEANTE/MENOR | [desc o "Sin hallazgos"] |
-| 2. Inputs | OK/BLOQUEANTE/MENOR | [desc o "Sin hallazgos"] |
-| 3. Inyeccion | OK/BLOQUEANTE/MENOR | [desc o "Sin hallazgos"] |
-| 4. Secretos | OK/BLOQUEANTE/MENOR | [desc o "Sin hallazgos"] |
-| 5. Race Conditions | OK/BLOQUEANTE/MENOR | [desc o "Sin hallazgos"] |
-| 6. Data Exposure | OK/BLOQUEANTE/MENOR | [desc o "Sin hallazgos"] |
-| 7. Mock Data | OK/BLOQUEANTE/MENOR | [desc o "Sin hallazgos"] |
-| 8. BD Security | OK/BLOQUEANTE/MENOR | [desc o "Sin hallazgos"] |
+| 1. Security | OK/BLQ/MENOR/N/A | [desc] |
+| 2. Error Handling | OK/BLQ/MENOR/N/A | [desc] |
+| 3. Data Integrity | OK/BLQ/MENOR/N/A | [desc] |
+| 4. Performance | OK/BLQ/MENOR/N/A | [desc] |
+| 5. Integration | OK/BLQ/MENOR/N/A | [desc] |
+| 6. Type Safety | OK/BLQ/MENOR/N/A | [desc] |
+| 7. Test Coverage | OK/BLQ/MENOR/N/A | [desc] |
+| 8. Scope Drift | OK/BLQ/MENOR/N/A | [desc] |
+| 9. Destructive Migrations | OK/BLQ/MENOR/N/A | [desc] |
+| 10. SECURITY DEFINER | OK/BLQ/MENOR/N/A | [desc] |
+| 11. Cache Invalidation | OK/BLQ/MENOR/N/A | [desc] |
+| 12. Afirmaciones sin testigo | OK/BLQ/MENOR/N/A | [desc] |
 
-### Hallazgos BLOQUEANTE (si hay)
+### Hallazgos
 
-| # | Categoria | Archivo | Descripcion | Fix requerido |
-|---|-----------|---------|-------------|---------------|
-| 1 | [cat] | `[path]` | [que esta mal] | [que debe corregirse] |
-
-### Hallazgos MENOR (si hay)
-
-| # | Categoria | Archivo | Descripcion | Recomendacion |
-|---|-----------|---------|-------------|---------------|
-| 1 | [cat] | `[path]` | [que podria mejorar] | [sugerencia] |
+| ID | Categoria | Archivo:linea | Descripcion | Reproduccion | Impacto | Sugerencia |
+|----|-----------|---------------|-------------|--------------|---------|------------|
+| BLQ-ALTO-1 | [cat] | `[path:linea]` | [que esta mal] | [input → esperado vs real] | [impacto] | [sin codigo] |
 
 ### Veredicto
 
-- **BLOCKED**: Hay hallazgos BLOQUEANTE. Dev debe corregir y Adversary re-revisa.
-- **APPROVED with notes**: Solo hallazgos MENOR. Documentar y continuar.
-- **APPROVED**: Sin hallazgos. Pipeline limpio.
+**APROBADO** / **APROBADO con MENORs** / **RECHAZADO (BLOQUEANTEs activos)**
 ```
 
 ---
 
 ## Reglas del AR
 
-1. **Adversary NUNCA implementa**. Solo identifica problemas. Dev corrige.
-2. **BLOQUEANTE es innegociable**. No se avanza hasta que se corrija.
-3. **MENOR se documenta**. Se corrige si es rapido, se deja como deuda tecnica si no.
-4. **Re-review despues de correcciones**. Adversary verifica que el fix es correcto.
-5. **Sin falsos positivos**. Adversary debe justificar cada hallazgo con evidencia concreta.
-6. **N/A es valido**. Si una categoria no aplica a esta HU, marcar OK con nota "N/A".
+1. **Adversary nunca implementa**. Solo identifica problemas. Dev corrige.
+2. **Cualquier BLQ bloquea**. El nivel solo ordena el fix-pack.
+3. **MENOR se documenta**. Se corrige si es rapido; si no, queda como deuda.
+4. **Re-review despues de corregir**. Adversary verifica que el fix funciona.
+5. **Sin reproduccion no hay hallazgo**. Cada uno lleva evidencia concreta.
+6. **N/A es valido**, con su justificacion en una linea.
 7. **El AR se hace sobre codigo real**. Adversary lee los archivos modificados, no asume.

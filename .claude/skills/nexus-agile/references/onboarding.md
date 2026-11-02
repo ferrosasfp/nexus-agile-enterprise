@@ -165,7 +165,7 @@ REGLA #3:  Gates son de personas. AI nunca auto-aprueba.
 
 ESCALAR:   Dev -> TL (2h) | TL -> PO (4h) | SM si bloqueo
 
-DOCS:      doc/sdd/NNN-titulo/ -> work-item.md | sdd.md | story-file.md | validation.md | report.md
+DOCS:      $NEXUS_ROOT/doc/sdd/NNN-titulo/ -> work-item.md | sdd.md | story-file.md | validation.md | report.md
 
 METRICAS:  Lead time | BLOQUEANTE rate | Drift rate | Costo/HU | Carry-over rate
 

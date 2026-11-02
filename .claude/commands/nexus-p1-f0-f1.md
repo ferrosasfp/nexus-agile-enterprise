@@ -1,7 +1,7 @@
 ---
 description: NexusAgil F0+F1 — Bootstrap context and generate work-item.md for an HU
 argument-hint: <HU-ID> [descripción libre]
-allowed-tools: Task, Read, Glob, Grep, Write
+allowed-tools: Task, Read, Glob, Grep, Write, Bash, AskUserQuestion
 ---
 
 # /nexus-p1-f0-f1 — Context Bootstrap + Work Item (Paso 1/8)
@@ -10,10 +10,12 @@ Lanza el sub-agente `nexus-analyst` para ejecutar F0 (Context Bootstrap) + F1 (W
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX [descripción opcional]`)
 
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+
 ## Acciones
 
-1. Verificá que `project-context.md` exista en la raíz del proyecto. Si no existe, el sub-agente lo genera primero.
-2. Leé `doc/sdd/_INDEX.md` para conocer el siguiente NNN. Si no existe el directorio `doc/sdd/`, creá la estructura.
+1. Verificá que `project-context.md` exista en NEXUS_ROOT. Si no existe, el sub-agente lo genera primero.
+2. Leé `$NEXUS_ROOT/doc/sdd/_INDEX.md` para conocer el siguiente NNN. Si no existe el directorio `$NEXUS_ROOT/doc/sdd/`, creá la estructura.
 3. Lanzá el sub-agente con el Task tool:
 
 ```
@@ -21,31 +23,28 @@ Task tool:
   subagent_type: nexus-analyst
   description: F0+F1 para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres el agente nexus-analyst de NexusAgil ejecutando F0 + F1 para la HU [WKH-XX].
 
     INPUT:
     - HU descrita por el humano: $ARGUMENTS
     - project-context.md: [verificar si existe en la raíz]
     - product-context.md: [verificar si existe en la raíz — contexto de negocio]
-    - _INDEX.md: doc/sdd/_INDEX.md
-    - Ticket en Jira/issue tracker (si aplica): consultar mcp__claude_ai_Atlassian__getJiraIssue
+    - _INDEX.md: $NEXUS_ROOT/doc/sdd/_INDEX.md
+    - Ticket en Jira/issue tracker (si aplica): leerlo con la tool getJiraIssue disponible. Si no está disponible, marcarlo y avisar; el orquestador pasa el texto
 
     TU TAREA:
-    1. Si project-context.md no existe → generarlo siguiendo references/project_context_template.md
+    1. Si project-context.md no existe → generarlo siguiendo $SKILL_DIR/references/project_context_template.md
     1b. Product Context:
         Si product-context.md EXISTE → leerlo. Usar personas, flujos, y restricciones de negocio para informar los ACs y el sizing.
-        Si NO existe → preguntar al humano via AskUserQuestion:
+        Si NO existe y el prompt no trae la respuesta → devolver en PREGUNTAS PARA EL HUMANO:
           "No encontré product-context.md. ¿Cómo querés darme el contexto de negocio?"
-          Opciones:
-          (a) "Te lo escribo/dicto acá" → guardar texto completo en doc/prd/prd-raw.md + generar product-context.md (~200 líneas) en la raíz
-          (b) "Te paso un link" → fetchear contenido → guardar en doc/prd/prd-raw.md + generar product-context.md
-          (c) "Ya subí el PRD a doc/prd/" → leer doc/prd/*.md|*.txt|*.pdf → generar product-context.md
-          (d) "Seguí sin contexto de negocio" → continuar, marcar [SIN PRODUCT CONTEXT] en work-item
-        En todos los casos (a/b/c): product-context.md apunta a doc/prd/ en su sección Fuentes.
-        Usar references/product_context_template.md como estructura del documento generado.
+          (a) texto, (b) link, (c) archivo ya subido a $NEXUS_ROOT/doc/prd/, (d) seguir sin contexto ([SIN PRODUCT CONTEXT] en el work-item)
+        Con la respuesta: guardar el material en $NEXUS_ROOT/doc/prd/prd-raw.md si aplica, y generar product-context.md (~200 líneas) en NEXUS_ROOT, con $NEXUS_ROOT/doc/prd/ en su sección Fuentes.
+        Usar $SKILL_DIR/references/product_context_template.md como estructura del documento generado.
     2. Smart Sizing: clasificar como FAST/LAUNCH/QUALITY
     3. Skills Router: declarar máximo 2 skills relevantes
-    4. Generar work-item.md en doc/sdd/NNN-titulo/work-item.md con:
+    4. Generar work-item.md en $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md con:
        - ACs en EARS (mínimo 3)
        - Scope IN/OUT explícito
        - Decisiones técnicas iniciales (DT-N)
@@ -55,25 +54,26 @@ Task tool:
     5. Actualizar _INDEX.md con la nueva HU en estado "in progress"
 
     OUTPUT ESPERADO:
-    - doc/sdd/NNN-titulo/work-item.md
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md
     - _INDEX.md actualizado
     - Resumen ejecutivo (5-10 líneas) al orquestador
 
     SCOPE:
     - Lee SOLO archivos necesarios para entender stack y dominio
-    - Máximo 3 preguntas al humano vía AskUserQuestion para completar DoR
+    - No podés preguntar directamente: máximo 3 preguntas en el bloque PREGUNTAS PARA EL HUMANO
     - Si falta info crítica → marcar [NEEDS CLARIFICATION] y avanzar
 
     ## ⛔ PROHIBIDO EN ESTA FASE
     - NO escribir código de producción
     - NO generar SDD ni Story File (eso es Architect en F2)
-    - NO modificar archivos fuera de doc/sdd/NNN-titulo/, doc/prd/, product-context.md
+    - NO modificar archivos fuera de $NEXUS_ROOT/doc/sdd/NNN-titulo/, $NEXUS_ROOT/doc/prd/, product-context.md
     - NO inventar requirements
     - NO asumir scope: si dudás, marcar [NEEDS CLARIFICATION]
 ```
 
-4. Cuando el sub-agente entregue el work-item, presentalo al humano con un resumen y esperá el gate `HU_APPROVED` (texto literal).
-5. NO continúes a F2 hasta recibir el gate.
+4. Si el sub-agente devuelve PREGUNTAS PARA EL HUMANO, hacelas con `AskUserQuestion` y relanzalo con las respuestas.
+5. Cuando el work-item esté completo, presentalo al humano con un resumen y esperá el gate `HU_APPROVED` (texto literal).
+6. NO continúes a F2 hasta recibir el gate.
 
 ## ⚠️ Importante
 - Vos sos el ORQUESTADOR. NO leas el codebase, NO escribas el work-item vos mismo.

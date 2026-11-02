@@ -81,7 +81,7 @@ Para evitar colisiones de numeracion entre equipos que comparten repo:
 | Bravo | B- | feat/B-001-payment-auth |
 | Charlie | C- | feat/C-001-reporting |
 
-Cada equipo mantiene su propio _INDEX.md: doc/sdd/_INDEX-alpha.md, doc/sdd/_INDEX-bravo.md.
+Cada equipo mantiene su propio _INDEX.md: $NEXUS_ROOT/doc/sdd/_INDEX-alpha.md, $NEXUS_ROOT/doc/sdd/_INDEX-bravo.md.
 O un solo _INDEX.md con columna de equipo.
 
 ---

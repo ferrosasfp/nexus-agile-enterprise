@@ -12,10 +12,12 @@ Lanza el sub-agente `nexus-adversary` **DOS VECES en paralelo** (mismo mensaje, 
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX`)
 
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+
 ## Pre-requisitos
 
 - F3 debe haber terminado (código en disco, tests pasando)
-- `git diff --name-only main...HEAD` debe mostrar los archivos modificados
+- `git -C "$CODE_ROOT" diff --name-only main...HEAD` debe mostrar los archivos modificados
 
 ## Acciones — DOS Tasks en EL MISMO MENSAJE (paralelo real)
 
@@ -26,16 +28,17 @@ Task #1 (AR):
   subagent_type: nexus-adversary
   description: AR para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres el agente nexus-adversary de NexusAgil ejecutando AR (Adversarial Review) para la HU [WKH-XX].
 
     INPUT:
-    - doc/sdd/NNN-titulo/story-file.md (contrato que el Dev debía cumplir)
-    - doc/sdd/NNN-titulo/auto-blindaje.md (errores documentados por el Dev)
-    - Archivos modificados: ejecutar `git diff --name-only main...HEAD` (o el branch base)
-    - references/adversarial_review_checklist.md del skill nexus-agile
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (contrato que el Dev debía cumplir)
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/auto-blindaje.md (errores documentados por el Dev)
+    - Archivos modificados: ejecutar `git -C "$CODE_ROOT" diff --name-only main...HEAD` (o el branch base)
+    - $SKILL_DIR/references/adversarial_review_checklist.md del skill nexus-agile
 
     TU TAREA:
-    Atacar la implementación en las 8 categorías:
+    Atacar la implementación en las 12 categorías de nexus-adversary (la 9 a la 12 se marcan N/A con una línea si no aplican; nunca se omiten):
     1. Security
     2. Error Handling
     3. Data Integrity
@@ -44,16 +47,20 @@ Task #1 (AR):
     6. Type Safety
     7. Test Coverage
     8. Scope Drift
+    9. Destructive Migrations
+    10. RPC con SECURITY DEFINER
+    11. Cache Invalidation Logic
+    12. Afirmaciones sin testigo
 
-    Para cada categoría: BLQ-ALTO / BLQ-MED / BLQ-BAJO / MENOR / OK con evidencia archivo:línea. Cualquier BLQ (ALTO, MED, o BAJO) bloquea el gate — la granularidad solo sirve para priorizar el fix-pack del Dev.
+    Para cada categoría: BLQ-ALTO / BLQ-MED / BLQ-BAJO / MENOR / OK / N/A con evidencia archivo:línea y reproducción. Cualquier BLQ (ALTO, MED, o BAJO) bloquea el gate — la granularidad solo sirve para priorizar el fix-pack del Dev.
 
     OUTPUT ESPERADO:
-    - doc/sdd/NNN-titulo/ar-report.md
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/ar-report.md
     - Veredicto final: APROBADO / APROBADO con MENORs / RECHAZADO
     - Resumen al orquestador
 
     ## ⛔ PROHIBIDO EN ESTA FASE
-    - NO modificar código (solo Read, Glob, Grep, Bash)
+    - NO modificar código: Write es solo para el reporte y Bash solo para leer y reproducir
     - NO escribir el fix vos mismo — solo reportar el hallazgo
     - NO ser permisivo: tu trabajo es romper, no validar
     - NO modificar story-file ni SDD
@@ -62,6 +69,7 @@ Task #2 (CR — corre en paralelo con #1):
   subagent_type: nexus-adversary
   description: CR para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres el agente nexus-adversary de NexusAgil ejecutando CR (Code Review) para la HU [WKH-XX].
 
     NOTA: corres EN PARALELO con AR. NO podés leer ar-report.md (todavía no existe).
@@ -69,28 +77,24 @@ Task #2 (CR — corre en paralelo con #1):
     — el orquestador deduplica al consolidar.
 
     INPUT:
-    - doc/sdd/NNN-titulo/story-file.md
-    - Archivos modificados: `git diff main...HEAD`
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md
+    - Archivos modificados: `git -C "$CODE_ROOT" diff main...HEAD`
 
     TU TAREA:
-    Revisar calidad de código (NO seguridad — eso es AR). 6 checks:
-    1. Naming consistency con el proyecto
-    2. Complejidad (funciones >50 líneas, ciclomática alta)
-    3. DRY violations (código duplicado evitable)
-    4. SOLID — evaluá cada principio como PASS / MENOR / BLOQUEANTE:
-       - **S (SRP)**: ¿alguna clase/función tiene >1 responsabilidad clara? Señales: nombre con "y" (UserAndEmailService), >300 líneas, importa librerías de dominios no relacionados.
-       - **O (OCP)**: ¿hay if/switch hardcodeado sobre tipo/categoría que requeriría editar para agregar un caso nuevo? (Solo flag si la variación ya apareció ≥2 veces; YAGNI > OCP prematuro.)
-       - **L (LSP)**: ¿algún override de subclase rompe el contrato del padre? (Excepciones nuevas, postcondiciones más débiles, precondiciones más estrictas, throws de UnsupportedOperation.)
-       - **I (ISP)**: ¿alguna interface fuerza a clientes a depender de métodos que no usan? (Implementaciones con NotImplemented o que devuelven null por método irrelevante.)
-       - **D (DIP)**: ¿algún módulo de alto nivel (lógica de negocio/dominio) importa implementaciones concretas de bajo nivel (drivers, librerías de infra) en lugar de abstracciones? (Test de humo: ¿podés mockear esto en un unit test sin tocar archivos del dominio?)
-       REGLA: aplicá SOLID como **lente, no como checklist ritual**. Si el proyecto tiene un estilo pragmático que rompe un principio conscientemente (ej: YAGNI sobre OCP, framework constraints), marcalo OK con nota explicativa. NO sobre-abstracts.
-    5. Tests: cobertura, claridad, asserts significativos
-    6. Documentación inline (JSDoc/comments donde la lógica no es obvia)
+    Revisar calidad de código (NO seguridad — eso es AR). Los 8 checks de quality_pipeline.md, sección Code Review:
+    1. Patrones: ¿se siguieron los exemplars?
+    2. Naming: consistente con el proyecto
+    3. Complejidad: funciones cortas y responsabilidad única. SOLID como lente, no como checklist: solo se reporta con impacto concreto, y YAGNI gana a una abstracción prematura. Comentarios solo donde la lógica no es obvia
+    4. Duplicación evitable
+    5. Imports: solo dependencias aprobadas
+    6. Límites de archivo del proyecto
+    7. Escala: `git -C "$CODE_ROOT" diff --stat` contra el presupuesto del SDD 4.1; un exceso sin justificar es hallazgo
+    8. Claims: números, tablas de ejemplos y frases de cobertura deben tener testigo
 
     Clasificar hallazgos como BLQ-ALTO / BLQ-MED / BLQ-BAJO / MENOR / OK (cualquier BLQ bloquea el gate).
 
     OUTPUT ESPERADO:
-    - doc/sdd/NNN-titulo/cr-report.md
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/cr-report.md
     - Veredicto final
     - Resumen al orquestador
 
@@ -127,14 +131,14 @@ El orquestador decide caso a caso. Por defecto, si los fixes de AR son <20 líne
 
 Mientras AR y CR se ejecutan en paralelo (3-8 min dependiendo del tamaño del diff), **el orquestador tiene capacidad ociosa**. Aprovechala para tareas de infra **no-dependientes** que igual iban a correrse en algún momento:
 
-- **Aplicar migrations al remoto** (Supabase Management API, prisma migrate deploy, etc.) — siempre y cuando la migration sea del Scope IN de esta HU y el Dev ya la haya commiteado
+- **Preparar la base local o de CI** que F4 va a usar. Aplicar migraciones a un remoto compartido NO es una tarea paralela: se hace solo si el entorno de validacion lo declara, y nunca antes de que AR y CR aprueben
 - **Levantar servicios locales** que F4 va a necesitar para validación (DB local, mock APIs, preview deploys)
 - **Pre-warm del CR-report reader del qa** — leer archivos grandes como `project-context.md` o exemplars que el qa va a necesitar
-- **Commitear y pushear el branch** si F3 dejó cambios sin pushear (útil para que el CI corra en paralelo con AR+CR)
+- **Pushear el branch** solo si el proyecto lo permite y el humano lo pidio (util para que el CI corra en paralelo con AR+CR)
 
 **Regla**: la tarea paralela NO debe depender del output de AR ni CR. Si depende (ej: "aplicar el fix de AR"), no es paralelizable — tiene que esperar.
 
-**Dato real**: en LUM-8 este patrón bajó AR+CR wallclock de ~6 min a ~3 min porque `migration apply` se ejecutó en paralelo. **Ahorro depende del stack** — más infra → más paralelización posible.
+**Ahorro**: depende del stack; mas infra local implica mas paralelizacion posible.
 
 ## ⚠️ Importante
 

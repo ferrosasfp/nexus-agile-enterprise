@@ -78,7 +78,7 @@
 
 ### Script de SM
 
-1. **Revisar HUs en progreso**: Leer artefactos en `doc/sdd/` para HUs activas
+1. **Revisar HUs en progreso**: Leer artefactos en `$NEXUS_ROOT/doc/sdd/` para HUs activas
 2. **Identificar bloqueos**: HUs paradas en un gate, missing inputs, errores no resueltos
 3. **Presentar status**:
 

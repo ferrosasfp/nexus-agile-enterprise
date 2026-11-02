@@ -10,6 +10,8 @@ Pipeline intermedio entre `/nexus-fast-pipeline` (sin review) y el QUALITY compl
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX`)
 
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+
 ## 🎯 Cuándo usar este modo (vs FAST vs QUALITY)
 
 ### ✅ FAST+AR está diseñado para
@@ -78,6 +80,7 @@ Task tool:
   subagent_type: nexus-analyst
   description: F1 FAST+AR para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres nexus-analyst en MODO FAST+AR para la HU [WKH-XX].
 
     DIFERENCIAS vs modo FAST puro:
@@ -97,10 +100,10 @@ Task tool:
     - HU del humano: $ARGUMENTS
     - project-context.md (debe existir)
     - product-context.md (si existe en la raíz → leerlo para contexto de negocio)
-    - doc/sdd/_INDEX.md (para asignar NNN)
+    - $NEXUS_ROOT/doc/sdd/_INDEX.md (para asignar NNN)
 
     OUTPUT:
-    - doc/sdd/NNN-titulo/work-item.md compacto con sección "Riesgo" explicitando las categorías
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md compacto con sección "Riesgo" explicitando las categorías
     - Máximo 10 ACs en EARS
     - Scope IN exhaustivo (máx 5 archivos)
     - Reporte al orquestador: path + 3 líneas explicando qué se construye y cuál es el riesgo
@@ -130,6 +133,7 @@ Task tool:
   subagent_type: nexus-dev
   description: F3 FAST+AR para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres nexus-dev en MODO FAST+AR para la HU [WKH-XX].
 
     Tu input es el WORK-ITEM directamente (NO hay Story File). Tratalo como contrato autocontenido.
@@ -141,7 +145,7 @@ Task tool:
     - NO expandas scope, NO refactors no pedidos.
 
     INPUT:
-    - doc/sdd/NNN-titulo/work-item.md (con sección Riesgo)
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md (con sección Riesgo)
     - project-context.md
 
     OUTPUT:
@@ -162,41 +166,43 @@ Task #1 (AR):
   subagent_type: nexus-adversary
   description: AR FAST+AR para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres nexus-adversary ejecutando AR para la HU [WKH-XX] en modo FAST+AR.
 
     NOTA: NO hay Story File. Tu contrato es el work-item.md.
 
     INPUT:
-    - doc/sdd/NNN-titulo/work-item.md (con sección Riesgo que te dice dónde prestar más atención)
-    - doc/sdd/NNN-titulo/auto-blindaje.md (si existe)
-    - Archivos modificados: `git diff --name-only main...HEAD`
-    - references/adversarial_review_checklist.md del skill nexus-agile
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md (con sección Riesgo que te dice dónde prestar más atención)
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/auto-blindaje.md (si existe)
+    - Archivos modificados: `git -C "$CODE_ROOT" diff --name-only main...HEAD`
+    - $SKILL_DIR/references/adversarial_review_checklist.md del skill nexus-agile
 
     TU TAREA:
-    Atacar la implementación en las 8 categorías estándar (Security, Error Handling, Data Integrity, Performance, Integration, Type Safety, Test Coverage, Scope Drift).
+    Atacar la implementación en las 12 categorías de nexus-adversary. Las que no aplican se marcan N/A con una línea (Destructive Migrations y SECURITY DEFINER suelen ser N/A acá; si aplican, esta HU debería ser QUALITY).
 
     PRIORIDAD: las categorías del work-item marcadas como riesgo son las que MÁS tenés que atacar. Si el work-item dice "server-actions-writes", la categoría Security + Data Integrity son críticas. No dejes nada sin revisar ahí.
 
     OUTPUT:
-    - doc/sdd/NNN-titulo/ar-report.md con findings en severidad BLQ-ALTO / BLQ-MED / BLQ-BAJO / MENOR / OK
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/ar-report.md con findings en severidad BLQ-ALTO / BLQ-MED / BLQ-BAJO / MENOR / OK
     - Veredicto final
 
 Task #2 (CR — paralelo):
   subagent_type: nexus-adversary
   description: CR FAST+AR para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres nexus-adversary ejecutando CR para la HU [WKH-XX] en modo FAST+AR.
 
     Corres EN PARALELO con AR — no podés leer ar-report.md.
 
     INPUT:
-    - doc/sdd/NNN-titulo/work-item.md
-    - Archivos modificados: `git diff main...HEAD`
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md
+    - Archivos modificados: `git -C "$CODE_ROOT" diff main...HEAD`
 
     TU TAREA:
-    6 checks: naming, complejidad, DRY, SOLID (S/O/L/I/D), tests, docs inline. Clasificar en BLQ-ALTO / BLQ-MED / BLQ-BAJO / MENOR / OK.
+    Los 8 checks de quality_pipeline.md, sección Code Review: patrones, naming, complejidad (SOLID como lente), duplicación, imports, límites, escala y claims. Clasificar en BLQ-ALTO / BLQ-MED / BLQ-BAJO / MENOR / OK.
 
-    OUTPUT: doc/sdd/NNN-titulo/cr-report.md
+    OUTPUT: $NEXUS_ROOT/doc/sdd/NNN-titulo/cr-report.md
 ```
 
 ### Fase 4 — fix-pack (si hay BLQ)
@@ -208,6 +214,7 @@ Task tool:
   subagent_type: nexus-dev
   description: Fix-pack FAST+AR para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Aplicá los fixes de AR + CR combinados. Priorizá BLQ-ALTO primero, luego MED, luego BAJO. Los MENORs quedan como deuda documentada, NO los fixes.
 
     INPUT: ar-report.md + cr-report.md + código actual
@@ -224,14 +231,15 @@ Task tool:
   subagent_type: nexus-qa
   description: F4 FAST+AR para HU [WKH-XX]
   prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
     Eres nexus-qa en modo COMPACT para HU [WKH-XX].
 
     El agente nexus-qa ya sabe hacer runtime-first y validation report compacto. Seguí su prompt estándar, con estas instrucciones específicas para FAST+AR:
 
-    1. Runtime checks (DB state, env parity, migration apply) — SI la categoría de riesgo del work-item los justifica. Si es `server-actions-writes` con migration → SÍ. Si es `auth-rbac` sin migration → verificá env vars pero no DB schema.
+    1. Runtime checks según el Entorno de validación de project-context.md, SI la categoría de riesgo los justifica. Si es `server-actions-writes` con migration → SÍ. Si es `auth-rbac` sin migration → verificá env vars pero no DB schema.
     2. AC verification con evidencia (tests o manual) para los máx 10 ACs del work-item.
     3. Drift detection rápido.
-    4. Gate confirmation leyendo el output de AR/CR — NO re-ejecutar lint/tsc/vitest/build.
+    4. Gate del repo: correrlo UNA vez, con comando literal, exit code y salida. No correr sus partes por separado.
 
     OUTPUT: validation.md en modo COMPACTO si todo verde, DENSO si hay findings.
 ```
