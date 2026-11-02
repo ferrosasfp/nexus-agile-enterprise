@@ -24,6 +24,12 @@ Lanza el sub-agente `nexus-docs` para cerrar la HU: reporte final, actualizació
 
 ## Acciones
 
+Antes de lanzar Docs, corré las métricas de la HU y pasáselas en el prompt (las lee de los transcripts y de `.gates.jsonl`, sin modelo):
+
+```bash
+python3 "$SKILL_DIR/scripts/nexus_metrics.py" --hu-dir "[HU_DIR]"
+```
+
 ```
 Task tool:
   subagent_type: nexus-docs
@@ -52,6 +58,7 @@ Task tool:
        - Archivos modificados
        - Decisiones diferidas a backlog (spinoffs)
        - Lecciones para próximas HUs
+       - Métricas: la tabla de nexus_metrics.py que te paso, tal cual, sin recalcular
     2. Actualizar $NEXUS_ROOT/doc/sdd/_INDEX.md con status final (DONE/ABORTED/BLOCKED), fecha, branch, link al report
     3. Verificar que el validation.md tiene veredicto APROBADO. Si no → marcar BLOCKED.
 
