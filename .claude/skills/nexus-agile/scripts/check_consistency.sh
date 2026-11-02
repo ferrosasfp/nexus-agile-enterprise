@@ -119,6 +119,25 @@ done
 check_absent "sin IDs de proyecto real" 'LUM-[0-9]|Luma' .claude README.md
 pass "fase 2 revisada"
 
+# --- Fase 3: coherencia y poda
+grep -q '\*\*11 slash commands\*\*' $S/SKILL.md || fail "SKILL no dice 11 comandos"
+check_count "comandos en la tabla de SKILL" 11 "$(grep -cE '^\| `/nexus-' $S/SKILL.md)"
+check_absent "sin conteos viejos" '8 slash|10 commands|Los 3 Modos|Los 4 Modos|The 9 Agents' .claude README.md
+check_absent "sin roles inexistentes" 'Spec Writer|Party Mode|Personalidad|Architect\+Adversary|Architect \+ Adversary|Adversary\+QA|Adversary \+ QA' $A $C $S/SKILL.md $R README.md
+check_absent "limites de FAST sin versiones viejas" '<30|30 lineas|≥3 archivos|1-2 archivos|Max 2 files|<5 archivos' $A $C $S/SKILL.md $R/quality_pipeline.md $R/quick_flow.md $R/governance.md $R/onboarding.md $R/sdd_template.md README.md
+grep -q '^| `RELEASE_APPROVED`' $S/SKILL.md || fail "SKILL sin RELEASE_APPROVED"
+grep -q 'release_gate' $R/project_context_template.md || fail "plantilla sin release_gate"
+grep -q 'release_gate' $C/nexus-p7-f4.md || fail "p7 sin F5"
+grep -q 'nunca se autoaprueba' $C/nexus-auto.md || fail "auto puede autoaprobar RELEASE"
+check_absent "gates con opcion exacta" 'Opciones\*?\*?: APROBAR' $C
+check_absent "sin enfasis visual" '⛔|🔴|⚠️' $A $C $S/SKILL.md $R/quality_pipeline.md $R/subagent_protocol.md
+check_absent "sin mayusculas de enfasis" '\b(NUNCA|SIEMPRE|DEBE)\b' $A $C $S/SKILL.md $R/quality_pipeline.md $R/subagent_protocol.md
+grep -q 'references/enterprise.md' $S/SKILL.md || fail "SKILL sin puntero a enterprise"
+[ -f $R/enterprise.md ] || fail "falta enterprise.md"
+[ -f $R/auto_completion_report.md ] || fail "falta auto_completion_report.md"
+[ "$(wc -l < $S/SKILL.md)" -le 520 ] || fail "SKILL.md supera 520 lineas"
+pass "fase 3 revisada"
+
 # --- Evidencia y entorno de validacion
 check_absent "evidencia: archivo:linea ya no alcanza como PASS" 'no puede marcar (CUMPLE|PASS) sin citar' $R $A
 grep -q 'Entorno de validacion' $R/project_context_template.md || fail "plantilla sin Entorno de validacion"

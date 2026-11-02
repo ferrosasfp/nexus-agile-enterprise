@@ -62,7 +62,7 @@ Task tool:
     - auto-blindaje.md (si hubo errores)
     - Reporte al orquestador: archivos creados/modificados, comandos ejecutados, output de typecheck/tests
 
-    ## ⛔ PROHIBIDO EN ESTA FASE
+    ## Prohibido en esta fase
     - NO tocar archivos fuera del Scope IN del contrato
     - NO crear archivos no listados
     - NO expandir scope (no refactors, no "mejoras")
@@ -76,7 +76,7 @@ Task tool:
 
 El pipeline continúa automático: lanzá `/nexus-p5-ar` inmediatamente con la misma HU.
 
-## ⚠️ Importante
+## Importante
 - Vos sos el ORQUESTADOR. NO escribas código vos mismo.
 - Si el Dev reporta scope drift o hallazgos no resueltos: re-lanzá con instrucciones específicas.
 - Si el Dev pide info que no está en el contrato: escalá al Architect (relanzá F2.5, o F2 con `contract_mode: unified`, con la corrección).

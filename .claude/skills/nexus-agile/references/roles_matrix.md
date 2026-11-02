@@ -65,7 +65,7 @@
 |------|-------------------|------------------|----------------------|
 | SPRINT_APPROVED | PO + TL (ambos) | — | Backlog priorizado, HUs estimadas, capacidad confirmada |
 | HU_APPROVED | PO | SM (si PO delega) | ACs claros, scope definido, sin [NEEDS CLARIFICATION] |
-| SPEC_APPROVED | TL | Senior Dev (si TL delega) | SDD tecnicamente viable, Readiness Check OK, sin BLOQUEANTEs en AR de SDD |
+| SPEC_APPROVED | TL | Senior Dev (si TL delega) | SDD tecnicamente viable, Readiness Check OK |
 | REVIEW_APPROVED | PO + TL | — | Status revisado, bloqueos identificados, plan de accion |
 | RELEASE_APPROVED | TL + PO (ambos) | Senior Dev + SM | Pre-release checklist OK, staging verificado, rollback definido |
 | RETRO_APPROVED | SM | TL | Action items registrados, retrospectiva completada |
@@ -90,7 +90,6 @@
 | F1: Generar Work Item | Autonomo | PO aprueba en gate |
 | F2: Codebase Grounding | Autonomo | — |
 | F2: Generar SDD | Autonomo | TL aprueba en gate |
-| F2: Adversarial Review del SDD | Autonomo | TL revisa BLOQUEANTEs |
 | F2.5: Generar Story File | Autonomo | — |
 | F3: Implementacion | Autonomo | Dev humano revisa PR |
 | AR: Adversarial Review | Autonomo | TL revisa BLOQUEANTEs |
@@ -149,7 +148,7 @@ Esta en scope del Story File?
 ### Solo (1 persona)
 
 PO + TL + Dev + QA = misma persona.
-Gates: auto-aprobados (modo original NexusAgile).
+Gates: los aprueba esa misma persona, o los delega con `/nexus-auto`.
 AI: maxima delegacion.
 
 ### Equipo chico (2-4 personas)
@@ -180,7 +179,7 @@ Coordinacion entre equipos: Scrum of Scrums facilitado por SMs.
 
 1. **Un rol, una persona** — Nadie ocupa 2 roles en la misma HU (excepcion: equipo solo/chico segun configuracion arriba).
 2. **Quien especifica no implementa** — Si el TL escribe el SDD, no deberia ser el reviewer de su propio PR.
-3. **Gates son de personas** — Los agentes AI nunca auto-aprueban gates. Ni aunque la calidad sea perfecta.
+3. **Gates son de personas** — Un agente no aprueba por su cuenta. Unica excepcion: con `/nexus-auto`, el humano delega `HU_APPROVED` y `SPEC_APPROVED` en una revision clinica con atribucion. `RELEASE_APPROVED` y los gates de sprint nunca se delegan.
 4. **Delegacion explicita** — No se asume. Se declara por escrito, por gate, por periodo.
 5. **Audit trail obligatorio** — Toda aprobacion de gate tiene: quien, cuando, donde. Sin esto, el gate no cuenta.
 6. **Veto tecnico** — TL puede vetar una HU si el riesgo tecnico es inaceptable. PO puede escalar a CTO/VP si no esta de acuerdo.

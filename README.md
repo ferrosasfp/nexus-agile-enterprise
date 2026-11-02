@@ -46,7 +46,7 @@ npm i  →  No.  Just copy one folder into your project.  Done.
   │  F0: Bootstrap + Smart Sizing + Skills Router       │
   │  F1: Work Item + EARS ACs + Scope + Dependencies    │
   │  ⛔ HU_APPROVED                                     │
-  │  F2: Codebase Grounding + SDD + Adversary Review    │
+  │  F2: Codebase Grounding + SDD                       │
   │  ⛔ SPEC_APPROVED                                   │
   │  F2.5: Story File (Dev's contract)                  │
   │  F3: Implementation — Waves + Anti-Hallucination    │
@@ -115,7 +115,7 @@ Four structural additions that eliminate context overload AND prevent the orches
 
 ### Custom Sub-Agents (`.claude/agents/`)
 
-Six specialized Claude Code agents — one per pipeline phase — with the role, allowed tools, and `⛔ FORBIDDEN IN THIS PHASE` block baked into the agent file itself. The orchestrator literally **cannot** invoke them without inheriting the constraints.
+Six specialized Claude Code agents — one per pipeline phase — with the role, allowed tools, and forbidden-actions block baked into the agent file itself. The orchestrator literally **cannot** invoke them without inheriting the constraints.
 
 | Agent | Phases | Model | Tools | Output |
 |---|---|---|---|---|
@@ -190,7 +190,7 @@ The orchestrator never writes code, generates SDDs, or touches files. It coordin
 
 Without a router: a monolithic `AGENTS.md` with 1000+ lines loaded on every turn — Angular patterns loaded for a Supabase migration, blockchain instructions loaded for a CSS fix.
 
-With the Skills Router, the Architect runs a lightweight detection at F0 and loads only the 1-2 skills relevant to the current HU:
+With the Skills Router, the Analyst runs a lightweight detection at F0 and loads only the 1-2 skills relevant to the current HU:
 
 | Signal in the HU | Skill loaded |
 |---|---|
@@ -215,7 +215,7 @@ Classifies the HU by SDD_MODE:
 
 | Signal | SDD_MODE |
 |---|---|
-| Max 2 files, no DB, no new logic | `patch` → FAST pipeline |
+| Up to 2 code files (plus tests), under 50 lines, no DB, no new logic | `patch` → FAST pipeline |
 | Bug with reproduction steps | `bugfix` → lightweight SDD |
 | Refactor or tech task | `mini` → minimal SDD |
 | Feature with logic | `full` → full pipeline |
@@ -224,7 +224,7 @@ Then runs the Skills Router: detects the domain from the HU and loads only the r
 
 ### F1: Discovery
 
-Analyst normalizes the HU into a Work Item: objective, EARS Acceptance Criteria, Scope IN/OUT, and missing inputs. UX contributes microcopy and user flows when UI is involved. Architect analyzes dependencies and proposes execution order.
+Analyst normalizes the HU into a Work Item: objective, EARS Acceptance Criteria, Scope IN/OUT, and missing inputs. UX contributes microcopy and user flows when UI is involved. Analyst analyzes dependencies and proposes execution order.
 
 Output: `work-item.md`
 
@@ -236,7 +236,7 @@ Deep Codebase Grounding: reads 2-3 real files related to the HU, extracts patter
 
 Then writes the SDD: routes, schema, UI spec, Constraint Directives (REQUIRED / FORBIDDEN), Integration Contract when components communicate, and a Readiness Check that verifies every AC has a file and every file has a valid Exemplar.
 
-Adversary reviews the SDD before it reaches the human. No `[NEEDS CLARIFICATION]` items allowed at the gate.
+No `[NEEDS CLARIFICATION]` items allowed at the gate.
 
 Output: `sdd.md`
 
@@ -286,14 +286,16 @@ doc/sdd/_INDEX.md         ← history of every closed HU
 ```
 
 
-## The 9 Agents
+## The Roles
+
+Six roles have an agent file in `.claude/agents/`. UX, SM and Triage have no file of their own: the orchestrator takes them on when needed.
 
 | Agent | Role | Active in |
 |---|---|---|
-| **Analyst** | Interprets input, normalizes into Work Item, writes EARS ACs, defines scope | F0, F1 |
-| **Architect** | Codebase Grounding, Context Map, Exemplars, SDD, Story File | F0, F1, F2, F2.5 |
+| **Analyst** | Interprets input, normalizes into Work Item, writes EARS ACs, defines scope, sizes the HU | F0, F1 |
+| **Architect** | Codebase Grounding, Context Map, Exemplars, SDD, Story File | F2, F2.5 |
 | **UX** | Microcopy, user flows, accessibility — only when the HU has UI | F1 (UI only) |
-| **Adversary** | Attacks SDD (F2) and implementation (AR) across 12 categories. Sole owner of Code Review (8 checks). Never implements. | F2, AR, CR |
+| **Adversary** | Attacks the implementation (AR) across 12 categories. Sole owner of Code Review (8 checks). Never implements. | AR, CR |
 | **Dev** | Implements only the contract, in Waves, reading the SDD only for the why. Anti-Hallucination Protocol always on. | F3, post-AR fixes |
 | **SM** | Sprint Planning, Status Meeting, Retrospective, Sprint Closure Checklist | Sprint cadence |
 | **QA** | Drift Detection, AC evidence as command + output, repo gate, Validation Report | F4 |
@@ -313,10 +315,11 @@ Analyst (defines)   ≠  Architect (specifies)  ≠  Dev (implements)  ≠  Adve
 | `SPRINT_APPROVED` | `SPRINT_APPROVED` | After Sprint Planning |
 | `HU_APPROVED` | `HU_APPROVED` | After F1 Work Item |
 | `SPEC_APPROVED` | `SPEC_APPROVED` | After F2 SDD |
+| `RELEASE_APPROVED` | `RELEASE_APPROVED` | After F5, only with `release_gate: true`. Never self-approved |
 | `REVIEW_APPROVED` | `REVIEW_APPROVED` | After Status Meeting |
 | `RETRO_APPROVED` | `RETRO_APPROVED` | After Retrospective |
 
-Only the exact text activates the gate. "yes", "ok", "go", "sure" do **not** activate any gate.
+Only the exact text activates the gate. "yes", "ok", "go", "sure" do **not** activate any gate. The one exception is `/nexus-auto`, where you explicitly delegate `HU_APPROVED` and `SPEC_APPROVED` to a clinical review that escalates on any failure.
 
 Between gates, the pipeline runs automatically. The agent never asks "shall I continue?" — that is a process error.
 
@@ -406,9 +409,11 @@ README.md
 │   └── nexus-auto.md                    #     /nexus-auto — autonomous multi-HU orchestrator
 │
 └── skills/nexus-agile/
-    ├── SKILL.md                         # Full pipeline, 4 modes, global rules
+    ├── SKILL.md                         # Full pipeline, modes, global rules
+    ├── CHANGELOG.md                     # What changed
+    ├── scripts/check_consistency.sh     # Verifies counts, models, tools and paths match
     └── references/
-        ├── agents_roster.md             # 9 agent roles — personality + responsibilities
+        ├── agents_roster.md             # 9 roles: 6 agent files + UX, SM, Triage
         ├── subagent_protocol.md         # Orchestration + AUTO clinical review + Bash Auto-Blindaje
         ├── skills_router.md             # Selective skill loading — clean context per HU
         ├── sdd_template.md              # SDD templates: FULL / BUGFIX / MINI
@@ -428,6 +433,9 @@ README.md
         ├── concurrent_work_protocol.md  # Enterprise: multi-dev branches, PRs
         ├── metrics.md                   # KPIs, production baselines, token analysis, sprint reports
         ├── onboarding.md                # Enterprise: quick start by role
+        ├── enterprise.md                # Enterprise: entry point for teams
+        ├── auto_completion_report.md    # AUTO: completion report format
+        ├── workflow_evaluation.md       # Why AUTO is not a Workflow script yet
         ├── governance.md                # Enterprise: scope changes, disputes, incidents
         ├── greenfield_bootstrap.md      # Enterprise: new project from scratch
         ├── cross_team_protocol.md       # Enterprise: multi-team coordination

@@ -13,7 +13,7 @@
 | **full** | FULL | feature/improvement con logica |
 | **bugfix** | BUGFIX | bugs con repro steps |
 | **mini** | MINI | tech-task, refactor |
-| **patch** | Sin SDD | Trivial: 1-2 archivos, <30 lineas → Quick Flow |
+| **patch** | Sin SDD | Trivial: limites de FAST en `references/quick_flow.md` |
 
 ---
 

@@ -6,7 +6,7 @@ allowed-tools: Task, Read, Bash
 
 # /nexus-p6-cr — Code Review (Paso 6/8) — OPCIONAL desde Fase 1.5
 
-> ⚠️ **Desde Fase 1.5**, este comando es **opcional**: `/nexus-p5-ar` ahora lanza AR y CR EN PARALELO en una sola pasada. Solo usá `/nexus-p6-cr` standalone si:
+> **Desde Fase 1.5**, este comando es **opcional**: `/nexus-p5-ar` ahora lanza AR y CR EN PARALELO en una sola pasada. Solo usá `/nexus-p6-cr` standalone si:
 >
 > 1. Querés ejecutar CR sin AR (caso raro)
 > 2. Necesitás **re-correr CR** después de que el Dev aplicó fixes de BLOQUEANTEs de AR que cambiaron el código de forma estructural (ver tradeoff en `/nexus-p5-ar`)
@@ -57,7 +57,7 @@ Task tool:
     - Veredicto final
     - Resumen al orquestador
 
-    ## ⛔ PROHIBIDO EN ESTA FASE
+    ## Prohibido en esta fase
     - NO modificar código
     - NO repetir hallazgos del AR (referencialos si aplica)
     - NO ser exigente con cosas no documentadas en el project-context
@@ -70,6 +70,6 @@ Task tool:
 | APROBADO / APROBADO con MENORs | Lanzar `/nexus-p7-f4` |
 | RECHAZADO | Verificar los BLQ como indica `/nexus-p5-ar` y re-lanzar `/nexus-p4-f3` con los que sigan en pie |
 
-## ⚠️ Importante
+## Importante
 - Vos sos el ORQUESTADOR. NO revisás vos mismo.
 - CR es menos crítico que AR — sé razonable con MENORs aceptados como deuda técnica.

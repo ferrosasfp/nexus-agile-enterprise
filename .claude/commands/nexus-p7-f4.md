@@ -47,7 +47,7 @@ Task tool:
     - Veredicto final: APROBADO PARA DONE / APROBADO con observaciones / RECHAZADO
     - Resumen al orquestador
 
-    ## ⛔ PROHIBIDO EN ESTA FASE
+    ## Prohibido en esta fase
     - NO modificar código
     - NO modificar tests para que pasen (eso es trampa)
     - NO marcar AC como PASS sin evidencia concreta
@@ -59,10 +59,10 @@ Task tool:
 
 | Veredicto | Acción |
 |-----------|--------|
-| APROBADO PARA DONE | Lanzar `/nexus-p8-done` |
+| APROBADO PARA DONE | Con `release_gate: true`: correr F5 (`quality_pipeline.md`) y esperar `RELEASE_APPROVED`. Después, o sin ese campo, lanzar `/nexus-p8-done` |
 | APROBADO con observaciones | Presentar al humano para decidir |
 | RECHAZADO | Re-lanzar `/nexus-p4-f3` con AC fallidos |
 
-## ⚠️ Importante
+## Importante
 - Vos sos el ORQUESTADOR. NO ejecutás los tests vos mismo, ni validás ACs vos mismo.
 - El QA es la última línea de defensa antes de DONE — no permitir saltar evidencia.

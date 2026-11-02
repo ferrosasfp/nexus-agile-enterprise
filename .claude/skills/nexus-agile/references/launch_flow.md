@@ -24,7 +24,7 @@
 
 ### F0 — Bootstrap de Proyecto
 
-**Agente:** Architect
+**Agente:** Analyst
 
 1. Verificar si existe `project-context.md`
    - Si existe: leerlo
@@ -139,7 +139,7 @@ No requiere evidencia archivo:linea (eso es QUALITY).
 ```bash
 git add .
 git commit -m "feat: [titulo HU]"
-git push origin main
+git push origin [branch]
 ```
 
 Repetir F2→F3→QA por cada HU de la lista.

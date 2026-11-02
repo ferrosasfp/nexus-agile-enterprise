@@ -24,9 +24,9 @@ Orchestrator (contexto mínimo — solo coordina)
      │
      ├─► [sub-agente F0] → entrega: project-context.md + sizing
      ├─► [sub-agente F1] → entrega: work-item.md
-     │         ⛔ GATE: HU_APPROVED
+     │         GATE: HU_APPROVED
      ├─► [sub-agente F2] → entrega: sdd.md
-     │         ⛔ GATE: SPEC_APPROVED
+     │         GATE: SPEC_APPROVED
      ├─► [sub-agente F2.5] → entrega: story-file.md
      ├─► [sub-agente F3]  → entrega: código + auto-blindaje
      ├─► [sub-agente AR]  → entrega: reporte adversarial
@@ -39,7 +39,7 @@ Orchestrator (contexto mínimo — solo coordina)
 
 ## Rol del Orquestador
 
-El orquestador NUNCA:
+El orquestador nunca:
 - Lee archivos del codebase
 - Escribe código
 - Genera SDDs ni Story Files
@@ -76,7 +76,7 @@ SCOPE:
 - No explores el codebase más allá de lo necesario para tu tarea
 - Si necesitas algo que no está en tu INPUT: escala al orquestador
 
-## ⛔ PROHIBIDO EN ESTA FASE — [FASE]
+## Prohibido en esta fase — [FASE]
 [Copiar el bloque correspondiente de la tabla abajo]
 ```
 
@@ -96,7 +96,7 @@ SCOPE:
 
 ### Regla del orquestador sobre outputs inesperados
 
-Si un sub-agente reporta que hizo trabajo de una fase diferente a la asignada (ej: un F1 que dice "también implementé el código"), el orquestador DEBE:
+Si un sub-agente reporta que hizo trabajo de una fase diferente a la asignada (ej: un F1 que dice "también implementé el código"), el orquestador debe:
 1. NO revertir nada: listar los archivos fuera de alcance (`git -C "$CODE_ROOT" status --short`) y pedir decision al humano. Un `git checkout -- .` puede borrar trabajo ajeno
 2. Registrar como Auto-Blindaje
 3. Re-lanzar la fase correcta si el artefacto esperado no fue generado correctamente
@@ -107,33 +107,15 @@ Si un sub-agente reporta que hizo trabajo de una fase diferente a la asignada (e
 
 | Fase | Sub-agente | Input | Output |
 |------|-----------|-------|--------|
-| F0 | Analyst + Architect | HU raw + repo path | project-context.md (si no existe) + SDD_MODE |
-| F1 | Analyst + Architect + UX | HU + project-context.md | work-item.md |
-| F2 | Architect + Adversary | work-item.md + project-context.md | sdd.md |
+| F0 | Analyst | HU raw + repo path | project-context.md (si no existe) + SDD_MODE |
+| F1 | Analyst | HU + project-context.md | work-item.md |
+| F2 | Architect | work-item.md + project-context.md | sdd.md |
 | F2.5 | Architect | sdd.md | story-file.md |
 | F3 | Dev | story-file.md | código en disco + auto-blindaje |
 | AR | Adversary | story-file.md + archivos modificados | ar-report.md |
 | CR | Adversary | story-file.md + archivos modificados | cr-report.md |
 | F4 | QA | story-file.md + archivos modificados | validation.md |
 | DONE | Docs | todos los artefactos anteriores | report.md + _INDEX.md |
-
----
-
-## Paralelismo real en F2
-
-Spec Writer + Designer pueden correr en paralelo como sub-agentes independientes:
-
-```
-Orchestrator
-     │
-     ├─► [sub-agente Spec Writer] ──┐
-     │                              ├─► merge → sdd.md completo
-     └─► [sub-agente Designer]  ──┘
-```
-
-El orquestador espera ambos outputs antes de presentar el SDD al humano.
-Solo si el IDE soporta sub-agentes paralelos (Claude Code Task tool, OpenCode).
-Si no hay soporte de paralelismo: correr en secuencia, mismo resultado.
 
 ---
 
@@ -166,7 +148,7 @@ Esto es posible porque los artefactos son autocontenidos. El orquestador no nece
 
 **Claude Code:**
 ```
-Task tool — el orquestador usa `task` para lanzar cada fase como sub-agente
+Tool Agent (antes Task; el nombre viejo sigue funcionando): el orquestador lanza cada fase como sub-agente
 El sub-agente recibe el prompt completo y los archivos de input
 ```
 
@@ -185,7 +167,7 @@ La memoria persistente (Principio 8) compensa la falta de sub-agentes
 
 ---
 
-## ⚠️ Checklist obligatorio antes de lanzar sub-agente F3
+## Checklist obligatorio antes de lanzar sub-agente F3
 
 El orquestador ejecuta esto ANTES de lanzar cualquier sub-agente Dev:
 
@@ -203,11 +185,9 @@ El orquestador ejecuta esto ANTES de lanzar cualquier sub-agente Dev:
 [ ] ¿Las env vars necesarias para la HU están configuradas?
     → Si la HU toca DB, pagos o servicios externos: verificar antes
 
-[ ] ¿Los permisos de Bash están configurados para background agents?
-    → Los sub-agentes en background NO pueden pedir aprobación interactiva
-    → Si vas a lanzar F3 en background: verificar que .claude/settings.json
-      tenga los permisos granulares necesarios (ver Auto-Blindaje "Bash bloqueado")
-    → Si vas a lanzar F3 en foreground: no hace falta (el humano aprueba cada call)
+[ ] ¿Los permisos de Bash están configurados para no frenar la corrida?
+    → Hoy un sub-agente en segundo plano muestra el pedido de permiso en la sesión principal
+    → Sin nadie mirando, ese pedido queda esperando: para AUTO, configurar permisos granulares en .claude/settings.json
 ```
 
 **Si falla algún check:** resolver antes de lanzar F3. No lanzar sobre entorno roto.
@@ -222,7 +202,7 @@ El orquestador ejecuta esto ANTES de lanzar cualquier sub-agente Dev:
 
 ---
 
-## ⚠️ Auto-Blindaje — F3 Paralelo en Repositorio Compartido
+## Auto-Blindaje — F3 Paralelo en Repositorio Compartido
 
 **Fecha:** 2026-04-02 | **Proyecto:** wasiai-a2a | **HUs afectadas:** WKH-6, WKH-7
 
@@ -257,7 +237,7 @@ git worktree remove ../wasiai-a2a-wkh-7
 
 ---
 
-## ⚠️ Auto-Blindaje — Gates saltados por sub-agente one-shot
+## Auto-Blindaje — Gates saltados por sub-agente one-shot
 
 **Fecha:** 2026-04-04 | **Proyecto:** wasiai-a2a | **HUs afectadas:** WKH-10, WKH-13, WKH-14
 
@@ -267,7 +247,7 @@ git worktree remove ../wasiai-a2a-wkh-7
 
 ### Regla obligatoria para orquestador:
 
-**NUNCA incluir más de un gate en el prompt de un sub-agente.**
+**nunca incluir más de un gate en el prompt de un sub-agente.**
 
 El flujo correcto es:
 
@@ -276,11 +256,11 @@ Orquestador lanza sub-agente F0+F1
   → sub-agente entrega work-item.md
   → orquestador presenta Work Item al humano
   → humano escribe HU_APPROVED
-Orquestador lanza sub-agente F2+F2.5
-  → sub-agente entrega sdd.md + story-file.md
+Orquestador lanza sub-agente F2
+  → sub-agente entrega sdd.md
   → orquestador presenta SDD al humano
   → humano escribe SPEC_APPROVED
-Orquestador lanza sub-agente F3→DONE
+Orquestador lanza, una por vez, F2.5, F3, AR+CR, F4 y DONE
   → sin gates humanos en este tramo (AR, CR, F4 son reviews de agentes)
 ```
 
@@ -289,15 +269,17 @@ Orquestador lanza sub-agente F3→DONE
 - El prompt del sub-agente dice "esperar HU_APPROVED" (imposible en modo one-shot)
 - El orquestador presenta el resultado final sin haber mostrado Work Item ni SDD al humano
 
-**Fix:** Siempre dividir en mínimo 3 lanzamientos separados: F0+F1 / F2+F2.5 / F3→DONE. El orquestador es el checkpoint humano entre ellos.
+**Fix:** Una fase por lanzamiento, salvo F0+F1. El orquestador es el checkpoint humano en cada gate.
 
 ---
 
-## ⚠️ Auto-Blindaje — Bash bloqueado en background agents
+## Auto-Blindaje — Bash bloqueado en background agents
 
 **Fecha:** 2026-04-09 | **Proyecto:** wasiai-a2a | **HUs afectadas:** WKH-34, WKH-35
 
-**Error:** Sub-agentes F3 lanzados en background (`run_in_background: true`) fallan silenciosamente porque necesitan Bash para operaciones obligatorias del pipeline (git checkout -b, npm test, npx tsc --noEmit, mkdir, rm) pero los background agents no pueden solicitar aprobación interactiva al humano. El sub-agente se bloquea en el primer Bash call no aprobado y aborta sin output útil.
+> **Actualización:** las versiones actuales de Claude Code muestran el pedido de permiso en la sesión principal, en vez de fallar en silencio. Los permisos granulares siguen sirviendo para que una corrida desatendida no quede esperando.
+
+**Error (versiones anteriores):** Sub-agentes F3 lanzados en background fallaban porque necesitaban Bash para operaciones obligatorias del pipeline y no podían pedir aprobación. El sub-agente abortaba sin output útil.
 
 **Síntoma:** Ambos sub-agentes F3 retornan error o output vacío. El orquestador reintenta con los mismos permisos → mismo resultado. Tiempo perdido: ~2 relanzamientos por HU antes de diagnosticar la causa.
 
@@ -330,7 +312,6 @@ Sin `push`, `reset`, `clean` ni `rm` amplios: esos quedan para aprobacion humana
 
 1. **Opción recomendada:** configurar permisos granulares (lista específica de patrones aprobados)
 2. **Alternativa:** lanzar el sub-agente en foreground (el humano aprueba cada Bash call interactivamente — más lento pero no requiere config previa)
-3. **Último recurso:** el orquestador implementa directamente — viola "orquestador no codea" pero es un override consciente por limitación técnica. Documentar como excepción.
 
 **Señales de que estás cayendo en este error:**
 - Sub-agente F3 retorna output vacío o error genérico
@@ -395,7 +376,7 @@ el costo de aprobar algo incorrecto puede ser alto (bugs en prod, rework).
 
 ### Compatibilidad con Auto-Blindaje "Gates saltados"
 
-AUTO mode **NO viola** la regla de "NUNCA incluir más de un gate en el prompt de un sub-agente".
+AUTO mode **NO viola** la regla de "nunca incluir más de un gate en el prompt de un sub-agente".
 Los sub-agentes siguen recibiendo **UNA fase a la vez**. La diferencia es que el orquestador
 self-aprueba en lugar de esperar al humano. El gate sigue existiendo como checkpoint —
 solo cambia **QUIÉN** aprueba.

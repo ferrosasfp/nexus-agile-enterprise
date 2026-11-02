@@ -8,10 +8,10 @@
 
 ## F0: Contexto
 
-**Agentes**: Analyst (requisitos) + Architect (arquitectura)
+**Agente**: Analyst
 **Objetivo**: Establecer contexto del proyecto y del codebase antes de procesar la HU.
 
-### ⚠️ PASO 0 — OBLIGATORIO ANTES DE TODO (Anti-Drift)
+### PASO 0 — OBLIGATORIO ANTES DE TODO (Anti-Drift)
 
 > **El orquestador y cada sub-agente deben leer `project-context.md` como PRIMER acto, antes de leer el codebase, antes de hacer cualquier análisis.**
 > Violar este paso es el error más costoso del pipeline — lleva a implementar con el stack incorrecto.
@@ -22,7 +22,7 @@ Buscar en este orden hasta encontrar:
 3. `docs/project-context.md`
 
 **Si existe:** leer COMPLETO antes de continuar. El `project-context.md` define:
-- Stack inmutable (framework, DB, librerías) — **NUNCA asumir el stack del código si difiere del project-context**
+- Stack inmutable (framework, DB, librerías) — **nunca asumir el stack del código si difiere del project-context**
 - Reglas absolutas (Golden Path) — inviolables
 - Patrones y convenciones del proyecto
 
@@ -39,7 +39,7 @@ Buscar en este orden hasta encontrar:
 
 | Tipo | Senales | SDD_MODE |
 |------|---------|----------|
-| **Trivial** | 1-2 archivos, <30 lineas, sin BD, sin logica nueva | **patch** → Quick Flow (Triage) |
+| **Trivial** | Limites de FAST en `references/quick_flow.md` | **patch** → Quick Flow (Triage) |
 | **Hotfix** | Bug en produccion, causa raiz desconocida, puede tocar auth/datos | **hotfix** → Hotfix Pipeline (Dev) |
 | **Bugfix** | Bug confirmado con repro steps | **bugfix** |
 | **Tech-task / refactor** | Sin cambio funcional visible | **mini** |
@@ -51,7 +51,7 @@ Buscar en este orden hasta encontrar:
 ### Bootstrap de Proyecto (solo cuando NO existe project-context.md)
 
 NexusAgil es stack-agnostic. No asume ningun framework ni lenguaje.
-Si no hay project-context.md, el Architect descubre el proyecto leyendo el codebase real.
+Si no hay project-context.md, el Analyst descubre el proyecto leyendo el codebase real.
 
 Checklist de descubrimiento (leer en orden):
 
@@ -86,7 +86,7 @@ Si hay ambiguedades criticas: preguntar al humano (max 3 preguntas) antes de con
 
 ## F1: Discovery
 
-**Agentes**: Analyst (requisitos) + Architect (arquitectura) + UX (si aplica)
+**Agente**: Analyst (con UX si aplica)
 **Objetivo**: Transformar cualquier input en un Work Item estructurado con ACs EARS.
 
 ### Proceso
@@ -147,7 +147,7 @@ Preguntar: "Creo branch `{branch}`? (si/no/otro nombre)"
 
 ### Analisis de Dependencias y Paralelismo (cuando hay multiples HUs en el sprint)
 
-Despues de presentar todos los Work Items del sprint, el Architect analiza y presenta:
+Despues de presentar todos los Work Items del sprint, el Analyst propone (en AUTO, el orquestador lo calcula):
 
 ```markdown
 ## Propuesta de ejecucion — Sprint N
@@ -165,7 +165,7 @@ Despues de presentar todos los Work Items del sprint, el Architect analiza y pre
 ```
 
 **El humano aprueba los Work Items Y el orden de ejecucion con un solo `HU_APPROVED`.**
-Si el humano modifica el orden, el Architect actualiza la propuesta antes de continuar a F2.
+Si el humano modifica el orden, se actualiza la propuesta antes de continuar a F2.
 
 ### GATE 1: HU_APPROVED
 Presentar Work Item al humano. Esperar el texto exacto **HU_APPROVED**.
@@ -180,7 +180,7 @@ Escribir en `$NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md`.
 
 ## F2: Spec / SDD
 
-**Agentes**: Architect + Adversary (revision de seguridad)
+**Agente**: Architect
 **Objetivo**: Generar SDD con codebase grounding. NO se escribe codigo.
 
 ### Fase 1: Codebase Grounding (OBLIGATORIO)
@@ -297,9 +297,9 @@ El Story File es **el contrato de Dev**: lo que no esta ahi, no se hace. Contien
 ### Regla Critica
 Dev puede leer el SDD solo para entender el porque; nunca agrega alcance. No lee el Work Item. Si el SDD y el contrato difieren, manda el contrato y Dev escala. Si el Story File es ambiguo, Dev escala a Architect: no inventa.
 
-### ⚠️ Grounding Check obligatorio ANTES de generar el Story File
+### Grounding Check obligatorio ANTES de generar el Story File
 
-El Architect DEBE ejecutar esto antes de escribir el Story File:
+El Architect debe ejecutar esto antes de escribir el Story File:
 
 ```bash
 # 1. Traer el estado remoto sin mover el arbol de trabajo
@@ -355,7 +355,7 @@ Este checklist es una instruccion interna. NO se presenta al usuario.
 
 ### Re-mapeo Ligero entre Waves
 
-**ANTES de iniciar cada Wave (excepto W0)**, Dev DEBE:
+**ANTES de iniciar cada Wave (excepto W0)**, Dev debe:
 1. Leer los archivos que el Wave anterior **creo o modifico**
 2. Verificar que los imports/exports que el Wave actual necesita **existen realmente**
 3. Si algo difiere: ajustar sin salirse del Story File
@@ -445,7 +445,7 @@ git -C "$CODE_ROOT" diff [branch-base] --name-only
 
 | Severidad | Significado | Accion |
 |-----------|-------------|--------|
-| **BLQ-ALTO / BLQ-MED / BLQ-BAJO** | Rompe un AC, expone una vulnerabilidad o causa data loss, en orden de gravedad | Dev DEBE corregir antes de continuar. El nivel solo ordena el fix-pack |
+| **BLQ-ALTO / BLQ-MED / BLQ-BAJO** | Rompe un AC, expone una vulnerabilidad o causa data loss, en orden de gravedad | Dev debe corregir antes de continuar. El nivel solo ordena el fix-pack |
 | **MENOR** | Mejora recomendada, no rompe nada | Documentar, corregir si es rapido |
 | **OK / N/A** | Sin hallazgos, o no aplica con su justificacion | Continuar |
 
@@ -487,7 +487,7 @@ justifica o recorta. Y la pregunta que decide, que no es sobre estilo:
 Lo que no sobrevive esa pregunta es andamiaje defensivo alrededor de una API que no se entendio.
 Se recorta.
 
-⚠️ **Excederse NO es automaticamente un rechazo** y el numero solo no decide: una HU puede requerir
+**Excederse NO es automaticamente un rechazo** y el numero solo no decide: una HU puede requerir
 mas de lo estimado por una razon legitima que aparecio al implementar. Lo que el check exige es que
 esa razon quede ESCRITA. Un exceso silencioso es el hallazgo; un exceso justificado es informacion
 para la proxima estimacion.
@@ -509,7 +509,7 @@ nadie discute una decision correcta. Tres preguntas, una por clase de afirmacion
    minima que la vuelve falsa, y que se pone rojo? Si el gate queda verde, la frase es falsa. Un
    guardian honesto sobre lo que cubre no vuelve verdadera la frase del documento que lo cita.
 
-⚠️ **Metrica autorreferente** (lineas del propio diff, archivos tocados, ocurrencias de una palabra
+**Metrica autorreferente** (lineas del propio diff, archivos tocados, ocurrencias de una palabra
 dentro del documento que la contiene): se mide en la ULTIMA pasada y con UN solo instrumento. Medir
 el total con una herramienta y las filas con otra produce una tabla que no suma, y que nadie suma.
 
@@ -578,9 +578,9 @@ Escribir en `$NEXUS_ROOT/doc/sdd/NNN-titulo/validation.md`.
 **Objetivo**: Verificar que el codigo aprobado en F4 esta listo para produccion.
 **Gate**: RELEASE_APPROVED (TL + PO)
 
-> **Cuando aplica**: Proyectos que deployean a produccion (apps web, APIs, servicios).
-> **Cuando NO aplica**: Librerias, paquetes, skills, herramientas internas sin deploy. Configurar en `project-context.md` con `release_gate: false`.
-> **Default**: Si `project-context.md` no lo especifica, F5 aplica.
+> **Cuando aplica**: Solo si `project-context.md` declara `release_gate: true`. El orquestador la corre entre `/nexus-p7-f4` y `/nexus-p8-done`.
+> **Cuando NO aplica**: Sin ese campo, o con `release_gate: false`: de F4 se pasa a DONE.
+> **AUTO**: `RELEASE_APPROVED` nunca se autoaprueba: siempre lo escribe una persona.
 
 ### Pre-Release Checklist
 
@@ -665,7 +665,7 @@ Agregar al `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md`:
 **Agente**: Docs
 **Objetivo**: Cerrar el pipeline y documentar.
 
-> ⚠️ **DONE es obligatorio. El merge del PR NO cierra la HU.**
+> **DONE es obligatorio. El merge del PR NO cierra la HU.**
 > La HU está DONE cuando _INDEX.md tiene su fila con status DONE y el issue tracker está cerrado.
 > Origen: Auto-Blindaje 2026-04-02 — 4 HUs mergeadas sin ejecutar DONE. _INDEX.md quedó con solo WKH-5.
 
@@ -680,10 +680,10 @@ Agregar al `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md`:
    - **Release Gate status** (si F5 aplica)
 2. Escribir en `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md`
 3. Actualizar `$NEXUS_ROOT/doc/sdd/_INDEX.md` con status DONE
-4. Cerrar en el issue tracker del proyecto (Linear, GitHub Issues, Jira, o el configurado en `project-context.md`) — mover el issue a Done/Closed
+4. Recordar al humano cerrar el issue en el tracker del proyecto (Linear, GitHub Issues, Jira, o el configurado en `project-context.md`): Docs no lo cierra
 5. Si la HU generó nuevas reglas de proceso → actualizar `project-context.md` o el SKILL.md relevante
 6. Si usó Engram → persistir métricas: `engram save "HU done" "sprint:N hu:ID bloqueantes:N menores:N auto-blindajes:N" --scope project`
 7. Presentar resumen al humano
 
 ### Abort
-Si el humano aborta en cualquier punto: Docs actualiza _INDEX.md con status ABORTED y cierra el issue en el tracker como CANCELLED.
+Si el humano aborta en cualquier punto: Docs actualiza _INDEX.md con status ABORTED, y el humano cierra el issue como CANCELLED.

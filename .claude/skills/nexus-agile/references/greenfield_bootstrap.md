@@ -7,7 +7,7 @@
 
 ## Cuando Aplica
 
-El Architect detecta en F0 que:
+El Analyst detecta en F0 que:
 - No existe package.json / Gemfile / requirements.txt / go.mod
 - No hay estructura de carpetas (Glob retorna vacio o solo README)
 - No hay archivos de codigo fuente

@@ -15,7 +15,7 @@ El prompt trae `NEXUS_ROOT` (artefactos y contextos), `CODE_ROOT` (el repo) y `S
 
 Si la tool `LSP` responde, usala para saber quién llama a una función y para encontrar referencias (`findReferences`, `incomingCalls`): es más exacta que buscar texto. Si no hay servidor para ese lenguaje, seguí con `Grep`. La ausencia de LSP no bloquea nada, y un "sin referencias" solo vale si el servidor realmente indexó el proyecto.
 
-## ⛔ PROHIBIDO EN ESTA FASE
+## Prohibido en esta fase
 
 - NO tocar archivos fuera del **Scope IN** del Story File
 - NO crear archivos no listados en el Story File
@@ -29,20 +29,20 @@ Si la tool `LSP` responde, usala para saber quién llama a una función y para e
 
 Si algo no está en el Story File → STOP. Escalá al orquestador. NO inventes.
 
-## 📥 Input
+## Input
 
 Tu contrato es `$NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md` o, si `sdd.md` tiene `contract_mode: unified`, su sección `Contrato de implementación`.
 
 Podés leer `sdd.md` **solo para entender el porqué** (decisiones, riesgos, flujos). No agrega alcance: lo que hay que hacer es lo que dice el contrato. Si el SDD y el contrato difieren, manda el contrato, no improvises y escalá al orquestador. No leas el work-item ni el historial de chat. Para un fix-pack, tu input suma los hallazgos que te pasa el orquestador.
 
-## 📤 Output esperado
+## Output esperado
 
 - Código en disco según Scope IN
 - Tests pasando para esta wave
 - Auto-Blindaje documentado en `$NEXUS_ROOT/doc/sdd/NNN-titulo/auto-blindaje.md` cada vez que un error ocurre durante la implementación
 - Reporte final al orquestador: archivos creados/modificados, comandos ejecutados, status de tests/typecheck
 
-## 🌊 Implementación por Waves
+## Implementación por Waves
 
 ```
 W0 (serial)  — contratos, tipos, migraciones de DB, configuración
@@ -56,7 +56,7 @@ W2+ (paralelo) — rutas, UI, integración
 3. Después de cada wave: **Verificación incremental** — typecheck + tests específicos de los archivos modificados.
 4. Si una wave falla: parar, documentar Auto-Blindaje, corregir, re-verificar.
 
-## 🛡️ Anti-Hallucination Protocol (obligatorio antes de cada archivo)
+## Anti-Hallucination Protocol (obligatorio antes de cada archivo)
 
 Para CADA archivo que vas a crear o modificar:
 
@@ -71,8 +71,8 @@ Para CADA archivo que vas a crear o modificar:
     versión exacta. **Un `Grep` en `node_modules` NO alcanza**: matchea changelogs, tests y ejemplos
     de versiones que no son la tuya. Si la firma no aparece en los tipos ni en la doc de la versión
     instalada, el símbolo no existe: STOP.
-    ⚠️ Este es el modo de falla más común de un modelo con una librería: no inventa de la nada,
-    **recuerda una versión anterior**. Anotá en el Story File dónde verificaste cada símbolo externo.
+    Este es el modo de falla más común de un modelo con una librería: no inventa de la nada,
+    **recuerda una versión anterior**. Anotá en tu reporte dónde verificaste cada símbolo externo: el Story File es inmutable.
 6. ¿La estructura del archivo coincide con el exemplar (naming, exports, imports)? → Sí.
 7. Implementar.
 8. Verificar (typecheck + test específico si aplica).
@@ -80,7 +80,7 @@ Para CADA archivo que vas a crear o modificar:
 
 Si **cualquier paso** falla o requiere asumir algo: STOP y escalar al orquestador.
 
-## 🧪 Test-First (cuando aplica)
+## Test-First (cuando aplica)
 
 Para lógica de negocio (services, utilities, business rules):
 1. Escribir test que falla
@@ -89,7 +89,7 @@ Para lógica de negocio (services, utilities, business rules):
 
 Para infraestructura (rutas, configs, migraciones): el test puede venir después o ser de integración.
 
-## 🔒 Un control puede estar vacío (antes de decir que un test cubre algo)
+## Un control puede estar vacío (antes de decir que un test cubre algo)
 
 Un test verde y un test que no puede fallar son indistinguibles desde afuera. Antes de reportar que un control cubre una propiedad, pasale las cuatro:
 
@@ -98,11 +98,11 @@ Un test verde y un test que no puede fallar son indistinguibles desde afuera. An
 3. **El mutante se aplicó** — un mutante que no matcheó (el formateador reacomodó el texto, el patrón cambió) más una suite verde son indistinguibles de un control que funciona. Verificá el marcador dentro del archivo ANTES de correr la suite, y abortá si no está.
 4. **Alguien lo invoca** — buscá los `export` sin llamador de tu propio entregable antes de entregarlo. Si una propiedad del AC descansa en una función, alguien la tiene que llamar en **cada corrida**; garantizada "por el orden de los commits" es prosa que hay que auditar a mano. **Un artefacto sin llamador no es una defensa.**
 
-⚠️ **Si el control consulta el ENTORNO y no sólo el código** (historia de git, red, reloj, rutas fuera del checkout, variables del runner), es una precondición de **infraestructura** y el verde local no dice nada. La pregunta, antes de escribirlo: *¿qué le llega al runner de CI?* Caso medido: tres controles que leían commits fijos, con el CI clonando **un solo commit** por default. Verde local, rojo garantizado en el primer push, y no por una aserción sino por un error de la herramienta. Reproducilo con las condiciones del runner, y dejá la precondición **explícita en el config aunque el default sea el correcto**: el default de una acción de terceros no es una precondición verificada.
+**Si el control consulta el ENTORNO y no sólo el código** (historia de git, red, reloj, rutas fuera del checkout, variables del runner), es una precondición de **infraestructura** y el verde local no dice nada. La pregunta, antes de escribirlo: *¿qué le llega al runner de CI?* Caso medido: tres controles que leían commits fijos, con el CI clonando **un solo commit** por default. Verde local, rojo garantizado en el primer push, y no por una aserción sino por un error de la herramienta. Reproducilo con las condiciones del runner, y dejá la precondición **explícita en el config aunque el default sea el correcto**: el default de una acción de terceros no es una precondición verificada.
 
-⚠️ **Si una métrica EMPEORA al arreglar un bug**, la reacción correcta no es revertir: es preguntar **qué otro defecto estaba compensando**. Casos que pasaban por la razón equivocada dejan de pasar cuando el primer defecto se va, y eso es información, no una regresión.
+**Si una métrica EMPEORA al arreglar un bug**, la reacción correcta no es revertir: es preguntar **qué otro defecto estaba compensando**. Casos que pasaban por la razón equivocada dejan de pasar cuando el primer defecto se va, y eso es información, no una regresión.
 
-## 📝 Auto-Blindaje (documentar errores cuando ocurren)
+## Auto-Blindaje (documentar errores cuando ocurren)
 
 Cada vez que cometas un error y lo corrijas, agregá una entrada en `$NEXUS_ROOT/doc/sdd/NNN-titulo/auto-blindaje.md`:
 
@@ -116,7 +116,7 @@ Cada vez que cometas un error y lo corrijas, agregá una entrada en `$NEXUS_ROOT
 
 Esto NO es opcional. Es lo que protege futuras HUs del mismo error.
 
-## ✅ Done Definition
+## Done Definition
 
 Tu trabajo termina cuando:
 - Todas las waves del Story File están implementadas

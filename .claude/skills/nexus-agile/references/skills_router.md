@@ -22,7 +22,7 @@ Con router → Carga SELECTIVA por tipo de tarea:
 
 ## Cómo funciona
 
-El Architect ejecuta el router en F0 después del Smart Sizing:
+El Analyst ejecuta el router en F0 después del Smart Sizing:
 
 ```
 1. Leer señales de la HU (keywords, archivos afectados, dominio)
@@ -127,7 +127,7 @@ F0 checklist (actualizado):
 6. Si SDD_MODE = patch → Triage. Si no → F1.
 ```
 
-El Architect declara explícitamente qué skills cargó:
+El Analyst declara explícitamente qué skills cargó:
 ```
 Skills cargadas para esta HU:
 - nexus-agile/SKILL.md (siempre)
@@ -140,6 +140,6 @@ Skills cargadas para esta HU:
 
 1. **NexusAgile siempre** — la metodología base nunca se omite
 2. **Máximo 2 skills adicionales** — más de 2 = señal de que la HU es demasiado grande (dividir)
-3. **Declarar siempre** — el Architect lista las skills cargadas en F0
+3. **Declarar siempre** — el Analyst lista las skills cargadas en F0
 4. **No cargar por precaución** — si no hay señal clara, no cargar la skill
 5. **Revisar en F1** — si la HU resulta ser de otro dominio, actualizar el skill cargado antes de F2

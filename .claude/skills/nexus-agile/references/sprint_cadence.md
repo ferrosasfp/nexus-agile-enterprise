@@ -7,7 +7,7 @@
 
 | Ceremonia | Gate | Texto exacto | Efecto |
 |-----------|------|-------------|--------|
-| Planning | `SPRINT_APPROVED` | El humano escribe exactamente esto | SM commitea artefactos, Architect arranca F0 de la primera HU |
+| Planning | `SPRINT_APPROVED` | El humano escribe exactamente esto | SM commitea artefactos, Analyst arranca F0 de la primera HU |
 | Status | `REVIEW_APPROVED` | El humano escribe exactamente esto | SM commitea status, pipeline continua |
 | Retrospectiva | `RETRO_APPROVED` | El humano escribe exactamente esto | SM ejecuta Checklist de Cierre y declara sprint CERRADO |
 
@@ -59,10 +59,10 @@
 ```
 
 4. **Esperar `SPRINT_APPROVED`** del humano — texto exacto, sin excepciones
-5. **Al recibir `SPRINT_APPROVED`**: commitear `sprint-status.yaml` + `roadmap-sprints.md`, actualizar issue tracker, notificar al Architect para arrancar F0+F1 de todas las HUs del sprint
+5. **Al recibir `SPRINT_APPROVED`**: commitear `sprint-status.yaml` + `roadmap-sprints.md`, actualizar issue tracker, notificar al Analyst para arrancar F0+F1 de todas las HUs del sprint
 6. **Si hay dudas sobre una HU**: Analyst puede intervenir para clarificar requisitos
 
-> **Nota:** El análisis de dependencias y propuesta de paralelismo es responsabilidad del **Architect en F1** — no del SM. El SM solo coordina la selección; el Architect decide qué puede ir en paralelo basándose en el codebase real.
+> **Nota:** El análisis de dependencias y propuesta de paralelismo es responsabilidad del **Analyst en F1** — no del SM. El SM solo coordina la selección; el Analyst decide qué puede ir en paralelo basándose en el codebase real.
 
 ### Estimacion de Sizing
 
@@ -161,7 +161,6 @@
 4. **Auto-Blindaje a reglas del proyecto**: Si un error se repitio en multiples HUs, SM propone agregarlo a `project-context.md` o reglas del proyecto
 5. **Esperar `RETRO_APPROVED`** del humano — texto exacto, sin excepciones
 6. **Al recibir `RETRO_APPROVED`**: SM ejecuta el Checklist de Cierre de Sprint y declara sprint CERRADO
-7. **Celebracion**: Si el sprint fue limpio (sin BLOQUEANTE, sin drift grave), Party Mode breve
 
 ---
 

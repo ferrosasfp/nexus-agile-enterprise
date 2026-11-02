@@ -12,9 +12,9 @@ Pipeline compacto para Historias de Usuario que **no justifican** el overhead de
 
 **Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
 
-## ⚠️ Cuándo usar FAST y cuándo NO
+## Cuándo usar FAST y cuándo NO
 
-### ✅ FAST está diseñado para
+### FAST está diseñado para
 - **Bugfixes < 50 líneas** en código que ya existe y tiene tests
 - **Cambios de config** (env vars, feature flags, constantes)
 - **Doc-only changes** (README, comentarios, docstrings)
@@ -22,17 +22,17 @@ Pipeline compacto para Historias de Usuario que **no justifican** el overhead de
 - **HUs con sizing FAST** declarado por el analyst en el work-item
 - **Hot-fixes urgentes** donde la velocidad importa más que la cobertura exhaustiva
 
-### ❌ FAST NO debe usarse para
+### FAST NO debe usarse para
 - Features nuevas (cualquier código que no exista todavía)
 - Cambios en módulos sin tests existentes (no hay safety net)
 - Código security-critical (auth, payments, crypto, RBAC, validación de inputs externos)
-- Cambios que tocan ≥3 archivos
+- Cambios que tocan más de 2 archivos de código (además de sus tests)
 - Refactors que cambian contratos (signatures, exports, schemas)
 - HUs donde el humano duda si vale la pena el overhead → si dudás, usá QUALITY
 
 **Regla de oro**: en duda → `/nexus-p1-f0-f1` (QUALITY). FAST es para casos donde **demostradamente** no necesitás el pipeline completo.
 
-## 📋 Estructura del FAST pipeline
+## Estructura del FAST pipeline
 
 | Fase | Equivalente QUALITY | Agente | Modelo | Saltado |
 |------|---------------------|--------|--------|---------|
@@ -43,7 +43,7 @@ Pipeline compacto para Historias de Usuario que **no justifican** el overhead de
 | DONE fast | p8 (DONE) | nexus-docs | haiku | mini-report (5 líneas) + update _INDEX.md |
 | **SKIPPED** | p2 (F2 SDD) | — | — | El work-item compacto sirve de spec |
 | **SKIPPED** | p3 (F2.5 Story File) | — | — | El dev usa el work-item como contrato |
-| **SKIPPED** | p5/p6 (AR + CR) | — | — | ⚠️ NO hay adversarial review — riesgo asumido |
+| **SKIPPED** | p5/p6 (AR + CR) | — | — | NO hay adversarial review — riesgo asumido |
 
 **Tiempo real observado**:
 
@@ -60,7 +60,7 @@ Pipeline compacto para Historias de Usuario que **no justifican** el overhead de
 - **HU chica + alto riesgo** (writes, auth, streaming, admin, RLS) → `/nexus-fast-plus-ar` ⭐ (sweet spot — 17-32 min con AR+CR)
 - **HU grande o arquitectónica** → `/nexus-p1-f0-f1` (QUALITY completo)
 
-## 🎯 Ejecución
+## Ejecución
 
 Vos sos el orquestador. NO codeás vos mismo. Lanzás los sub-agentes con instrucciones de **modo FAST**.
 
@@ -78,7 +78,7 @@ Task tool:
     - NO ejecutás F0 (bootstrap de project-context.md). Asumí que ya existe; si no existe, ABORTÁ y pedile al humano que corra /nexus-p1-f0-f1 primero.
     - El work-item.md que generás debe ser COMPACTO pero SUFICIENTE como contrato directo para el dev (sin SDD ni Story File).
     - Máximo 3 ACs en EARS.
-    - Scope IN debe ser EXHAUSTIVO (lista exacta de archivos a tocar, máx 5). Si supera 5, ABORTÁ — esta HU no es FAST.
+    - Scope IN debe ser EXHAUSTIVO (lista exacta de archivos a tocar: hasta 2 de código, más sus tests). Si supera eso, ABORTÁ: esta HU no es FAST.
     - Smart Sizing forzado a "FAST" en el work-item.
     - NO necesitás Análisis de paralelismo (FAST asume secuencial).
 
@@ -92,9 +92,9 @@ Task tool:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md compacto que dobla como story-file (porque el dev lo va a leer directo en F3)
     - Reporte al orquestador: path del work-item + 3 líneas explicando qué se va a hacer
 
-    REGLA CRÍTICA: si al revisar el alcance ves que NO califica como FAST (>5 archivos, código nuevo no trivial, security-critical, sin tests existentes), ABORTÁ con el mensaje: "Esta HU NO es FAST — usar /nexus-p1-f0-f1 (pipeline QUALITY)". El humano decide si reclasifica.
+    Regla crítica: si al revisar el alcance ves que NO califica como FAST (más de 2 archivos de código, código nuevo no trivial, security-critical, sin tests existentes), ABORTÁ con el mensaje: "Esta HU NO es FAST — usar /nexus-fast-plus-ar o /nexus-p1-f0-f1". El humano decide si reclasifica.
 
-    ## ⛔ PROHIBIDO en FAST mode (igual que en normal + extras)
+    ## PROHIBIDO en FAST mode (igual que en normal + extras)
     - NO generar SDD
     - NO generar Story File
     - NO ACs vagos ("debería", "quizás")
@@ -107,7 +107,7 @@ Después de Fase 1, **PARAR**. Presentar el work-item al humano y esperar aproba
 
 Usar `AskUserQuestion`:
 - Pregunta: "El work-item compacto está en `<path>`. ¿Aprobás avanzar a F3 FAST? (revisá ACs, scope IN/OUT, y que efectivamente esto califique como FAST)"
-- Opciones: APROBAR / RECHAZAR (con feedback) / RECLASIFICAR a QUALITY (cancela FAST y sugiere /nexus-p1-f0-f1)
+- Opciones: `HU_APPROVED` / RECHAZAR (con feedback) / RECLASIFICAR a QUALITY (cancela FAST y sugiere /nexus-p1-f0-f1)
 
 Si RECHAZA o RECLASIFICA → ABORT del FAST pipeline. Reportar al humano.
 
@@ -137,7 +137,7 @@ Task tool:
     - auto-blindaje.md si hubo errores
     - Reporte al orquestador: archivos tocados + comandos corridos + status typecheck/tests
 
-    REGLAS CRÍTICAS:
+    Reglas críticas:
     - Si descubrís que el cambio requiere tocar archivos FUERA del Scope IN del work-item → STOP, esta HU no era FAST. Reportá al orquestador para escalar a QUALITY.
     - Si descubrís complejidad inesperada (tests rotos en cascada, dependencias ocultas, refactor implícito) → STOP, escalar.
     - NO expandas scope, NO refactors no pedidos, NO docstrings extras.
@@ -155,8 +155,8 @@ Task tool:
 
     DIFERENCIAS vs modo normal:
     - SKIP drift detection exhaustivo (en FAST el scope es chico, drift se ve a ojo).
-    - SKIP AC verification con evidencia detallada — solo confirmá que los ACs SON cumplidos a alto nivel.
-    - FOCUS: ejecutar quality gates del stack (typecheck, tests, build, lint) y reportar resultados.
+    - Evidencia breve por AC: comando y salida. Sin eso, el AC va NO VERIFICABLE, no PASS.
+    - FOCUS: correr UNA vez el gate único del repo y reportar comando, exit code y salida.
 
     INPUT:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md (los ACs viven acá en FAST mode)
@@ -164,8 +164,8 @@ Task tool:
 
     OUTPUT:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/validation.md COMPACTO con:
-      - Quality gates: PASS/FAIL con output
-      - ACs: PASS/FAIL a alto nivel (sin evidencia detallada por AC)
+      - Gate del repo: PASS/FAIL con comando y salida
+      - ACs: PASS/FAIL/NO VERIFICABLE con comando y salida breve
       - Veredicto final: APROBADO / RECHAZADO
 
     NOTA IMPORTANTE: en FAST mode NO hubo AR ni CR — vos sos la única red de seguridad antes de DONE. Si los quality gates fallan, RECHAZAR sin contemplaciones.
@@ -215,7 +215,7 @@ Task tool:
     3. Reporte al orquestador: 3 líneas resumen
 ```
 
-## 🛡️ Reglas críticas del FAST pipeline
+## Reglas críticas del FAST pipeline
 
 1. **NO hay AR ni CR**: si la HU descubierta requiere review de seguridad o calidad → ABORT y escalar a QUALITY (`/nexus-p1-f0-f1`).
 2. **Cualquier agente puede ABORTAR el FAST**: si analyst, dev, o qa detectan que la HU no califica como FAST (alcance crece, complejidad inesperada, security-critical), DEBEN parar y escalar.
@@ -224,7 +224,7 @@ Task tool:
 5. **Auto-Blindaje sigue activo**: si hubo errores durante implementación, se documentan igual.
 6. **El humano siempre puede rechazar y reclasificar**: si en cualquier gate ve que era más complejo de lo esperado, FAST se cancela y se reinicia con `/nexus-p1-f0-f1`.
 
-## 🔄 Relación con el pipeline QUALITY
+## Relación con el pipeline QUALITY
 
 FAST y QUALITY **coexisten**. NO se reemplazan.
 
@@ -233,15 +233,7 @@ FAST y QUALITY **coexisten**. NO se reemplazan.
 
 El analyst (en cualquier modo) puede recomendar cuál usar, pero el humano decide. FAST es **opt-in explícito** — nunca se invoca por accidente.
 
-## 📊 Métricas (Fase 2 — futuro)
-
-Cuando se instrumenten métricas, FAST trackeará:
-- Tiempo total wallclock (target: **10-14 min** para HU chica real)
-- Tasa de escalación a QUALITY (target: <20% — si pasa 30%, las heurísticas de "qué califica como FAST" están mal)
-- Tasa de escalación a FAST+AR (si está >40% → muchas HUs tienen riesgo oculto y FAST puro está mal elegido por default)
-- Bugs post-DONE en HUs FAST vs FAST+AR vs QUALITY (si FAST dispara más bugs, hay que recalibrar el threshold o mover la HU a FAST+AR)
-
-## 🎯 Tabla de elección rápida (leé esto antes de elegir pipeline)
+## Tabla de elección rápida (leé esto antes de elegir pipeline)
 
 | Señal | Pipeline |
 |-------|----------|
@@ -256,7 +248,7 @@ Cuando se instrumenten métricas, FAST trackeará:
 | Panel admin o gate `is_admin` | **FAST+AR** ⭐ |
 | RLS policy nueva o modificada | **FAST+AR** ⭐ |
 | Llamada a API externa con secrets | **FAST+AR** ⭐ |
-| Feature grande (>5 archivos o >10 ACs) | QUALITY |
+| Feature grande (más de 5 archivos o de 10 ACs) | QUALITY |
 | Migration destructiva o no-additive sobre data | QUALITY |
 | Función postgres con `SECURITY DEFINER` | QUALITY |
 | Necesitás SDD para pensar antes de codear | QUALITY |

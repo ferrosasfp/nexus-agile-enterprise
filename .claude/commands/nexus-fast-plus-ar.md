@@ -12,9 +12,9 @@ Pipeline intermedio entre `/nexus-fast-pipeline` (sin review) y el QUALITY compl
 
 **Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
 
-## 🎯 Cuándo usar este modo (vs FAST vs QUALITY)
+## Cuándo usar este modo (vs FAST vs QUALITY)
 
-### ✅ FAST+AR está diseñado para
+### FAST+AR está diseñado para
 HUs donde **pocos archivos + scope acotado** coinciden con **superficie de riesgo**:
 
 - Nuevos Server Actions con DB writes (insert/update/delete con ownership)
@@ -24,15 +24,15 @@ HUs donde **pocos archivos + scope acotado** coinciden con **superficie de riesg
 - Paneles de admin y gates de `is_admin`
 - RLS policies nuevas o modificadas
 - Llamadas a APIs externas con secretos
-- HUs con <5 archivos + ≤10 ACs pero que tocan alguno de los anteriores
+- HUs con hasta 5 archivos y hasta 10 ACs que tocan alguno de los anteriores
 
-### ❌ Usá FAST puro (`/nexus-fast-pipeline`) si
+### Usá FAST puro (`/nexus-fast-pipeline`) si
 - UI pura (layout, typography, theme, CSS)
 - Queries read-only a tablas ya validadas
 - Fix de typos, copy, strings
 - Refactors mecánicos de código ya cubierto por AR previo
 
-### ❌ Usá QUALITY completo (`/nexus-p1-f0-f1`) si
+### Usá QUALITY completo (`/nexus-p1-f0-f1`) si
 - Features grandes (>5 archivos o >10 ACs)
 - Migrations destructivas o no-additive sobre tablas con data
 - Funciones postgres con `SECURITY DEFINER`
@@ -42,7 +42,7 @@ HUs donde **pocos archivos + scope acotado** coinciden con **superficie de riesg
 
 **Regla de oro del FAST+AR**: "es chica pero puede explotar en prod". Si dudás, usá QUALITY.
 
-## 📋 Estructura del FAST+AR pipeline
+## Estructura del FAST+AR pipeline
 
 | Fase | Equivalente QUALITY | Agente | Modelo | Nota |
 |------|---------------------|--------|--------|------|
@@ -67,7 +67,7 @@ HUs donde **pocos archivos + scope acotado** coinciden con **superficie de riesg
 - F4 compact verifica runtime state (DB, env parity, migrations) — cosas que CR no puede ver
 - Validation report compacto si todo verde, denso si hay hallazgos
 
-## 🎯 Ejecución
+## Ejecución
 
 Vos sos el orquestador. NO codeás vos mismo. Lanzás los sub-agentes con instrucciones de **modo FAST+AR**.
 
@@ -108,7 +108,7 @@ Task tool:
     - Scope IN exhaustivo (máx 5 archivos)
     - Reporte al orquestador: path + 3 líneas explicando qué se construye y cuál es el riesgo
 
-    ## ⛔ PROHIBIDO en FAST+AR
+    ## PROHIBIDO en FAST+AR
     - NO generar SDD
     - NO generar Story File
     - NO ACs vagos
@@ -120,7 +120,7 @@ Task tool:
 
 Presentar al humano el work-item. Usar `AskUserQuestion`:
 - **Pregunta**: "Work-item compacto en `<path>`. Clasificado como `[categoría-riesgo]`. ¿Aprobás avanzar a F3 FAST+AR?"
-- **Opciones**: APROBAR / RECHAZAR (con feedback) / ESCALAR a QUALITY completo
+- **Opciones**: `HU_APPROVED` / RECHAZAR (con feedback) / ESCALAR a QUALITY completo
 
 Si RECHAZA o ESCALA → ABORT.
 
@@ -138,7 +138,7 @@ Task tool:
 
     Tu input es el WORK-ITEM directamente (NO hay Story File). Tratalo como contrato autocontenido.
 
-    REGLAS CRÍTICAS:
+    Reglas críticas:
     - Anti-Hallucination Protocol sigue vigente — verificás exemplars, no inventás APIs.
     - Auto-Blindaje obligatorio si cometés errores.
     - Si el cambio requiere tocar archivos fuera del Scope IN → STOP, escalar a QUALITY.
@@ -248,7 +248,7 @@ Task tool:
 
 Idéntico a `/nexus-fast-pipeline` Fase 4: mini-report + `_INDEX.md` update.
 
-## 🛡️ Reglas críticas del FAST+AR
+## Reglas críticas del FAST+AR
 
 1. **AR + CR son obligatorios** — ese es el `+AR` en el nombre del modo. Si saltás AR, usá FAST puro.
 2. **Gate binario en AR/CR**: cualquier BLQ (ALTO, MED, o BAJO) dispara fix-pack.
@@ -257,7 +257,7 @@ Idéntico a `/nexus-fast-pipeline` Fase 4: mini-report + `_INDEX.md` update.
 5. **Auto-Blindaje sigue activo**: errores documentados igual.
 6. **Runtime checks del F4 son condicionales** — solo ejecutá los que la categoría de riesgo justifica, no el combo completo.
 
-## 🔄 Relación con los otros pipelines
+## Relación con los otros pipelines
 
 FAST, FAST+AR y QUALITY **coexisten**. El analyst puede recomendar cuál usar, pero el humano decide.
 
@@ -269,7 +269,7 @@ FAST, FAST+AR y QUALITY **coexisten**. El analyst puede recomendar cuál usar, p
 
 FAST+AR es **opt-in explícito** — nunca se invoca por accidente. Pero es el sweet spot para el 40-50% de las HUs de producto real: no son triviales ni son features arquitectónicas, son "toquecitos" que igual pueden romper prod.
 
-## 📊 Ejemplo histórico — cuándo habría importado
+## Ejemplo histórico — cuándo habría importado
 
 | HU | Qué pasó con FAST puro (hipotético) | Qué pasaría con FAST+AR |
 |----|-------------------------------------|-------------------------|

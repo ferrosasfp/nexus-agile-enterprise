@@ -14,7 +14,7 @@ Lanza el sub-agente `nexus-docs` para cerrar la HU: reporte final, actualizació
 
 ## Pre-requisitos
 
-- F4 completado con veredicto APROBADO PARA DONE
+- F4 completado con veredicto APROBADO PARA DONE, y `RELEASE_APPROVED` si `project-context.md` declara `release_gate: true`
 - Todos los artefactos en `$NEXUS_ROOT/doc/sdd/NNN-titulo/`:
   - work-item.md, sdd.md, story-file.md (no existe con contract_mode: unified)
   - ar-report.md, cr-report.md, validation.md
@@ -56,7 +56,7 @@ Task tool:
     - $NEXUS_ROOT/doc/sdd/_INDEX.md actualizado
     - Resumen ejecutivo (5-10 líneas) al orquestador
 
-    ## ⛔ PROHIBIDO EN ESTA FASE
+    ## Prohibido en esta fase
     - NO modificar código fuente
     - NO modificar artefactos previos (son inmutables)
     - NO marcar DONE si validation.md no es APROBADO
@@ -69,6 +69,6 @@ Task tool:
 - Si hay spinoffs (tickets nuevos como WKH-33): mencionalos
 - El humano decide cuándo mergear el PR y cerrar el ticket en Jira
 
-## ⚠️ Importante
+## Importante
 - Vos sos el ORQUESTADOR. NO escribas el report.md vos mismo.
 - DONE es solo cierre documental. No mergea, no pushea, no hace deploy.

@@ -129,9 +129,9 @@ Cuando durante un FAST se descubre que el cambio es mas complejo de lo esperado:
 ### Trigger
 
 Triage o Dev detecta que el cambio:
-- Toca mas de 2 archivos
-- Requiere mas de 30 lineas
-- Involucra logica condicional, DB, o auth
+- Toca mas de 2 archivos de codigo
+- Requiere 50 lineas o mas
+- Involucra logica nueva, DB, o auth
 - El typecheck/build falla por razones no triviales
 
 ### Proceso

@@ -140,7 +140,7 @@ Sin Nexus:  ███████████████░░░░░░░�
 |---------|----------------|
 | Costo por turn | $0.08-0.11 |
 | Cache read ratio | ~89% del input (ahorro ~90% vs sin cache) |
-| Output tokens (dominante) | $75/M — el mayor componente de costo |
+| Output tokens (dominante) | El mayor componente de costo (foto de abril de 2026) |
 | Sesion mediana | $20-40 por sesion de trabajo |
 | Sprint completo (8 HUs, mixed pipelines) | ~$89 |
 | Costo estimado por HU | ~$11 (promedio FAST+QUALITY mixed) |
@@ -174,6 +174,7 @@ for project_dir in glob.glob(base + "*/"):
                             turns += 1
                 except:
                     pass
+        # Precios de ejemplo por millon de tokens: ajustarlos al modelo y a la tarifa vigente.
         cost = (ti/1e6)*15 + (tcc/1e6)*3.75 + (tcr/1e6)*0.375 + (to/1e6)*75
         fname = os.path.basename(fp)[:10]
         size = os.path.getsize(fp) / 1e6

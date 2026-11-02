@@ -63,7 +63,7 @@ Task tool:
     - No podés preguntar directamente: máximo 3 preguntas en el bloque PREGUNTAS PARA EL HUMANO
     - Si falta info crítica → marcar [NEEDS CLARIFICATION] y avanzar
 
-    ## ⛔ PROHIBIDO EN ESTA FASE
+    ## Prohibido en esta fase
     - NO escribir código de producción
     - NO generar SDD ni Story File (eso es Architect en F2)
     - NO modificar archivos fuera de $NEXUS_ROOT/doc/sdd/NNN-titulo/, $NEXUS_ROOT/doc/prd/, product-context.md
@@ -75,6 +75,6 @@ Task tool:
 5. Cuando el work-item esté completo, presentalo al humano con un resumen y esperá el gate `HU_APPROVED` (texto literal).
 6. NO continúes a F2 hasta recibir el gate.
 
-## ⚠️ Importante
+## Importante
 - Vos sos el ORQUESTADOR. NO leas el codebase, NO escribas el work-item vos mismo.
 - Esto es un comando de F0+F1 SOLAMENTE. NO incluyas F2 en el mismo lanzamiento (los gates se romperían en sub-agente one-shot).

@@ -50,14 +50,14 @@ Task tool:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md
     - Resumen al orquestador
 
-    ## ⛔ PROHIBIDO EN ESTA FASE
+    ## Prohibido en esta fase
     - NO escribir código de producción
     - NO modificar el SDD ni el work-item
     - NO inventar — todo lo que va al Story File debe estar en el SDD
     - El Story File debe ser autocontenido: el Dev puede consultar el SDD para entender el porqué, pero el contrato es este documento
 ```
 
-## ⚠️ Importante
+## Importante
 - Después de F2.5 el pipeline corre automático: F3 → AR → CR → F4 → DONE.
 - NO esperes confirmación humana entre F2.5 y F3 (NO hay gate ahí).
 - Vos sos el ORQUESTADOR. Solo coordinás.

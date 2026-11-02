@@ -80,11 +80,12 @@ Tu describes una feature -> AI analiza, disena, implementa, ataca, valida -> Vos
 
 ## Conceptos Clave (todos los roles)
 
-### Los 3 Modos
+### Los Modos
 
 | Modo | Cuando | Ejemplo |
 |------|--------|---------|
-| **FAST** | Cambio trivial, 1-2 archivos, sin DB | Fix de typo, ajuste de estilo |
+| **FAST** | Cambio chico, hasta 2 archivos de codigo, sin DB | Fix de typo, ajuste de estilo |
+| **FAST+AR** | Cambio chico en territorio de riesgo | Validacion en un endpoint, ajuste de permisos |
 | **LAUNCH** | MVP o prototipo nuevo | Primera version de una app |
 | **QUALITY** | Feature para produccion | Flujo de pagos, auth, dashboard |
 
@@ -151,7 +152,7 @@ En duda -> QUALITY. Es mejor sobre-engineerear el proceso que sub-engineerearlo.
 
 PIPELINE:  F0 -> F1 -> [HU_APPROVED] -> F2 -> [SPEC_APPROVED] -> F2.5 -> F3 -> AR -> CR -> F4 -> [RELEASE_APPROVED] -> DONE
 
-MODOS:     FAST (trivial) | LAUNCH (MVP) | QUALITY (prod)
+MODOS:     FAST (chico) | FAST+AR (chico y riesgoso) | LAUNCH (MVP) | QUALITY (prod) | AUTO (delegado)
 
 GATES:     Solo texto exacto: HU_APPROVED  SPEC_APPROVED  RELEASE_APPROVED  SPRINT_APPROVED  REVIEW_APPROVED  RETRO_APPROVED
 
@@ -161,7 +162,7 @@ BRANCHES:  feat/NNN-titulo | hotfix/NNN-titulo — Siempre PR a main. Nunca push
 
 REGLA #1:  El AI no inventa. Lee codigo real primero.
 REGLA #2:  Si no esta en el Story File, escalar.
-REGLA #3:  Gates son de personas. AI nunca auto-aprueba.
+REGLA #3:  Gates son de personas. La IA solo los resuelve con delegacion explicita (/nexus-auto).
 
 ESCALAR:   Dev -> TL (2h) | TL -> PO (4h) | SM si bloqueo
 

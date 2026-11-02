@@ -59,7 +59,7 @@ El orquestador **puede y debe** subir el pipeline si el clinical review detecta 
 que el analyst no capturó. Nunca bajar.
 
 **Señales de override:**
-- Analyst dice FAST pero el scope toca auth/payment/RLS → subir a FAST+AR
+- Analyst dice FAST pero el scope toca auth/payment/RLS, o más de 2 archivos de código → subir a FAST+AR
 - Analyst dice FAST+AR pero hay >5 archivos o necesita SDD → subir a QUALITY
 - Analyst dice LAUNCH pero toca auth/payment path → subir a FAST+AR mínimo
 
@@ -140,6 +140,8 @@ Notes: [observaciones si las hay]
 
 Estos gates ya son automáticos en el pipeline normal (tabla de decisión en `/nexus-p5-ar`
 y `/nexus-p7-f4`). No requieren clinical review adicional en AUTO mode.
+
+`RELEASE_APPROVED` nunca se autoaprueba: si `release_gate: true`, se detiene y escala al humano.
 
 ### §4.4 Formato de atribución (obligatorio)
 
@@ -362,7 +364,7 @@ Fase 8 — DONE
 ### §7.4 AR+CR BLQ Deduplication (fix-pack prep)
 
 Cuando AR y CR corren en paralelo, ambos pueden encontrar el **mismo issue**.
-Antes de lanzar fix-pack, el orquestador DEBE:
+Antes de lanzar fix-pack, el orquestador debe:
 
 1. Leer `ar-report.md` y `cr-report.md`
 2. Identificar BLQs duplicados (mismo archivo + misma causa raíz)
@@ -394,7 +396,7 @@ completion report (§8.2). Cuando AR encuentra BLQs reales, documenta:
 ### §8.1 In-Flight Progress (obligatorio)
 
 Después de cada lanzamiento de sub-agente y cada transición de fase, el orquestador
-DEBE mostrar la **progress bar visual** de cada HU del batch. Formato:
+debe mostrar la **progress bar visual** de cada HU del batch. Formato:
 
 ```
 WKH-XX:  F0✅ → F1✅ → HU✅ → [F2 🔄] → F2.5 → F3 → AR+CR → F4 → DONE
@@ -434,147 +436,17 @@ Este es el más grande del batch — 4 waves, ~19 archivos. Cuando F3 completa �
 - Al lanzar cada sub-agente
 - Al completar cada sub-agente (actualizar ✅)
 - Al self-aprobar un gate (actualizar HU✅ o SPEC✅)
-- Al escalar al humano (marcar `[⚠️ ESCALATED]` en vez de 🔄)
+- Al escalar al humano (marcar `[ESCALATED]` en vez de 🔄)
 
 ### §8.2 Completion Report
 
-Al terminar TODAS las HUs del batch (o al escalar en la regla #10), presentar un reporte
-estructurado con 3 secciones obligatorias:
-
-**Sección 1 — Tabla de resultados**
-
-Tabla con una fila por HU (o bloque de trabajo si hubo tareas no-HU como memory/Jira reorg):
-
-```
-Resumen de la sesión YYYY-MM-DD
-
-┌────────┬──────────┬───────────────┬───────────────┬──────────────────────────────────────────┐
-│ Bloque │  Ticket  │     Modo      │    Estado     │          Deliverable clave                │
-├────────┼──────────┼───────────────┼───────────────┼──────────────────────────────────────────┤
-│ 1      │ WKH-XX   │ FAST          │ ✅ Finalizada │ [descripción 1 línea del output]          │
-├────────┼──────────┼───────────────┼───────────────┼──────────────────────────────────────────┤
-│ 2      │ WKH-YY   │ FAST+AR       │ ✅ Finalizada │ [descripción 1 línea del output]          │
-├────────┼──────────┼───────────────┼───────────────┼──────────────────────────────────────────┤
-│ 3      │ WKH-ZZ   │ QUALITY       │ ✅ Finalizada │ [descripción 1 línea del output]          │
-├────────┼──────────┼───────────────┼───────────────┼──────────────────────────────────────────┤
-│ 4      │ WKH-AA   │ QUALITY W1-W3 │ ⚠️ Parcial    │ [descripción + qué falta]                 │
-└────────┴──────────┴───────────────┴───────────────┴──────────────────────────────────────────┘
-```
-
-**Columnas:**
-- **Bloque**: número secuencial de ejecución
-- **Ticket**: HU-ID o nombre de tarea
-- **Modo**: FAST / FAST+AR / QUALITY / QUALITY W1-WN (si parcial)
-- **Estado**: ✅ Finalizada / ⚠️ Parcial / ❌ Escalada / ❌ Abortada
-- **Deliverable clave**: 1 línea concisa del output principal (archivos creados, features deployed, etc.)
-
-**Sección 2 — Pipeline summary**
-
-Resumen agrupado por tipo de pipeline con árbol visual:
-
-```
-Pipeline NexusAgil ejecutado
-
-N HUs procesadas:
-├── N FAST (WKH-XX, WKH-YY)
-├── N FAST+AR (WKH-ZZ) — con nexus-adversary AR+CR
-└── N QUALITY (WKH-AA, WKH-BB) — full pipeline F0→...→DONE
-
-AR encontró N BLOQUEANTEs → fix-pack → N resueltos
-Gates self-approved: N | Gates escalated: N
-Total wallclock: NN min
-```
-
-**Sección 3 — Production State (si hubo merge)**
-
-Tabla por capa/feature mostrando qué está live en producción después del batch:
-
-```
-Lo que está en producción ahora
-
-┌───────────────┬──────────────────────────────────────────────────┬─────────┐
-│     Capa      │                    Feature                       │ Status  │
-├───────────────┼──────────────────────────────────────────────────┼─────────┤
-│ L2 Adapters   │ PaymentAdapter, GaslessAdapter, etc.             │ ✅ Live │
-├───────────────┼──────────────────────────────────────────────────┼─────────┤
-│ L3 Identity   │ POST /auth/agent-signup → wasi_a2a_ keys         │ ✅ Live │
-├───────────────┼──────────────────────────────────────────────────┼─────────┤
-│ Hardening     │ Rate limit, circuit breaker, error boundary      │ ✅ Live │
-├───────────────┼──────────────────────────────────────────────────┼─────────┤
-│ Smoke test    │ scripts/smoke-test.sh — 8/8 endpoints            │ ✅ Live │
-└───────────────┴──────────────────────────────────────────────────┴─────────┘
-```
-
-**Columnas:**
-- **Capa**: nivel arquitectónico o subsistema (L1/L2/L3/L4, Middleware, Hardening, Docs, etc.)
-- **Feature**: descripción concisa de lo que se deployó
-- **Status**: ✅ Live / 🔄 Deploying / ⚠️ Pending review
-
-Incluir también el estado técnico:
-
-```
-- PR #N merged a main: [timestamp]
-- Tests: N/N passing, tsc clean
-- Deploy: [status — auto-triggered / manual / pending]
-- New deps: [si aplica]
-```
-
-Si no hubo merge (branches pendientes de review humano):
-
-```
-Branches pendientes de merge
-
-- feat/NNN-titulo (WKH-XX) — ready for PR
-- feat/NNN-titulo (WKH-YY) — ready for PR
-```
-
-**Sección 4 — What Remains (siempre)**
-
-Tabla de tickets pendientes del proyecto/sprint que NO se procesaron en este batch:
-
-```
-Lo que queda
-
-┌────────┬──────────────────────────────────────┬───────────────────┐
-│ Ticket │                 Qué                  │     Esfuerzo      │
-├────────┼──────────────────────────────────────┼───────────────────┤
-│ WKH-26 │ Mid-checkpoint submission            │ Operativo — horas │
-├────────┼──────────────────────────────────────┼───────────────────┤
-│ WKH-17 │ Video + README final                 │ 1 día             │
-├────────┼──────────────────────────────────────┼───────────────────┤
-│ WKH-31 │ Pitch deck final                     │ Owner: [nombre]   │
-└────────┴──────────────────────────────────────┴───────────────────┘
-```
-
-**Columnas:**
-- **Ticket**: HU-ID o nombre
-- **Qué**: descripción de 1 línea
-- **Esfuerzo**: estimación libre (horas, días, "owner-name-owned", etc.)
-
-Si no quedan tickets pendientes, indicar: "El backlog está vacío. Sprint completo."
-
-**Sección 5 — Cross-session summary (si aplica)**
-
-Si el batch es parte de un sprint de múltiples sesiones, incluir totales acumulados:
-
-```
-Resumen acumulado (sesiones YYYY-MM-DD a YYYY-MM-DD)
-
-- N HUs shipped en producción
-- Tests: N → N (+N new)
-- BLOQUEANTEs encontrados por AR: N → todos resueltos
-- PRs merged: #N, #N, #N
-- Modos usados: N FAST, N FAST+AR, N QUALITY
-```
-
-Esta sección solo aparece cuando hay contexto de sesiones anteriores (vía Engram o memoria persistente).
-Si es la primera sesión del sprint, omitir.
+Al terminar TODAS las HUs del batch (o al escalar en la regla #10), presentá el reporte con el formato de `$SKILL_DIR/references/auto_completion_report.md`. Leelo recién en ese momento.
 
 ---
 
 ## §9 Reglas críticas
 
-1. **El orquestador NUNCA hace trabajo real** — no lee codebase, no escribe código, no genera SDDs.
+1. **El orquestador nunca hace trabajo real** — no lee codebase, no escribe código, no genera SDDs.
    Solo coordina sub-agentes, ejecuta clinical reviews, y maneja el batch.
 
 2. **Los sub-agentes reciben UNA fase a la vez** — compatible con Auto-Blindaje "Gates saltados".
@@ -601,10 +473,9 @@ Si es la primera sesión del sprint, omitir.
 
 10. **Dashboard final obligatorio** — el batch no está completo sin el completion report de §8.2.
 
-11. **Permisos Bash para background agents** — antes de lanzar F3/F4/DONE en background,
-    verificar que `.claude/settings.json` tenga permisos granulares de Bash configurados
-    (git, npm test, npx tsc, mkdir, etc.). Sin esto, los background agents fallan
-    silenciosamente. Ver Auto-Blindaje "Bash bloqueado" en `subagent_protocol.md`.
+11. **Permisos Bash para corridas desatendidas**: los sub-agentes en segundo plano piden permiso en la
+    sesión principal. Sin nadie mirando, el pedido queda esperando: configurá permisos granulares en
+    `.claude/settings.json` antes de lanzar F3, F4 o DONE. Ver `subagent_protocol.md`.
 
 ---
 
@@ -622,4 +493,4 @@ El humano siempre puede:
 - Interrumpir un AUTO en curso y tomar control manual del gate
 - Rechazar un self-approval cuando el orquestador escala por FAIL
 
-**Los 6 agents y los otros 10 commands no cambian.** AUTO los orquesta, no los modifica.
+**Los demás agentes y comandos no cambian.** AUTO los orquesta, no los modifica.

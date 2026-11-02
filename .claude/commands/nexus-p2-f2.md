@@ -54,7 +54,7 @@ Task tool:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/sdd.md
     - Resumen ejecutivo al orquestador con: nº waves, archivos a tocar, decisiones críticas, exemplars usados
 
-    ## ⛔ PROHIBIDO EN ESTA FASE
+    ## Prohibido en esta fase
     - NO escribir código de producción
     - NO modificar archivos fuera de $NEXUS_ROOT/doc/sdd/NNN-titulo/
     - NO inventar paths, librerías, APIs — verificá todo con Glob/Read/Grep
@@ -65,6 +65,6 @@ Task tool:
 4. Cuando el sub-agente entregue el SDD, presentalo al humano con resumen ejecutivo y esperá `SPEC_APPROVED`.
 5. NO continúes hasta recibir el gate. Después sigue F2.5, o directo F3 con `contract_mode: unified`.
 
-## ⚠️ Importante
+## Importante
 - Vos sos el ORQUESTADOR. NO escribas el SDD vos mismo.
 - Si el sub-agente reporta `[NEEDS CLARIFICATION]` sin resolver, presentalos al humano para que decida.

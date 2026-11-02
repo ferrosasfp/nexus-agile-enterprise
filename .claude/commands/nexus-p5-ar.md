@@ -21,7 +21,7 @@ Lanza el sub-agente `nexus-adversary` **DOS VECES en paralelo** (mismo mensaje, 
 
 ## Acciones — DOS Tasks en EL MISMO MENSAJE (paralelo real)
 
-CRÍTICO: emitir ambos Task tool calls en **un solo bloque de tool_use** para que Claude Code los ejecute concurrentemente. Si los emitís en mensajes separados serán secuenciales.
+Importante: emitir ambos Task tool calls en **un solo bloque de tool_use** para que Claude Code los ejecute concurrentemente. Si los emitís en mensajes separados serán secuenciales.
 
 ```
 Task #1 (AR):
@@ -59,7 +59,7 @@ Task #1 (AR):
     - Veredicto final: APROBADO / APROBADO con MENORs / RECHAZADO
     - Resumen al orquestador
 
-    ## ⛔ PROHIBIDO EN ESTA FASE
+    ## Prohibido en esta fase
     - NO modificar código: Write es solo para el reporte y Bash solo para leer y reproducir
     - NO escribir el fix vos mismo — solo reportar el hallazgo
     - NO ser permisivo: tu trabajo es romper, no validar
@@ -98,7 +98,7 @@ Task #2 (CR — corre en paralelo con #1):
     - Veredicto final
     - Resumen al orquestador
 
-    ## ⛔ PROHIBIDO EN ESTA FASE
+    ## Prohibido en esta fase
     - NO modificar código
     - NO ser exigente con cosas no documentadas en el project-context
 ```
@@ -126,7 +126,7 @@ Task (verificación, antes de cualquier fix-pack):
 
     OUTPUT: $NEXUS_ROOT/doc/sdd/NNN-titulo/blq-verification.md
 
-    ## ⛔ PROHIBIDO
+    ## PROHIBIDO
     - NO modificar código ni los reportes
     - NO agregar hallazgos nuevos
     - NO descartar por razonamiento: NO REPRODUCE requiere haber corrido los pasos
@@ -149,7 +149,7 @@ Los BLQ ya confirmados no se vuelven a verificar en las siguientes iteraciones.
 | * | RECHAZADO (BLQ-CR) | Verificar los BLQ y re-lanzar `/nexus-p4-f3` con los que sigan en pie |
 | RECHAZADO | RECHAZADO | Verificar los BLQ combinados y re-lanzar `/nexus-p4-f3` con los que sigan en pie |
 
-## ⚠️ Tradeoff vs ejecución secuencial (leelo una vez)
+## Tradeoff vs ejecución secuencial (leelo una vez)
 
 - **Antes** (p5 → p6 secuencial): CR revisaba el código **post-fixes de AR**.
 - **Ahora** (p5 paralelo): CR revisa el código **pre-fixes de AR**.
@@ -164,7 +164,7 @@ Los BLQ ya confirmados no se vuelven a verificar en las siguientes iteraciones.
 
 El orquestador decide caso a caso. Por defecto, si los fixes de AR son <20 líneas o solo agregan validaciones, no hace falta re-CR.
 
-## ⚡ Bonus — paralelización humana mientras AR+CR corren
+## Bonus — paralelización humana mientras AR+CR corren
 
 Mientras AR y CR se ejecutan en paralelo (3-8 min dependiendo del tamaño del diff), **el orquestador tiene capacidad ociosa**. Aprovechala para tareas de infra **no-dependientes** que igual iban a correrse en algún momento:
 
@@ -177,7 +177,7 @@ Mientras AR y CR se ejecutan en paralelo (3-8 min dependiendo del tamaño del di
 
 **Ahorro**: depende del stack; mas infra local implica mas paralelizacion posible.
 
-## ⚠️ Importante
+## Importante
 
 - Vos sos el ORQUESTADOR. NO ataques ni revisás vos mismo.
 - Si hay BLOQUEANTEs: NO avances a `/nexus-p7-f4` hasta que el Dev los resuelva en una nueva iteración de F3.

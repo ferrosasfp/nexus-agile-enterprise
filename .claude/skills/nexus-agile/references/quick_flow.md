@@ -9,18 +9,28 @@
 
 ---
 
+## Los tres escalones
+
+Esta tabla es la unica fuente de los limites. Ante la duda, se sube un escalon.
+
+| Pipeline | Limites | Comando |
+|----------|---------|---------|
+| **FAST** | Hasta 2 archivos de codigo (mas sus tests), menos de 50 lineas; sin BD, sin logica nueva, sin auth ni pagos | `/nexus-fast-pipeline` |
+| **FAST+AR** | Hasta 5 archivos y 10 ACs, tocando territorio de riesgo | `/nexus-fast-plus-ar` |
+| **QUALITY** | Todo lo demas | `/nexus-p1-f0-f1` |
+
 ## Cuando aplica Quick Flow
 
 Quick Flow es para cambios que cumplen TODAS estas condiciones:
 
 | Criterio | Limite |
 |----------|--------|
-| Archivos afectados | 1-2 |
-| Lineas de cambio | <30 |
+| Archivos afectados | Hasta 2 de codigo, mas sus tests |
+| Lineas de cambio | <50 |
 | Base de datos | No toca BD |
 | Logica nueva | No crea logica nueva |
 | Seguridad | No afecta auth/permisos |
-| Tests | No requiere tests nuevos |
+| Tests | Un bugfix agrega o ajusta su test; lo demas no requiere tests nuevos |
 
 ### Ejemplos que SI califican
 - Corregir un typo en un label
@@ -28,12 +38,13 @@ Quick Flow es para cambios que cumplen TODAS estas condiciones:
 - Actualizar texto estatico
 - Corregir una URL hardcodeada
 - Ajustar un padding/margin
+- Corregir un bug acotado en codigo con tests
 - Cambiar un icono por otro del mismo set
 
 ### Ejemplos que NO califican
 - Agregar un campo a un formulario (logica de validacion)
 - Cambiar un flujo de navegacion (multiples archivos)
-- Corregir un bug con logica condicional (requiere test)
+- Crear una rama de negocio nueva (requiere SDD o FAST+AR)
 - Cualquier cambio que toque la base de datos
 - Cambios que afectan autenticacion/autorizacion
 
@@ -45,12 +56,12 @@ Triage ejecuta este check antes de aceptar un cambio en Quick Flow:
 
 ```
 QUICK FLOW QUALIFICATION:
-[ ] Maximo 2 archivos afectados
-[ ] Maximo 30 lineas de cambio
+[ ] Maximo 2 archivos de codigo, mas sus tests
+[ ] Menos de 50 lineas de cambio
 [ ] No toca base de datos
-[ ] No crea logica nueva (sin if/else, sin loops, sin calculos)
+[ ] No crea logica nueva (corregir logica existente si)
 [ ] No afecta autenticacion ni autorizacion
-[ ] No requiere tests nuevos
+[ ] Solo requiere el test del propio bugfix, si aplica
 [ ] El cambio es verificable con typecheck/build (sin test manual)
 ```
 
@@ -114,9 +125,9 @@ Triage presenta al humano. Si el humano aprueba, continuar.
 
 Triage DEBE escalar a pipeline completo si DURANTE el Quick Flow descubre que:
 
-1. El cambio toca mas de 2 archivos
-2. El cambio requiere mas de 30 lineas
-3. Hay logica condicional involucrada
+1. El cambio toca mas de 2 archivos de codigo
+2. El cambio requiere 50 lineas o mas
+3. Hay logica nueva involucrada
 4. Necesita tocar base de datos
 5. Afecta flujos de autenticacion
 6. El typecheck/build falla por razones no triviales
@@ -160,7 +171,7 @@ Procediendo con F0...
 | **Causa** | Cambio trivial conocido | Bug reportado en produccion |
 | **Causa raiz** | Obvia (typo, color, padding) | Desconocida, requiere investigacion |
 | **Riesgo** | Sin riesgo | Puede tocar auth, datos, pagos, queries |
-| **Lineas** | <30 | Sin limite (lo minimo necesario) |
+| **Lineas** | <50 | Sin limite (lo minimo necesario) |
 | **AR** | No | Obligatorio si toca auth/datos/pagos/DB |
 
 ### Pipeline Hotfix (5 pasos)
