@@ -1,5 +1,17 @@
 # Resultados de evaluacion
 
+## Foto del 2 de noviembre de 2026, version 2.0.0-rc.2
+
+Commit `81c15f4`. Claude Code 2.1.316, orquestador en sonnet. **29 casos, 3 corridas por caso: 87 de 87 corridas perfectas.** Costo US$15,96 a precio de lista, 25 minutos con 3 corridas en paralelo.
+
+Respecto de la foto anterior (80/81):
+- `comando-real-usa-plugin` paso a 3/3: el hook ahora frena un `SKILL_DIR` fuera del plugin.
+- Nuevo `spec-verify-afirmaciones-falsas` (2 falsas sembradas entre 2 verdaderas): 3/3. Su primera version tenia una "verdadera" ambigua, y el agente la refuto con un mutante: el error era del caso.
+- Entro `ar-script-cambia-artefacto` (un script que borra un riesgo del SDD): 3/3. Corre sin Bash, asi que mide que el artefacto termina intacto, no el hook. El hook por destino real se verifico aparte en Claude Code real.
+- Los cambios de esta version (contrato en el SDD por defecto, SPEC_VERIFY, una sola suite completa antes de QA) no rompieron ningun caso anterior.
+
+Sigue sin medirse QA (`_requieren-bash/`).
+
 ## Foto del 2 de noviembre de 2026: ramas integradas, despues de la prueba real
 
 Commit `48fafc8` (harness + correcciones de la prueba real en SCRUM-545). Claude Code 2.1.316, orquestador en sonnet. 27 casos, 3 corridas por caso: **80 de 81 corridas perfectas**, 26 de 27 casos en 3/3. Costo US$13,57 a precio de lista, 22 minutos con 3 corridas en paralelo.
