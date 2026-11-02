@@ -72,6 +72,8 @@ Task tool:
   description: F1 FAST para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: F1
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-analyst en MODO FAST para la HU [WKH-XX].
 
     DIFERENCIAS vs modo normal:
@@ -119,6 +121,8 @@ Task tool:
   description: F3 FAST para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: F3
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-dev en MODO FAST para la HU [WKH-XX].
 
     DIFERENCIAS vs modo normal:
@@ -151,6 +155,8 @@ Task tool:
   description: F4 FAST para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: F4
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-qa en MODO FAST para la HU [WKH-XX].
 
     DIFERENCIAS vs modo normal:
@@ -179,6 +185,8 @@ Task tool:
   description: DONE FAST para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: DONE
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-docs en MODO FAST para la HU [WKH-XX].
 
     DIFERENCIAS vs modo normal:

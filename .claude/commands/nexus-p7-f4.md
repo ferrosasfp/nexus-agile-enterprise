@@ -25,6 +25,8 @@ Task tool:
   description: F4 QA Validation para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: F4
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres el agente nexus-qa de NexusAgil ejecutando F4 (Validation) para la HU [WKH-XX].
 
     INPUT:

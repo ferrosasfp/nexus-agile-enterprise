@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: qa-sin-entorno
+context:
+  scaffold_script: fixture.sh

@@ -30,6 +30,8 @@ Task tool:
   description: F2 SDD para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: F2
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres el agente nexus-architect de NexusAgil ejecutando F2 (SDD generation) para la HU [WKH-XX].
 
     INPUT:

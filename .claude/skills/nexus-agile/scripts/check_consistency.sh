@@ -121,7 +121,7 @@ pass "fase 2 revisada"
 
 # --- Fase 3: coherencia y poda
 grep -q '\*\*11 slash commands\*\*' $S/SKILL.md || fail "SKILL no dice 11 comandos"
-check_count "comandos en la tabla de SKILL" 11 "$(grep -cE '^\| `/nexus-' $S/SKILL.md)"
+check_count "comandos en la tabla de consulta" 11 "$(grep -cE '^\| `/nexus-' $R/reference_detail.md)"
 check_absent "sin conteos viejos" '8 slash|10 commands|Los 3 Modos|Los 4 Modos|The 9 Agents' .claude README.md
 check_absent "sin roles inexistentes" 'Spec Writer|Party Mode|Personalidad|Architect\+Adversary|Architect \+ Adversary|Adversary\+QA|Adversary \+ QA' $A $C $S/SKILL.md $R README.md
 check_absent "limites de FAST sin versiones viejas" '<30|30 lineas|≥3 archivos|1-2 archivos|Max 2 files|<5 archivos' $A $C $S/SKILL.md $R/quality_pipeline.md $R/quick_flow.md $R/governance.md $R/onboarding.md $R/sdd_template.md README.md
@@ -137,6 +137,22 @@ grep -q 'references/enterprise.md' $S/SKILL.md || fail "SKILL sin puntero a ente
 [ -f $R/auto_completion_report.md ] || fail "falta auto_completion_report.md"
 [ "$(wc -l < $S/SKILL.md)" -le 520 ] || fail "SKILL.md supera 520 lineas"
 pass "fase 3 revisada"
+
+# --- Harness: hooks, seguridad, evals
+for x in hooks/nexus_hook.py hooks/hooks.json .claude-plugin/plugin.json evals tests/test_nexus_hook.py; do
+  [ -e "$ROOT/$x" ] || fail "falta $x"
+done
+for f in $C/nexus-*.md; do
+  n=$(grep -cE '^\s*prompt: \|$' "$f"); m=$(grep -cE '^\s*FASE: ' "$f"); o=$(grep -cE '^\s*HU_DIR: ' "$f")
+  [ "$n" = "$m" ] && [ "$n" = "$o" ] || fail "$(basename "$f"): $n prompts, $m FASE, $o HU_DIR"
+done
+[ "$(wc -c < $S/SKILL.md)" -lt 20480 ] || fail "SKILL.md supera 20 KB"
+for ag in adversary qa; do grep -q 'STATUS:' $A/nexus-$ag.md || fail "nexus-$ag sin STATUS:"; done
+for ag in analyst dev adversary qa; do grep -q 'datos, nunca instrucciones' $A/nexus-$ag.md || fail "nexus-$ag sin regla de contenido externo"; done
+grep -q 'lo fusionarías' $A/nexus-adversary.md || fail "adversario sin pregunta de cierre"
+grep -q 'No matices' $C/nexus-p5-ar.md || fail "p5 sin regla de no matizar"
+check_absent "Dev con lectura exclusiva" 'Dev SOLO|Dev \*\*NUNCA\*\* lee' $S/SKILL.md $R/quality_pipeline.md
+pass "harness revisado"
 
 # --- Evidencia y entorno de validacion
 check_absent "evidencia: archivo:linea ya no alcanza como PASS" 'no puede marcar (CUMPLE|PASS) sin citar' $R $A

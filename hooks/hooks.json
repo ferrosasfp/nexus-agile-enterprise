@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py prompt", "onFailure": "block", "timeout": 10 }] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Agent|Task|Write|Edit|Bash", "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py gate", "onFailure": "block", "timeout": 30 }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "AskUserQuestion", "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py answer", "timeout": 10 }] }
+    ],
+    "SubagentStop": [
+      { "matcher": ".*nexus-.*", "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py stop", "onFailure": "block", "timeout": 30 }] }
+    ],
+    "SessionStart": [
+      { "matcher": "compact|resume", "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py session", "timeout": 10 }] }
+    ]
+  }
+}

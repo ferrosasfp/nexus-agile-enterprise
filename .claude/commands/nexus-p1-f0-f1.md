@@ -15,7 +15,7 @@ Lanza el sub-agente `nexus-analyst` para ejecutar F0 (Context Bootstrap) + F1 (W
 ## Acciones
 
 1. Verificá que `project-context.md` exista en NEXUS_ROOT. Si no existe, el sub-agente lo genera primero.
-2. Leé `$NEXUS_ROOT/doc/sdd/_INDEX.md` para conocer el siguiente NNN. Si no existe el directorio `$NEXUS_ROOT/doc/sdd/`, creá la estructura.
+2. Leé `$NEXUS_ROOT/doc/sdd/_INDEX.md` para conocer el siguiente NNN y creá `$NEXUS_ROOT/doc/sdd/NNN-titulo/`: los hooks exigen ese `HU_DIR` en el prompt.
 3. Lanzá el sub-agente con el Task tool:
 
 ```
@@ -24,6 +24,8 @@ Task tool:
   description: F0+F1 para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: F0F1
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres el agente nexus-analyst de NexusAgil ejecutando F0 + F1 para la HU [WKH-XX].
 
     INPUT:

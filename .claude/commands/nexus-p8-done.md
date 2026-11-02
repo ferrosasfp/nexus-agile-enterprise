@@ -28,6 +28,8 @@ Task tool:
   description: DONE para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: DONE
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres el agente nexus-docs de NexusAgil ejecutando la fase DONE (closure) para la HU [WKH-XX].
 
     INPUT:

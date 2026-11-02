@@ -28,7 +28,10 @@ mkdir -p "${TARGET_DIR}/.claude/skills" "${TARGET_DIR}/.claude/agents" "${TARGET
 cp -r "${REPO_ROOT}/.claude/skills/nexus-agile/" "${TARGET_DIR}/.claude/skills/"
 cp "${REPO_ROOT}/.claude/agents/nexus-"*.md      "${TARGET_DIR}/.claude/agents/"
 cp "${REPO_ROOT}/.claude/commands/nexus-"*.md    "${TARGET_DIR}/.claude/commands/"
-ok "Skill, 6 sub-agents and 11 commands installed."
+mkdir -p "${TARGET_DIR}/.claude/hooks"
+cp "${REPO_ROOT}/hooks/nexus_hook.py" "${TARGET_DIR}/.claude/hooks/"
+ok "Skill, 6 sub-agents, 11 commands and the hook script installed."
+warn "To enforce gates, add the hooks block to .claude/settings.json: see references/enforcement.md"
 
 # ── 2. Ensure the Engram binary (the memory engine) ─────────────────────────
 if command -v engram >/dev/null 2>&1; then

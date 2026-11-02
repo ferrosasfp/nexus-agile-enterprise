@@ -81,6 +81,8 @@ Task tool:
   description: F1 FAST+AR para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: F1
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-analyst en MODO FAST+AR para la HU [WKH-XX].
 
     DIFERENCIAS vs modo FAST puro:
@@ -134,6 +136,8 @@ Task tool:
   description: F3 FAST+AR para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: F3
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-dev en MODO FAST+AR para la HU [WKH-XX].
 
     Tu input es el WORK-ITEM directamente (NO hay Story File). Tratalo como contrato autocontenido.
@@ -167,6 +171,8 @@ Task #1 (AR):
   description: AR FAST+AR para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: AR
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-adversary ejecutando AR para la HU [WKH-XX] en modo FAST+AR.
 
     NOTA: NO hay Story File. Tu contrato es el work-item.md.
@@ -191,6 +197,8 @@ Task #2 (CR — paralelo):
   description: CR FAST+AR para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: AR
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-adversary ejecutando CR para la HU [WKH-XX] en modo FAST+AR.
 
     Corres EN PARALELO con AR — no podés leer ar-report.md.
@@ -215,6 +223,8 @@ Task tool:
   description: Fix-pack FAST+AR para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: F3
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Aplicá los fixes de AR + CR combinados. Priorizá BLQ-ALTO primero, luego MED, luego BAJO. Los MENORs quedan como deuda documentada, NO los fixes.
 
     INPUT: blq-verification.md + ar-report.md + cr-report.md + código actual. Corregí solo los BLQ que sigan en pie según blq-verification.md
@@ -232,6 +242,8 @@ Task tool:
   description: F4 FAST+AR para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: F4
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-qa en modo COMPACT para HU [WKH-XX].
 
     El agente nexus-qa ya sabe hacer runtime-first y validation report compacto. Seguí su prompt estándar, con estas instrucciones específicas para FAST+AR:

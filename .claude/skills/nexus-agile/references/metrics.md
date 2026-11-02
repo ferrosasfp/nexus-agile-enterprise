@@ -21,7 +21,7 @@
 
 | Metrica | Definicion | Como medir | Target |
 |---------|-----------|-----------|--------|
-| **Tasa de BLOQUEANTEs en AR** | % de HUs con hallazgos BLOQUEANTE | HUs_con_BLOQUEANTE / HUs_totales * 100 | Tendencia descendente sprint a sprint |
+| **Tasa de BLOQUEANTEs en AR** | % de HUs con hallazgos BLOQUEANTE | HUs_con_BLOQUEANTE / HUs_totales * 100 | No es meta por si sola: baja tambien si el revisor empeora. Leerla junto a recall y BLOQUEANTEs falsos del banco de `references/evaluation.md` |
 | **Categorias de BLOQUEANTE** | Distribucion de hallazgos por categoria | Clasificar de adversarial_review_checklist.md | Sin concentracion en una categoria |
 | **Drift Rate** | % de archivos implementados que difieren del plan | archivos_drift / archivos_planificados * 100 en F4 | < 10% |
 | **Bug Escape Rate** | Bugs encontrados en produccion post-deploy | Bug tracker | 0 es el target, < 2 por sprint es aceptable |

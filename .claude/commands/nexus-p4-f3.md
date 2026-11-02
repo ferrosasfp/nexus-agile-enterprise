@@ -25,6 +25,8 @@ Antes de lanzar el sub-agente Dev, verificá:
     → Si paralelismo necesario: un worktree por HU, con CODE_ROOT apuntando a él (ver subagent_protocol.md)
 ```
 
+Corré también `python3 $SKILL_DIR/scripts/check_contract.py [HU_DIR] --code-root [CODE_ROOT]`: cada AC con su tarea y su test, y rutas de Scope IN existentes.
+
 Si algún check falla: avisá al humano antes de lanzar.
 
 ## Acciones
@@ -35,6 +37,8 @@ Task tool:
   description: F3 Implementación para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: F3
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres el agente nexus-dev de NexusAgil ejecutando F3 (implementation) para la HU [WKH-XX].
 
     CONTRATO:

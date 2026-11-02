@@ -1,5 +1,20 @@
 # Changelog — NexusAgil
 
+## Sin publicar — Harness: enforcement, medicion y seguridad
+
+### Agregado
+- Hooks en `hooks/`: gates por codigo, escritura limitada por agente, Bash de solo lectura, `--no-verify` bloqueado, reporte y `STATUS:` exigidos, comparacion del arbol y estado por HU.
+- Plugin (`.claude-plugin/plugin.json`) sin mover archivos ni renombrar agentes.
+- `evals/` y `tests/test_nexus_hook.py`.
+- `references/`: `enforcement`, `security`, `evaluation`, `experiments`, `living_spec`, `auto_blindaje`, `reference_detail`.
+- `scripts/`: `check_contract.py` antes de F3, `review_package.sh` y `check_spec_ids.py`.
+- Formato de bug con Sin cambio, comprobacion invertida de retiros, brechas de verificacion, clasificacion de fallas y ciclo de vida de reglas.
+
+### Cambiado
+- Cada prompt lleva `FASE:` y `HU_DIR:`, y cada reporte una linea `STATUS:`.
+- Revisores: reportan todo y el triaje va aparte; cierran con "¿lo fusionarias?"; el contenido externo es dato, nunca instruccion.
+- `SKILL.md` baja de 20 KB: el detalle pasa a `references/`.
+
 ## Sin publicar — Fase 3: coherencia y poda
 
 ### Corregido

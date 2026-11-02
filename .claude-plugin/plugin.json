@@ -1,0 +1,20 @@
+{
+  "name": "nexus-agile",
+  "displayName": "NexusAgil",
+  "version": "2.0.0-rc.1",
+  "description": "Metodologia de desarrollo con agentes: pipeline por fases, gates humanos, revision adversaria y evidencia reproducible",
+  "author": { "name": "Fernando Rosas", "url": "https://github.com/ferrosasfp" },
+  "repository": "https://github.com/ferrosasfp/nexus-agile-enterprise",
+  "license": "MIT",
+  "keywords": ["methodology", "sdlc", "agents", "adversarial-review"],
+  "skills": ["./.claude/skills/"],
+  "commands": ["./.claude/commands/"],
+  "agents": [
+    "./.claude/agents/nexus-analyst.md",
+    "./.claude/agents/nexus-architect.md",
+    "./.claude/agents/nexus-dev.md",
+    "./.claude/agents/nexus-adversary.md",
+    "./.claude/agents/nexus-qa.md",
+    "./.claude/agents/nexus-docs.md"
+  ]
+}

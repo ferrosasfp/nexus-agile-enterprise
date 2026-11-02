@@ -396,6 +396,17 @@ Si algo no esta en este contrato, Dev para y escala. El resto del SDD explica el
 
 ---
 
+## Excepciones justificadas (solo si hay alguna)
+
+| Regla que se viola | Por que hace falta | Alternativa mas simple descartada |
+|--------------------|--------------------|-----------------------------------|
+
+## Deltas de especificacion (solo con `spec_mode: delta`)
+
+Ver `references/living_spec.md`.
+
+---
+
 ## Implementation Readiness Check
 
 > Architect ejecuta este check ANTES de presentar el SDD al humano en GATE 2.

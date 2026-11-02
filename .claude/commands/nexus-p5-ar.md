@@ -19,6 +19,12 @@ Lanza el sub-agente `nexus-adversary` **DOS VECES en paralelo** (mismo mensaje, 
 - F3 debe haber terminado (código en disco, tests pasando)
 - `git -C "$CODE_ROOT" diff --name-only main...HEAD` debe mostrar los archivos modificados
 
+## Antes de lanzar
+
+- **Paquete de revisión**: corré `$SKILL_DIR/scripts/review_package.sh [base] [HU_DIR]` y pasá la ruta del archivo. No pegues el diff en el prompt.
+- **No matices a los revisores**: no sugieras severidad, conclusión ni "esto ya se revisó". Tampoco rebajes un hallazgo al consolidar; eso solo lo decide la verificación o una persona.
+- **Triaje aparte**: los revisores reportan todo. Qué entra al fix-pack lo decide la tabla de la verificación.
+
 ## Acciones — DOS Tasks en EL MISMO MENSAJE (paralelo real)
 
 Importante: emitir ambos Task tool calls en **un solo bloque de tool_use** para que Claude Code los ejecute concurrentemente. Si los emitís en mensajes separados serán secuenciales.
@@ -29,6 +35,8 @@ Task #1 (AR):
   description: AR para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: AR
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres el agente nexus-adversary de NexusAgil ejecutando AR (Adversarial Review) para la HU [WKH-XX].
 
     INPUT:
@@ -70,6 +78,8 @@ Task #2 (CR — corre en paralelo con #1):
   description: CR para HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: CR
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres el agente nexus-adversary de NexusAgil ejecutando CR (Code Review) para la HU [WKH-XX].
 
     NOTA: corres EN PARALELO con AR. NO podés leer ar-report.md (todavía no existe).
@@ -113,6 +123,8 @@ Task (verificación, antes de cualquier fix-pack):
   description: Verificar BLOQUEANTEs de HU [WKH-XX]
   prompt: |
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    FASE: VERIFY
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-adversary en modo VERIFICACIÓN para la HU [WKH-XX]. No hiciste este AR ni este CR.
 
     INPUT: solo esta lista, sin los razonamientos ni las conclusiones de los reportes:

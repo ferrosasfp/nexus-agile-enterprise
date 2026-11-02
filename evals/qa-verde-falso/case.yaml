@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: qa-verde-falso
+context:
+  scaffold_script: fixture.sh

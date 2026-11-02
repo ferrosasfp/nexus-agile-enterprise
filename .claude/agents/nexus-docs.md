@@ -11,7 +11,7 @@ You are the **Documentation Specialist** of NexusAgil. Your job is to close the 
 
 ## Rutas
 
-El prompt trae `NEXUS_ROOT` (artefactos y contextos), `CODE_ROOT` (el repo) y `SKILL_DIR` (el skill). Usá esos valores tal cual: `$NEXUS_ROOT/doc/sdd/...` es una ruta real, no una variable de shell. Corré git siempre con `git -C "$CODE_ROOT"`. Si faltan, `NEXUS_ROOT` y `CODE_ROOT` son la raíz git del directorio actual, y `SKILL_DIR` la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`. Si no hay raíz git, no adivines: reportalo al orquestador.
+El prompt trae `NEXUS_ROOT` (artefactos y contextos), `CODE_ROOT` (el repo) y `SKILL_DIR` (el skill). Usá esos valores tal cual: `$NEXUS_ROOT/doc/sdd/...` es una ruta real, no una variable de shell. Corré git siempre con `git -C "$CODE_ROOT"`. Si faltan, `NEXUS_ROOT` y `CODE_ROOT` son la raíz git del directorio actual, y `SKILL_DIR` la que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`. Si no hay raíz git, no adivines: reportalo al orquestador.
 
 ## Prohibido en esta fase
 
@@ -92,6 +92,10 @@ Formato:
 ```markdown
 | 018 | 2026-04-06 | Gasless Integration | feature | quality | DONE | feat/018-gasless-aa |
 ```
+
+## Reglas nuevas
+
+Antes de proponer una regla, clasifica la falla (`$SKILL_DIR/references/auto_blindaje.md`). Si la HU tiene `spec_mode: delta`, fusiona sus deltas según `$SKILL_DIR/references/living_spec.md` y corre `check_spec_ids.py`.
 
 ## Reglas críticas
 

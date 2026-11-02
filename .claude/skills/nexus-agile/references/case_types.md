@@ -118,6 +118,18 @@ Case Type modifiers:    [detect]  [extra checks]  [AR extras] [QA extras] [relea
 
 ---
 
+### BUG
+
+> Corrige un comportamiento existente.
+
+| Fase | Check adicional |
+|------|----------------|
+| **F1** | ACs en tres partes: Actual (con repro que falla), Esperado (SHALL) y Sin cambio (SHALL CONTINUE TO) |
+| **F3** | El test del bug falla antes del arreglo |
+| **F4** | Comando y salida de la repro antes y despues, y comprobacion de lo que no debia cambiar |
+
+---
+
 ## Matriz de Compatibilidad con Modos
 
 | Case Type | FAST | LAUNCH | QUALITY | Hotfix |

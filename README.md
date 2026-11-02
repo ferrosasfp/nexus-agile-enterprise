@@ -63,6 +63,16 @@ npm i  →  No.  Just copy one folder into your project.  Done.
 The human makes decisions at the gates. **Everything else runs automatically.**
 
 
+## What Is Enforced by Code
+
+Rules in prose are suggestions. With the hooks in `hooks/`, a phase can't start without its artifact and human gate, reviewers can't write outside their reports, and a gate only counts if a person typed it. See `references/enforcement.md`, including what this does **not** guarantee: it stops honest mistakes, and it is not a security boundary.
+
+Load everything as a plugin with `claude --plugin-dir .`, or copy the files with `setup.sh`.
+
+## Evaluating the Methodology
+
+`evals/` tests agent behaviour phase by phase, with seeded defects, clean controls and hostile inputs. See `references/evaluation.md`.
+
 ## 4 Modes
 
 | | FAST | FAST+AR | QUALITY | AUTO |

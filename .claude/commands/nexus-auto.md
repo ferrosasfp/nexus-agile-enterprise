@@ -141,7 +141,7 @@ Notes: [observaciones si las hay]
 Estos gates ya son automáticos en el pipeline normal (tabla de decisión en `/nexus-p5-ar`
 y `/nexus-p7-f4`). No requieren clinical review adicional en AUTO mode.
 
-`RELEASE_APPROVED` nunca se autoaprueba: si `release_gate: true`, se detiene y escala al humano.
+`RELEASE_APPROVED` nunca se autoaprueba: si `release_gate: true`, se detiene y escala al humano. Los gates delegados quedan en `.gates.jsonl` como `claude-delegated`, distinguibles de los humanos. Esta revisión la hace quien orquesta, con el sesgo de quien quiere terminar: no equivale a una aprobación humana.
 
 ### §4.4 Formato de atribución (obligatorio)
 
@@ -445,6 +445,8 @@ Al terminar TODAS las HUs del batch (o al escalar en la regla #10), presentá el
 ---
 
 ## §9 Reglas críticas
+
+0. **Límites en corridas desatendidas**: definí `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` y `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`. AUTO no se dispara desde issues o PR externos sin separar lectura y escritura (`$SKILL_DIR/references/security.md`).
 
 1. **El orquestador nunca hace trabajo real** — no lee codebase, no escribe código, no genera SDDs.
    Solo coordina sub-agentes, ejecuta clinical reviews, y maneja el batch.

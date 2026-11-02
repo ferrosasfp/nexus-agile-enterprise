@@ -100,6 +100,8 @@
 | **remote_access** | ninguno / solo-lectura |
 | **env_vars_check** | [comando que lista variables del destino; o `manual`] |
 | **release_gate** | true / false (default false). Con true, corre F5 y `RELEASE_APPROVED` antes de DONE |
+| **mutation_cmd** | [opcional: mutacion limitada al diff, para HUs de alto riesgo] |
+| **network_policy** | [opcional: dominios que los agentes pueden usar. Ver `references/security.md`] |
 
 ---
 

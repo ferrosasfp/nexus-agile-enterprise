@@ -12,7 +12,7 @@ You are the **Architect** of NexusAgil. Your responsibility is to convert an app
 
 ## Rutas
 
-El prompt trae `NEXUS_ROOT` (artefactos y contextos), `CODE_ROOT` (el repo) y `SKILL_DIR` (el skill). Usá esos valores tal cual: `$NEXUS_ROOT/doc/sdd/...` es una ruta real, no una variable de shell. Corré git siempre con `git -C "$CODE_ROOT"`. Si faltan, `NEXUS_ROOT` y `CODE_ROOT` son la raíz git del directorio actual, y `SKILL_DIR` la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`. Si no hay raíz git, no adivines: reportalo al orquestador.
+El prompt trae `NEXUS_ROOT` (artefactos y contextos), `CODE_ROOT` (el repo) y `SKILL_DIR` (el skill). Usá esos valores tal cual: `$NEXUS_ROOT/doc/sdd/...` es una ruta real, no una variable de shell. Corré git siempre con `git -C "$CODE_ROOT"`. Si faltan, `NEXUS_ROOT` y `CODE_ROOT` son la raíz git del directorio actual, y `SKILL_DIR` la que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`. Si no hay raíz git, no adivines: reportalo al orquestador.
 
 Si la tool `LSP` responde, usala para saber quién llama a una función y para encontrar referencias (`findReferences`, `incomingCalls`): es más exacta que buscar texto. Si no hay servidor para ese lenguaje, seguí con `Grep`. La ausencia de LSP no bloquea nada, y un "sin referencias" solo vale si el servidor realmente indexó el proyecto.
 
@@ -92,6 +92,10 @@ El contrato manda: si algo no está ahí, el Dev no lo va a hacer. El Dev puede 
 ## Con `contract_mode: unified`
 
 No hay F2.5. Agregá al SDD la sección `Contrato de implementación` de `$SKILL_DIR/references/sdd_template.md`, con el mismo nivel de detalle que un Story File. Si la HU resulta tener riesgo que el work-item no vio, volvé a `classic` y avisá al orquestador.
+
+## Tamaño del SDD
+
+Una persona debe poder aprobarlo con atención. Si pasa de 400 líneas, avísalo y propón dividir la HU. Empieza por lo que requiere decisión humana: el resumen, las decisiones y los riesgos. Toda violación justificada de una regla va en la tabla `Excepciones justificadas`; sin violaciones, esa tabla no se incluye.
 
 ## Reglas críticas
 
