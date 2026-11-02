@@ -1,6 +1,6 @@
 # Changelog — NexusAgil
 
-## Sin publicar — Correcciones de la primera corrida real
+## 2.0.0-rc.2 — Correcciones de la primera corrida real (sin publicar)
 
 ### Corregido
 - Los comandos ya no comparan contra `main` fijo: cada prompt lleva `BASE_REF`, la base real de la HU.
@@ -17,6 +17,8 @@
 - El supervisor no trata como rodeo que un agente siga la instruccion del propio mensaje del hook.
 
 ### Agregado
+- `marketplace.json`: instalacion con `/plugin marketplace add` y `/plugin install`.
+- README con lo medido y lo no medido.
 - Fase `SPEC_VERIFY` en QUALITY (era el experimento E10): el adversario, en un contexto nuevo, verifica cada afirmacion del SDD contra el codigo y escribe `sdd-verification.md` con el hash del SDD. El hook no deja pasar a F3 con falsas abiertas ni con la verificacion de otra version. Se apaga con `spec_verify: false`.
 - `nexus_metrics.py`: metricas de una HU desde los transcripts y `.gates.jsonl`. DONE lo corre y `report.md` trae la tabla.
 - CI del repo de la metodologia (`.github/workflows/ci.yml`): pruebas sin modelo en cada push; eval a mano con secreto.

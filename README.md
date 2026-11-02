@@ -71,7 +71,17 @@ Load everything as a plugin with `claude --plugin-dir .`, or copy the files with
 
 ## Evaluating the Methodology
 
-`evals/` tests agent behaviour phase by phase, with seeded defects, clean controls and hostile inputs. See `references/evaluation.md`.
+`evals/` tests agent behaviour phase by phase, with seeded defects, clean controls and hostile inputs. See `references/evaluation.md` and the measured results in `evals/RESULTADOS.md`.
+
+**What has been measured (November 2026):**
+
+- **Eval suite:** 28 cases, 3 runs each, 84/84 perfect runs (AR, gates, dev, analyst, security, roles, supervisor, AUTO checklist, real command template). About USD 15 per full pass.
+- **One real HU, end to end** (a 2-point feature in a production Next.js/Supabase monorepo, with a human supervising every stop): DONE with CI green, 20 agent launches, 2.6 M tokens, 1 h 48 min of agent time. The methodology alone found 6 of 26 defects; the rest came from an extra SDD verification, the human, and the supervising session. Those findings are what this version fixes: the SDD verification is now a phase, the hook blocks by real destination and restores artifacts, and the contract lives in the SDD by default.
+- **Hook tests without a model:** 90+ in `tests/`, run by CI on every push.
+
+**What has not been measured:** QA in the eval (its cases need Bash, which the eval sandbox refused on the test machine); more than one real HU; any comparison against another methodology. One real run is a case study, not a benchmark.
+
+Per-HU metrics come from `scripts/nexus_metrics.py`, which reads the Claude Code transcripts and `.gates.jsonl`.
 
 ## 4 Modes
 
@@ -339,7 +349,16 @@ Between gates, the pipeline runs automatically. The agent never asks "shall I co
 
 NexusAgile distributes the **skill** (methodology), the **sub-agents**, the **slash commands**, and wires up **persistent memory** (Engram) so the system learns from its own errors across sessions.
 
-### One command (recommended)
+### As a plugin (recommended)
+
+```bash
+/plugin marketplace add ferrosasfp/nexus-agile-enterprise
+/plugin install nexus-agile@nexus-agile
+```
+
+Agents are namespaced (`nexus-agile:nexus-dev`), the hooks load with the plugin, and the commands are `/nexus-agile:nexus-p1-f0-f1` and so on. To try a local checkout without installing: `claude --plugin-dir /path/to/nexus-agile-enterprise`.
+
+### One command (copy into a project)
 
 ```bash
 git clone https://github.com/ferrosasfp/nexus-agile-enterprise /tmp/nexus-agile

@@ -1,0 +1,13 @@
+{
+  "name": "nexus-agile",
+  "owner": { "name": "Fernando Rosas", "url": "https://github.com/ferrosasfp" },
+  "metadata": { "description": "NexusAgil: metodologia de desarrollo con agentes para Claude Code" },
+  "plugins": [
+    {
+      "name": "nexus-agile",
+      "source": "./",
+      "description": "Pipeline por fases con gates humanos, verificacion del SDD, revision adversaria y evidencia reproducible, con hooks que lo hacen cumplir",
+      "version": "2.0.0-rc.2"
+    }
+  ]
+}

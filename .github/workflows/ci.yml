@@ -39,7 +39,7 @@ jobs:
       - name: Sintaxis de scripts y JSON
         run: |
           for f in $(git ls-files '*.sh'); do bash -n "$f"; done
-          for f in .claude-plugin/plugin.json hooks/hooks.json setup/mcp.json; do python -m json.tool "$f" > /dev/null; done
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json hooks/hooks.json setup/mcp.json; do python -m json.tool "$f" > /dev/null; done
           python -m py_compile hooks/nexus_hook.py .claude/skills/nexus-agile/scripts/*.py
 
   eval:
