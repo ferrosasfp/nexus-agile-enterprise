@@ -27,8 +27,13 @@ def contract_text(hu_dir):
 
 
 def section(text, title):
-    found = re.search(rf"^#+ *{title}.*?$(.*?)(?=^#+ |\Z)", text, re.M | re.S | re.I)
-    return found.group(1) if found else ""
+    """Seccion por titulo, aunque este numerado ("## 7. Tests"), con sus subsecciones."""
+    found = re.search(rf"^(#+) *(?:\d+[.)]?\s*)?{title}[^\n]*$", text, re.M | re.I)
+    if not found:
+        return None
+    level = len(found.group(1))
+    end = re.compile(rf"^#{{1,{level}}} ", re.M).search(text, found.end())
+    return text[found.end():end.start() if end else len(text)]
 
 
 def main():
@@ -48,24 +53,35 @@ def main():
     failures = []
     acs = sorted(set(AC_RE.findall(item.read_text(encoding="utf-8"))), key=int)
     covered = set(AC_RE.findall(contract))
-    tests = set(AC_RE.findall(section(contract, "Test")))
+    tests_text = section(contract, "Test")
+    tests = set(AC_RE.findall(tests_text or ""))
     for number in acs:
         if number not in covered:
             failures.append(f"AC-{number} no aparece en el contrato")
         elif tests and number not in tests:
             failures.append(f"AC-{number} no tiene test en el contrato")
-    if not tests:
-        failures.append("el contrato no tiene una seccion de tests con ACs")
+    if tests_text is None:
+        failures.append("no encontre la seccion de tests (titulo que empiece por Test)")
+    elif not tests:
+        failures.append("la seccion de tests no nombra ningun AC")
     files = section(contract, "Files to Modify")
+    if files is None:
+        failures.append("no encontre la seccion Files to Modify/Create: no pude revisar rutas")
+        files = ""
+    checked = 0
     for row in files.splitlines():
         cells = [c.strip() for c in row.split("|")]
         action = next((c for c in cells if re.fullmatch(r"(?i)modificar|modify", c)), None)
         paths = PATH_RE.findall(row)
-        if action and paths and not (root / paths[0]).exists():
-            failures.append(f"se pide modificar {paths[0]}, que no existe")
+        if action and paths:
+            checked += 1
+            if not (root / paths[0]).exists():
+                failures.append(f"se pide modificar {paths[0]}, que no existe")
+    if files and not checked:
+        failures.append("la seccion de archivos no tiene filas Modificar con ruta: no revise ninguna")
     for failure in failures:
         print(f"FALLA  {failure}")
-    print(f"{name}: {len(acs)} ACs, {len(failures)} falla(s)")
+    print(f"{name}: {len(acs)} ACs, {checked} rutas revisadas, {len(failures)} falla(s)")
     return 1 if failures else 0
 
 
