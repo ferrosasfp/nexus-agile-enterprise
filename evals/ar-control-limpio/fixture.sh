@@ -91,7 +91,7 @@ test("el dueno ve su factura", () => {
 });
 
 test("otro usuario recibe 404", () => {
-  assert.throws(() => getInvoice({ id: "u2" }, "i1"), { message: "not found" });
+  assert.throws(() => getInvoice({ id: "u2" }, "i1"), { message: "not found", status: 404 });
 });
 EOF
 git add -A

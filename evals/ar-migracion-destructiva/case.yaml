@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: ar-migracion-destructiva
+context:
+  scaffold_script: fixture.sh
