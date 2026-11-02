@@ -16,7 +16,9 @@ Lanza el sub-agente `nexus-adversary` (en modo CR) para revisar calidad de códi
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX`)
 
-**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT`, `SKILL_DIR` y `BASE_REF`, y pasá sus valores reales en cada prompt. `BASE_REF` es la base real de la HU, no siempre `main`: si la HU parte de otro PR, es esa rama o ese commit. `SKILL_DIR` es la primera que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` y `~/.claude/skills/nexus-agile`; las demás reglas están en `$SKILL_DIR/references/paths.md`.
+
+**Agentes**: si invocaste este comando como `/nexus-agile:...`, lanzá cada agente con el prefijo: `nexus-agile:nexus-analyst`. Sin prefijo correría otra versión instalada, y el hook lo bloquea.
 
 ## Pre-requisitos
 
@@ -31,7 +33,7 @@ Task tool:
   subagent_type: nexus-adversary
   description: CR para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: CR
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres el agente nexus-adversary de NexusAgil ejecutando CR (Code Review) para la HU [WKH-XX].
@@ -39,7 +41,7 @@ Task tool:
     INPUT:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (o la sección "Contrato de implementación" de sdd.md si el work-item dice contract_mode: unified)
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/ar-report.md (referencia — no repitas hallazgos del AR)
-    - Archivos modificados: `git -C "$CODE_ROOT" diff main...HEAD`
+    - Archivos modificados: `git -C "$CODE_ROOT" diff $BASE_REF...HEAD`
 
     TU TAREA:
     Revisar calidad de código (NO seguridad — eso fue AR). Los 8 checks de quality_pipeline.md, sección Code Review:

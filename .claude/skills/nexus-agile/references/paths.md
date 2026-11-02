@@ -7,7 +7,8 @@
 |----------|--------------|---------|
 | `NEXUS_ROOT` | `project-context.md`, `product-context.md`, `doc/sdd/`, `doc/prd/` | raiz git del directorio actual |
 | `CODE_ROOT` | El repo donde corren git, tests y gates | raiz git del directorio actual |
-| `SKILL_DIR` | Este skill | la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile` |
+| `BASE_REF` | La base real de la HU, para comparar el diff | la rama default. Si la HU parte de otro PR, esa rama o ese commit |
+| `SKILL_DIR` | Este skill | la primera que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` y `~/.claude/skills/nexus-agile` |
 
 ## Como las resuelve el orquestador
 
@@ -32,7 +33,7 @@ El `project-context.md` se busca en `$NEXUS_ROOT/.nexus/`, `$NEXUS_ROOT/` y `$NE
 Los sub-agentes no heredan estos valores por si solos. El orquestador los escribe resueltos, como rutas absolutas, en cada prompt:
 
 ```
-RUTAS: NEXUS_ROOT=/ruta/absoluta · CODE_ROOT=/ruta/absoluta · SKILL_DIR=/ruta/absoluta
+RUTAS: NEXUS_ROOT=/ruta/absoluta · CODE_ROOT=/ruta/absoluta · SKILL_DIR=/ruta/absoluta · BASE_REF=commit-o-rama
 ```
 
 ## Artefactos fuera del repo: que revisar

@@ -10,7 +10,9 @@ Lanza el sub-agente `nexus-analyst` para ejecutar F0 (Context Bootstrap) + F1 (W
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX [descripción opcional]`)
 
-**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT`, `SKILL_DIR` y `BASE_REF`, y pasá sus valores reales en cada prompt. `BASE_REF` es la base real de la HU, no siempre `main`: si la HU parte de otro PR, es esa rama o ese commit. `SKILL_DIR` es la primera que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` y `~/.claude/skills/nexus-agile`; las demás reglas están en `$SKILL_DIR/references/paths.md`.
+
+**Agentes**: si invocaste este comando como `/nexus-agile:...`, lanzá cada agente con el prefijo: `nexus-agile:nexus-analyst`. Sin prefijo correría otra versión instalada, y el hook lo bloquea.
 
 ## Acciones
 
@@ -23,7 +25,7 @@ Task tool:
   subagent_type: nexus-analyst
   description: F0+F1 para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: F0F1
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres el agente nexus-analyst de NexusAgil ejecutando F0 + F1 para la HU [WKH-XX].
@@ -68,7 +70,7 @@ Task tool:
     ## Prohibido en esta fase
     - NO escribir código de producción
     - NO generar SDD ni Story File (eso es Architect en F2)
-    - NO modificar archivos fuera de $NEXUS_ROOT/doc/sdd/NNN-titulo/, $NEXUS_ROOT/doc/prd/, product-context.md
+    - NO modificar archivos fuera de $NEXUS_ROOT/doc/sdd/NNN-titulo/, $NEXUS_ROOT/doc/sdd/_INDEX.md, $NEXUS_ROOT/doc/prd/, project-context.md, product-context.md
     - NO inventar requirements
     - NO asumir scope: si dudás, marcar [NEEDS CLARIFICATION]
 ```

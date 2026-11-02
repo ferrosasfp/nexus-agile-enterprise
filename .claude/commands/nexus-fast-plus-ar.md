@@ -10,7 +10,9 @@ Pipeline intermedio entre `/nexus-fast-pipeline` (sin review) y el QUALITY compl
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX`)
 
-**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT`, `SKILL_DIR` y `BASE_REF`, y pasá sus valores reales en cada prompt. `BASE_REF` es la base real de la HU, no siempre `main`: si la HU parte de otro PR, es esa rama o ese commit. `SKILL_DIR` es la primera que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` y `~/.claude/skills/nexus-agile`; las demás reglas están en `$SKILL_DIR/references/paths.md`.
+
+**Agentes**: si invocaste este comando como `/nexus-agile:...`, lanzá cada agente con el prefijo: `nexus-agile:nexus-analyst`. Sin prefijo correría otra versión instalada, y el hook lo bloquea.
 
 ## Cuándo usar este modo (vs FAST vs QUALITY)
 
@@ -80,7 +82,7 @@ Task tool:
   subagent_type: nexus-analyst
   description: F1 FAST+AR para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: F1
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-analyst en MODO FAST+AR para la HU [WKH-XX].
@@ -135,7 +137,7 @@ Task tool:
   subagent_type: nexus-dev
   description: F3 FAST+AR para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: F3
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-dev en MODO FAST+AR para la HU [WKH-XX].
@@ -170,7 +172,7 @@ Task #1 (AR):
   subagent_type: nexus-adversary
   description: AR FAST+AR para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: AR
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-adversary ejecutando AR para la HU [WKH-XX] en modo FAST+AR.
@@ -180,7 +182,7 @@ Task #1 (AR):
     INPUT:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md (con sección Riesgo que te dice dónde prestar más atención)
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/auto-blindaje.md (si existe)
-    - Archivos modificados: `git -C "$CODE_ROOT" diff --name-only main...HEAD`
+    - Archivos modificados: `git -C "$CODE_ROOT" diff --name-only $BASE_REF...HEAD`
     - $SKILL_DIR/references/adversarial_review_checklist.md del skill nexus-agile
 
     TU TAREA:
@@ -196,7 +198,7 @@ Task #2 (CR — paralelo):
   subagent_type: nexus-adversary
   description: CR FAST+AR para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: AR
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-adversary ejecutando CR para la HU [WKH-XX] en modo FAST+AR.
@@ -205,7 +207,7 @@ Task #2 (CR — paralelo):
 
     INPUT:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md
-    - Archivos modificados: `git -C "$CODE_ROOT" diff main...HEAD`
+    - Archivos modificados: `git -C "$CODE_ROOT" diff $BASE_REF...HEAD`
 
     TU TAREA:
     Los 8 checks de quality_pipeline.md, sección Code Review: patrones, naming, complejidad (SOLID como lente), duplicación, imports, límites, escala y claims. Clasificar en BLQ-ALTO / BLQ-MED / BLQ-BAJO / MENOR / OK.
@@ -222,7 +224,7 @@ Task tool:
   subagent_type: nexus-dev
   description: Fix-pack FAST+AR para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: F3
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Aplicá los fixes de AR + CR combinados. Priorizá BLQ-ALTO primero, luego MED, luego BAJO. Los MENORs quedan como deuda documentada, NO los fixes.
@@ -241,7 +243,7 @@ Task tool:
   subagent_type: nexus-qa
   description: F4 FAST+AR para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: F4
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-qa en modo COMPACT para HU [WKH-XX].

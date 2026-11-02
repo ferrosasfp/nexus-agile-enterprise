@@ -10,7 +10,9 @@ Lanza el sub-agente `nexus-dev` para implementar la HU desde el Story File.
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX` o `WKH-XX W1`)
 
-**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT`, `SKILL_DIR` y `BASE_REF`, y pasá sus valores reales en cada prompt. `BASE_REF` es la base real de la HU, no siempre `main`: si la HU parte de otro PR, es esa rama o ese commit. `SKILL_DIR` es la primera que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` y `~/.claude/skills/nexus-agile`; las demás reglas están en `$SKILL_DIR/references/paths.md`.
+
+**Agentes**: si invocaste este comando como `/nexus-agile:...`, lanzá cada agente con el prefijo: `nexus-agile:nexus-analyst`. Sin prefijo correría otra versión instalada, y el hook lo bloquea.
 
 ## Pre-requisitos (Pre-flight checks obligatorios)
 
@@ -18,7 +20,7 @@ Antes de lanzar el sub-agente Dev, verificá:
 
 ```
 [ ] El contrato existe: story-file.md, o la sección "Contrato de implementación" de sdd.md con contract_mode: unified
-[ ] El branch base (main/develop) está actualizado
+[ ] BASE_REF es la base real de la HU y está actualizada
 [ ] El branch feature de la HU existe y está checked out
 [ ] Las env vars necesarias están configuradas
 [ ] No hay otro sub-agente Dev corriendo sobre el mismo directorio
@@ -36,7 +38,7 @@ Task tool:
   subagent_type: nexus-dev
   description: F3 Implementación para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: F3
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres el agente nexus-dev de NexusAgil ejecutando F3 (implementation) para la HU [WKH-XX].

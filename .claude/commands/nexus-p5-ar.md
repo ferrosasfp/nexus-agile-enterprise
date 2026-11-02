@@ -12,12 +12,14 @@ Lanza el sub-agente `nexus-adversary` **DOS VECES en paralelo** (mismo mensaje, 
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX`)
 
-**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT`, `SKILL_DIR` y `BASE_REF`, y pasá sus valores reales en cada prompt. `BASE_REF` es la base real de la HU, no siempre `main`: si la HU parte de otro PR, es esa rama o ese commit. `SKILL_DIR` es la primera que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` y `~/.claude/skills/nexus-agile`; las demás reglas están en `$SKILL_DIR/references/paths.md`.
+
+**Agentes**: si invocaste este comando como `/nexus-agile:...`, lanzá cada agente con el prefijo: `nexus-agile:nexus-analyst`. Sin prefijo correría otra versión instalada, y el hook lo bloquea.
 
 ## Pre-requisitos
 
 - F3 debe haber terminado (código en disco, tests pasando)
-- `git -C "$CODE_ROOT" diff --name-only main...HEAD` debe mostrar los archivos modificados
+- `git -C "$CODE_ROOT" diff --name-only $BASE_REF...HEAD` debe mostrar los archivos modificados
 
 ## Antes de lanzar
 
@@ -34,7 +36,7 @@ Task #1 (AR):
   subagent_type: nexus-adversary
   description: AR para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: AR
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres el agente nexus-adversary de NexusAgil ejecutando AR (Adversarial Review) para la HU [WKH-XX].
@@ -42,7 +44,7 @@ Task #1 (AR):
     INPUT:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (o la sección "Contrato de implementación" de sdd.md si el work-item dice contract_mode: unified): lo que el Dev debía cumplir
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/auto-blindaje.md (errores documentados por el Dev)
-    - Archivos modificados: ejecutar `git -C "$CODE_ROOT" diff --name-only main...HEAD` (o el branch base)
+    - Archivos modificados: ejecutar `git -C "$CODE_ROOT" diff --name-only $BASE_REF...HEAD` (o el branch base)
     - $SKILL_DIR/references/adversarial_review_checklist.md del skill nexus-agile
 
     TU TAREA:
@@ -77,7 +79,7 @@ Task #2 (CR — corre en paralelo con #1):
   subagent_type: nexus-adversary
   description: CR para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: CR
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres el agente nexus-adversary de NexusAgil ejecutando CR (Code Review) para la HU [WKH-XX].
@@ -88,7 +90,7 @@ Task #2 (CR — corre en paralelo con #1):
 
     INPUT:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (o la sección "Contrato de implementación" de sdd.md si el work-item dice contract_mode: unified)
-    - Archivos modificados: `git -C "$CODE_ROOT" diff main...HEAD`
+    - Archivos modificados: `git -C "$CODE_ROOT" diff $BASE_REF...HEAD`
 
     TU TAREA:
     Revisar calidad de código (NO seguridad — eso es AR). Los 8 checks de quality_pipeline.md, sección Code Review:
@@ -122,7 +124,7 @@ Task (verificación, antes de cualquier fix-pack):
   subagent_type: nexus-adversary
   description: Verificar BLOQUEANTEs de HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: VERIFY
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-adversary en modo VERIFICACIÓN para la HU [WKH-XX]. No hiciste este AR ni este CR.

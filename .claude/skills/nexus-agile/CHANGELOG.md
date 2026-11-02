@@ -1,5 +1,25 @@
 # Changelog — NexusAgil
 
+## Sin publicar — Correcciones de la primera corrida real
+
+### Corregido
+- Los comandos ya no comparan contra `main` fijo: cada prompt lleva `BASE_REF`, la base real de la HU.
+- Con el plugin, el hook exige el prefijo `nexus-agile:`. Sin prefijo se usaba en silencio otra version instalada.
+- `SKILL_DIR` busca primero dentro del plugin.
+- Sin `CODE_ROOT` valido, el hook bloquea en lugar de usar la carpeta actual.
+- `/nexus-p1-f0-f1` ya no se contradice con la edicion de `_INDEX.md`.
+
+### Agregado
+- `forbidden_commands` en `project-context.md`: comandos que el hook bloquea para todos, incluida la sesion principal.
+- Bloqueo de interpretes en linea que escriben, y comparacion del arbol en todo agente que no implementa, despues de que un arquitecto rodeara un bloqueo con `python3 -c`.
+- Regla en todos los agentes: si un hook bloquea, detente y reporta.
+- Guia para componer el gate unico desde el CI.
+- Experimento E10: verificador independiente del SDD.
+- Eval que usa un comando real: los casos anteriores armaban los prompts a mano y no vieron los defectos de las plantillas.
+
+### Cambiado
+- El arquitecto puede correr la suite en una copia desechable para medir el impacto.
+
 ## Sin publicar — Harness: enforcement, medicion y seguridad
 
 ### Agregado

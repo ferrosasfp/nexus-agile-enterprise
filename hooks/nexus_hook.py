@@ -23,7 +23,7 @@ from pathlib import Path
 GATES = ("HU_APPROVED", "SPEC_APPROVED", "RELEASE_APPROVED")
 GATE_DOC = {"HU_APPROVED": "work-item.md", "SPEC_APPROVED": "sdd.md"}
 READ_ONLY_BASH = {"nexus-adversary", "nexus-qa", "nexus-analyst", "nexus-architect", "nexus-docs"}
-REVIEWERS = {"nexus-adversary", "nexus-qa"}
+INLINE_WRITE = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b.*(open\(|write|unlink|rename|remove|rmtree|copy|move|mkdir|>)", re.S)
 PHASES = ("F0F1", "F1", "F2", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE")
 PHASE_OUTPUT = {
     "F0F1": "work-item.md", "F1": "work-item.md", "F2": "sdd.md", "F2.5": "story-file.md",
@@ -40,7 +40,7 @@ WRITE_RULES = {
 GIT_DESTRUCTIVE = re.compile(r"\bgit\b[^|;&]*\s(reset\s+--hard|checkout\s+--|checkout\s+\.|clean\s|restore\s|stash\b|pull\b)")
 NO_VERIFY = re.compile(r"\bgit\b[^|;&]*\s(commit|push)\b[^|;&]*\s--no-verify\b")
 GIT_WRITE = re.compile(r"\bgit\b[^|;&]*\s(commit|push|merge|rebase|apply|add|rm|mv|tag)\b")
-FILE_MUTATION = re.compile(r"\btee\b|\bsed\b[^|;&]*\s-i|\b(rm|mv|cp|chmod|chown|truncate|dd)\s")
+FILE_MUTATION = re.compile(r"\btee\b|\b(sed|perl)\b[^|;&]*\s-[a-zA-Z]*i|\b(rm|mv|cp|chmod|chown|truncate|dd)\s")
 REDIRECT = re.compile(r"(?<![0-9&<>])>>?\s*([^\s&|;]+)")
 
 
@@ -162,8 +162,17 @@ def check_phase(data, session):
     if phase not in PHASES:
         deny(f"fase desconocida {phase}. Validas: {', '.join(PHASES)}")
     hu_dir = abs_path(hu_value, data)
+    if os.environ.get("CLAUDE_PLUGIN_ROOT") and ":" not in (tool_input.get("subagent_type") or ""):
+        deny(f"esta sesion usa el plugin: lanza nexus-agile:{agent}. Sin prefijo correria otra version instalada")
     routes = re.search(r"CODE_ROOT=([^\s·]+)", prompt)
-    code_root = str(abs_path(routes.group(1), data)) if routes and routes.group(1) != "[valor]" else (data.get("cwd") or os.getcwd())
+    if routes and routes.group(1).startswith("["):
+        deny("RUTAS: tiene CODE_ROOT sin resolver. Pasa la ruta real")
+    code_root = str(abs_path(routes.group(1), data)) if routes else (data.get("cwd") or os.getcwd())
+    if phase not in ("F0F1", "F1") and not is_git_repo(code_root):
+        deny(f"{code_root} no es un repo git. Pasa CODE_ROOT= en la linea RUTAS:")
+    nexus = re.search(r"NEXUS_ROOT=([^\s·]+)", prompt)
+    if nexus and not nexus.group(1).startswith("["):
+        session["nexus_root"] = str(abs_path(nexus.group(1), data))
 
     def blocked(message):
         if session.get("override"):
@@ -243,15 +252,49 @@ def disposable(path, data):
     return path.startswith("/tmp/") and not path.startswith(cwd.rstrip("/") + "/")
 
 
+def is_git_repo(path):
+    try:
+        return subprocess.run(["git", "-C", path, "rev-parse", "--git-dir"], capture_output=True, timeout=20).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def forbidden_pattern(data, session):
+    """Comandos que el proyecto prohibe a todos, incluida la sesion principal."""
+    bases = [session.get("nexus_root"), data.get("cwd"), os.environ.get("NEXUS_ROOT")]
+    for base in filter(None, bases):
+        for sub in (".nexus", ".", "docs"):
+            path = Path(base) / sub / "project-context.md"
+            if path.is_file():
+                found = re.search(r"forbidden_commands\W+`([^`]+)`", path.read_text(encoding="utf-8"))
+                return found.group(1) if found else None
+    return None
+
+
+def check_forbidden(command, data):
+    pattern = forbidden_pattern(data, load_session(data))
+    if not pattern:
+        return
+    try:
+        matched = re.search(pattern, command)
+    except re.error as error:
+        deny(f"forbidden_commands no es una expresion valida: {error}")
+    if matched:
+        deny(f"el proyecto prohibe este comando ({matched.group(0)}). Detente y preguntale a la persona")
+
+
 def check_bash(agent, command, data):
     if ".gates.jsonl" in command:
         deny("los gates solo los registra el hook")
+    check_forbidden(command, data)
     if NO_VERIFY.search(command):
         deny("no se usa --no-verify: arregla lo que el hook del repo rechaza")
     if agent not in READ_ONLY_BASH:
         return
     if GIT_DESTRUCTIVE.search(command) or GIT_WRITE.search(command):
         deny(f"{agent} no modifica el repo con git: {command[:80]}")
+    if INLINE_WRITE.search(command) and not any(disposable(w.strip("'\"()"), data) for w in re.split(r"[\s,]+", command)):
+        deny(f"{agent} no escribe con un interprete en linea. Si necesita un cambio, usa Write o Edit donde su rol lo permite, o reportalo")
     for target in REDIRECT.findall(command):
         if not (target == "/dev/null" or disposable(target, data) or target.startswith(("$TMPDIR", "${TMPDIR"))):
             deny(f"{agent} no escribe archivos por Bash ({target}). Usa una copia en /tmp")
@@ -333,7 +376,7 @@ def cmd_answer(data):
 
 def tree_hash(code_root):
     # Los artefactos pueden vivir dentro del repo y no cuentan como cambio de codigo.
-    scope = ["--", ".", ":(exclude)doc/sdd", ":(exclude)doc/prd"]
+    scope = ["--", ".", ":(exclude)doc/sdd", ":(exclude)doc/prd", ":(exclude)project-context.md", ":(exclude)product-context.md", ":(exclude).nexus"]
     try:
         outputs = [subprocess.run(["git", "-C", code_root, *args], capture_output=True, text=True, timeout=20).stdout
                    for args in (["status", "--porcelain", *scope], ["diff", *scope], ["rev-parse", "HEAD"])]
@@ -374,8 +417,8 @@ def cmd_stop(data):
     save_session(data, session)
     hu_dir = Path(spawn["hu_dir"])
     problems = []
-    if agent in REVIEWERS and spawn.get("tree") and tree_hash(spawn["code_root"]) != spawn["tree"]:
-        problems.append("el arbol de git cambio durante tu revision. Restauralo y reporta el hallazgo en lugar de modificar el codigo")
+    if agent in READ_ONLY_BASH and spawn.get("tree") and tree_hash(spawn["code_root"]) != spawn["tree"]:
+        problems.append("el arbol de git cambio mientras corrias, y tu rol no modifica codigo. Restauralo y reporta por que")
     expected = PHASE_OUTPUT.get(spawn["phase"])
     if expected and spawn["phase"] != "F2.5":
         stem = expected[:-3]

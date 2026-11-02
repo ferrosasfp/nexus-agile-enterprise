@@ -83,7 +83,7 @@
 
 | Campo | Valor |
 |-------|-------|
-| **gate_command** | [comando que encadena lint, typecheck, tests y build; ej: `npm run qa`] |
+| **gate_command** | [comando que encadena lint, typecheck, tests y build; ej: `npm run qa`. Si el proyecto no lo tiene, componelo con los jobs del CI, declara que parte del CI no replica y correlo una vez antes de la primera HU] |
 
 ---
 
@@ -102,6 +102,7 @@
 | **release_gate** | true / false (default false). Con true, corre F5 y `RELEASE_APPROVED` antes de DONE |
 | **mutation_cmd** | [opcional: mutacion limitada al diff, para HUs de alto riesgo] |
 | **network_policy** | [opcional: dominios que los agentes pueden usar. Ver `references/security.md`] |
+| **forbidden_commands** | [opcional: expresion regular entre comillas invertidas, que el hook bloquea para todos, incluida la sesion principal; ej: `supabase db push\|prisma migrate deploy\|vercel .*--prod`] |
 
 ---
 

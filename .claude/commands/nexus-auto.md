@@ -39,7 +39,9 @@ si todos los criterios pasan. Si alguno falla, escala al humano con detalle.
 
 Parsear `$ARGUMENTS` para extraer la lista de HU-IDs y el flag `--user` si existe.
 
-**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT`, `SKILL_DIR` y `BASE_REF`, y pasá sus valores reales en cada prompt. `BASE_REF` es la base real de la HU, no siempre `main`: si la HU parte de otro PR, es esa rama o ese commit. `SKILL_DIR` es la primera que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` y `~/.claude/skills/nexus-agile`; las demás reglas están en `$SKILL_DIR/references/paths.md`.
+
+**Agentes**: si invocaste este comando como `/nexus-agile:...`, lanzá cada agente con el prefijo: `nexus-agile:nexus-analyst`. Sin prefijo correría otra versión instalada, y el hook lo bloquea.
 
 ---
 
@@ -446,7 +448,9 @@ Al terminar TODAS las HUs del batch (o al escalar en la regla #10), presentá el
 
 ## §9 Reglas críticas
 
-0. **Límites en corridas desatendidas**: definí `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` y `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`. AUTO no se dispara desde issues o PR externos sin separar lectura y escritura (`$SKILL_DIR/references/security.md`).
+0. **Prohibiciones del proyecto**: `forbidden_commands` de `project-context.md` vale para toda la corrida, incluida esta sesión.
+
+0b. **Límites en corridas desatendidas**: definí `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` y `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`. AUTO no se dispara desde issues o PR externos sin separar lectura y escritura (`$SKILL_DIR/references/security.md`).
 
 1. **El orquestador nunca hace trabajo real** — no lee codebase, no escribe código, no genera SDDs.
    Solo coordina sub-agentes, ejecuta clinical reviews, y maneja el batch.

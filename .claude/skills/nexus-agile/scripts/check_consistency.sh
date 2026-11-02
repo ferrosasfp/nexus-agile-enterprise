@@ -154,6 +154,18 @@ grep -q 'No matices' $C/nexus-p5-ar.md || fail "p5 sin regla de no matizar"
 check_absent "Dev con lectura exclusiva" 'Dev SOLO|Dev \*\*NUNCA\*\* lee' $S/SKILL.md $R/quality_pipeline.md
 pass "harness revisado"
 
+# --- Primera corrida real
+check_absent "sin base main fija" 'main\.\.\.HEAD' $A $C
+for f in $C/nexus-*.md; do
+  n=$(grep -cE '^\s*RUTAS: ' "$f"); m=$(grep -c 'BASE_REF=\[valor\]' "$f")
+  [ "$n" = "$m" ] || fail "$(basename "$f"): $n RUTAS y $m BASE_REF"
+  grep -q 'lanzá cada agente con el prefijo' "$f" || fail "$(basename "$f") sin regla de prefijo"
+  grep -q 'CLAUDE_PLUGIN_ROOT' "$f" || fail "$(basename "$f") sin SKILL_DIR del plugin"
+done
+for ag in analyst architect dev adversary qa docs; do grep -q 'No lo rodees' $A/nexus-$ag.md || fail "nexus-$ag sin regla de no rodear hooks"; done
+grep -q 'forbidden_commands' $R/project_context_template.md || fail "plantilla sin forbidden_commands"
+pass "correcciones de la corrida real revisadas"
+
 # --- Evidencia y entorno de validacion
 check_absent "evidencia: archivo:linea ya no alcanza como PASS" 'no puede marcar (CUMPLE|PASS) sin citar' $R $A
 grep -q 'Entorno de validacion' $R/project_context_template.md || fail "plantilla sin Entorno de validacion"

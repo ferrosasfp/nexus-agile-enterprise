@@ -10,7 +10,9 @@ Pipeline compacto para Historias de Usuario que **no justifican** el overhead de
 
 **Argumentos**: `$ARGUMENTS` (esperado: `WKH-XX`)
 
-**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT` y `SKILL_DIR` y pasá sus valores reales en cada prompt. `SKILL_DIR` es la que exista de `.claude/skills/nexus-agile` o `~/.claude/skills/nexus-agile`; las reglas de las otras dos están en `$SKILL_DIR/references/paths.md`.
+**Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT`, `SKILL_DIR` y `BASE_REF`, y pasá sus valores reales en cada prompt. `BASE_REF` es la base real de la HU, no siempre `main`: si la HU parte de otro PR, es esa rama o ese commit. `SKILL_DIR` es la primera que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` y `~/.claude/skills/nexus-agile`; las demás reglas están en `$SKILL_DIR/references/paths.md`.
+
+**Agentes**: si invocaste este comando como `/nexus-agile:...`, lanzá cada agente con el prefijo: `nexus-agile:nexus-analyst`. Sin prefijo correría otra versión instalada, y el hook lo bloquea.
 
 ## Cuándo usar FAST y cuándo NO
 
@@ -71,7 +73,7 @@ Task tool:
   subagent_type: nexus-analyst
   description: F1 FAST para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: F1
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-analyst en MODO FAST para la HU [WKH-XX].
@@ -120,7 +122,7 @@ Task tool:
   subagent_type: nexus-dev
   description: F3 FAST para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: F3
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-dev en MODO FAST para la HU [WKH-XX].
@@ -154,7 +156,7 @@ Task tool:
   subagent_type: nexus-qa
   description: F4 FAST para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: F4
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-qa en MODO FAST para la HU [WKH-XX].
@@ -166,7 +168,7 @@ Task tool:
 
     INPUT:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md (los ACs viven acá en FAST mode)
-    - Archivos modificados por el dev: `git -C "$CODE_ROOT" diff main...HEAD`
+    - Archivos modificados por el dev: `git -C "$CODE_ROOT" diff $BASE_REF...HEAD`
 
     OUTPUT:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/validation.md COMPACTO con:
@@ -184,7 +186,7 @@ Task tool:
   subagent_type: nexus-docs
   description: DONE FAST para HU [WKH-XX]
   prompt: |
-    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor]
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: DONE
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
     Eres nexus-docs en MODO FAST para la HU [WKH-XX].

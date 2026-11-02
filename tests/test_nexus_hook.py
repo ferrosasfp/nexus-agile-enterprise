@@ -66,6 +66,26 @@ class Fases(HookCase):
         result = self.run_hook("gate", tool_name="Agent", tool_input={"subagent_type": "nexus-agile:nexus-dev", "prompt": "x"})
         self.assertBlocked(result, "FASE")
 
+    def test_plugin_exige_prefijo(self):
+        self.env["CLAUDE_PLUGIN_ROOT"] = "/x"
+        self.assertBlocked(self.spawn("F1", "nexus-analyst"), "nexus-agile:nexus-analyst")
+        self.assertAllowed(self.spawn("F1", "nexus-agile:nexus-analyst"))
+
+    def test_copia_sin_plugin_no_exige_prefijo(self):
+        self.assertAllowed(self.spawn("F1", "nexus-analyst"))
+
+    def test_code_root_sin_resolver(self):
+        prompt = f"RUTAS: CODE_ROOT=[valor]\nFASE: F1\nHU_DIR: {self.hu}"
+        self.assertBlocked(self.run_hook("gate", tool_name="Agent", tool_input={"subagent_type": "nexus-analyst", "prompt": prompt}), "sin resolver")
+
+    def test_sin_repo_git_bloquea(self):
+        other = self.tmp / "sin-git"
+        other.mkdir()
+        self.write("work-item.md")
+        prompt = f"FASE: F2\nHU_DIR: {self.hu}"
+        result = self.run_hook("gate", cwd=str(other), tool_name="Agent", tool_input={"subagent_type": "nexus-architect", "prompt": prompt})
+        self.assertBlocked(result, "no es un repo git")
+
     def test_fase_desconocida(self):
         self.assertBlocked(self.spawn("F9"), "desconocida")
 
@@ -286,9 +306,45 @@ class Escritura(HookCase):
     def test_dev_puede_commitear(self):
         self.assertAllowed(self.bash_as("nexus-dev", "git add -A && git commit -m x"))
 
+    def test_interprete_en_linea_que_escribe(self):
+        for command in ("python3 -c \"open('sdd.md','w').write('x')\"", "node -e \"require('fs').writeFileSync('a','b')\"",
+                        "perl -pi -e 's/a/b/' app.ts"):
+            with self.subTest(command=command):
+                self.assertBlocked(self.bash_as("nexus-architect", command), "")
+
+    def test_interprete_que_solo_lee(self):
+        self.assertAllowed(self.bash_as("nexus-adversary", "node -e \"console.log(require('./app'))\""))
+
     def test_agujero_conocido_sigue_documentado(self):
         # Si un dia se cierra, este test avisa que hay que corregir enforcement.md.
-        self.assertAllowed(self.bash_as("nexus-adversary", "python3 -c \"open('app.ts','w')\""))
+        self.assertAllowed(self.bash_as("nexus-adversary", "python3 scripts/escribe.py"))
+
+    def _context(self, text):
+        (self.repo / "project-context.md").write_text(text)
+
+    def test_comando_prohibido_por_el_proyecto(self):
+        self._context("| **forbidden_commands** | `supabase db push|vercel .*--prod` |\n")
+        for agent in ("nexus-dev", "", "nexus-qa"):
+            with self.subTest(agent=agent):
+                self.assertBlocked(self.bash_as(agent, "supabase db push"), "prohibe")
+        self.assertAllowed(self.bash_as("nexus-dev", "supabase status"))
+
+    def test_sin_lista_no_se_prohibe(self):
+        self._context("| **gate_command** | `x` |\n")
+        self.assertAllowed(self.bash_as("nexus-dev", "supabase db push"))
+
+    def test_expresion_invalida_bloquea(self):
+        self._context("forbidden_commands: `(`\n")
+        self.assertBlocked(self.bash_as("nexus-dev", "ls"), "no es una expresion")
+
+    def test_contexto_en_nexus_root(self):
+        other = self.tmp / "nexus"
+        other.mkdir()
+        (other / "project-context.md").write_text("forbidden_commands: `db push`\n")
+        self.write("work-item.md", "- Pipeline: FAST\n")
+        prompt = f"RUTAS: NEXUS_ROOT={other} · CODE_ROOT={self.repo}\nFASE: F1\nHU_DIR: {self.hu}\nhaz"
+        self.assertAllowed(self.run_hook("gate", tool_name="Agent", tool_input={"subagent_type": "nexus-analyst", "prompt": prompt}))
+        self.assertBlocked(self.run_hook("gate", agent_type="nexus-dev", tool_name="Bash", cwd=str(self.tmp), tool_input={"command": "supabase db push"}), "prohibe")
 
 
 class AlTerminar(HookCase):
@@ -301,6 +357,14 @@ class AlTerminar(HookCase):
         (self.repo / "app.ts").write_text("cambiado\n")
         self.write("ar-report.md", "STATUS: APROBADO open_blq=0\n")
         self.assertIn("arbol de git cambio", self.stop("nexus-adversary").stdout)
+
+    def test_arquitecto_cambio_el_arbol(self):
+        self.write("work-item.md")
+        self.type_gate("HU_APPROVED")
+        self.spawn("F2")
+        (self.repo / "app.ts").write_text("cambiado\n")
+        self.write("sdd.md")
+        self.assertIn("arbol de git cambio", self.stop("nexus-architect").stdout)
 
     def test_artefactos_no_cuentan_como_cambio(self):
         self.write("work-item.md")

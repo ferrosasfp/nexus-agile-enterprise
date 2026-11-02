@@ -10,10 +10,10 @@
 |--------|----------|
 | `UserPromptSubmit` | Registra `HU_APPROVED`, `SPEC_APPROVED` y `RELEASE_APPROVED` escritos por una persona, con el hash del documento |
 | `PostToolUse(AskUserQuestion)` | Registra el gate si se elige la opcion con su nombre |
-| `PreToolUse(Agent)` | Bloquea la fase sin `FASE:`, `HU_DIR:`, artefacto o gate. Bloquea si el documento cambio despues de aprobarlo |
+| `PreToolUse(Agent)` | Bloquea la fase sin `FASE:`, `HU_DIR:`, artefacto o gate; si el documento cambio despues de aprobarlo; si `CODE_ROOT` no esta resuelto o no es un repo git; y si la sesion usa el plugin y el agente va sin prefijo |
 | `PreToolUse(Write, Edit)` | Cada agente de especificacion o revision escribe solo sus artefactos |
-| `PreToolUse(Bash)` | Solo lectura para quienes no implementan. Nadie usa `--no-verify` |
-| `SubagentStop` | Exige el reporte y su linea `STATUS:`; compara el arbol de git de los revisores; QA debe haber ejecutado al menos un comando |
+| `PreToolUse(Bash)` | Solo lectura para quienes no implementan, incluidos interpretes en linea que escriben. Nadie usa `--no-verify`. `forbidden_commands` del proyecto vale para todos, incluida la sesion principal |
+| `SubagentStop` | Exige el reporte y su linea `STATUS:`; compara el arbol de git de todo agente que no implementa; QA debe haber ejecutado al menos un comando |
 | `SessionStart(compact, resume)` | Recuerda la HU activa y su estado |
 
 ## Archivos que escribe
@@ -34,7 +34,8 @@ La persona escribe `NEXUS_OVERRIDE <motivo>`: pasa el proximo bloqueo y queda re
 
 ## Lo que NO garantiza
 
-- **No es una frontera de seguridad.** `python3 -c "open(...)"` pasa el filtro de Bash. La comparacion del arbol lo detecta despues, y solo en revisores.
+- **No es una frontera de seguridad.** En una corrida real, un agente bloqueado edito su artefacto con `python3 -c`. Ese camino ya se cierra, pero `python3 script.py` sigue pasando el filtro. La comparacion del arbol lo detecta despues, y no cubre artefactos fuera del repo.
+- **`forbidden_commands` compara texto.** Un alias o un script que envuelve el comando no coincide. Reduce errores; no reemplaza quitar las credenciales de produccion del entorno.
 - **La fase la declara el orquestador.** Una fase mal declarada pasa como esa fase.
 - **La sesion principal no esta limitada.** Un orquestador que implementa por su cuenta no se bloquea.
 - **`SubagentStop` insiste una sola vez**, para evitar ciclos.
