@@ -71,7 +71,7 @@ def main():
     checked = 0
     for row in files.splitlines():
         cells = [c.strip() for c in row.split("|")]
-        action = next((c for c in cells if re.fullmatch(r"(?i)modificar|modify", c)), None)
+        action = next((c for c in cells if re.match(r"(?i)\**\s*(modificar|modify)\b", c)), None)
         paths = PATH_RE.findall(row)
         if action and paths:
             checked += 1
