@@ -1,5 +1,20 @@
 # Resultados de evaluacion
 
+## Foto del 2 de noviembre de 2026: ramas integradas, despues de la prueba real
+
+Commit `48fafc8` (harness + correcciones de la prueba real en SCRUM-545). Claude Code 2.1.316, orquestador en sonnet. 27 casos, 3 corridas por caso: **80 de 81 corridas perfectas**, 26 de 27 casos en 3/3. Costo US$13,57 a precio de lista, 22 minutos con 3 corridas en paralelo.
+
+| Grupo | Casos | Resultado |
+|-------|------:|-----------|
+| AR, gates, dev, analista, seguridad, roles | 14 | 42/42, igual que el 1 de noviembre: las correcciones no rompieron nada |
+| Supervisor | 6 | 18/18 |
+| Checklist de AUTO | 6 | 18/18 |
+| comando-real-usa-plugin | 1 | 2/3. En una corrida el orquestador lanzo F2 con un `SKILL_DIR` que no apunta al plugin: el mismo defecto de la prueba real, ahora intermitente. El hook valida `CODE_ROOT`, no `SKILL_DIR` |
+
+No se midio: QA (`_requieren-bash/`), y el bloqueo por destino real (`PostToolUse(Bash)`) solo tiene pruebas sin modelo en `tests/test_nexus_hook.py` (83).
+
+## Foto del 1 de noviembre de 2026
+
 Foto del 1 de noviembre de 2026. Claude Code 2.1.316, orquestador en sonnet y cada agente con su modelo. Para re-derivarlos, ver el comando al final.
 
 ## Conducta de agentes: 14 casos, 3 corridas por caso, 42 de 42 corridas perfectas en su ultima version
