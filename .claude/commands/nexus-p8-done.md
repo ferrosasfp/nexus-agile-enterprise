@@ -73,6 +73,17 @@ Task tool:
 - Si hay spinoffs (tickets nuevos como WKH-33): mencionalos
 - El humano decide cuándo mergear el PR y cerrar el ticket en Jira
 
+## Si Claude Code rechaza la escritura del artefacto
+
+Claude Code puede rechazar que un subagente escriba un archivo de reporte, con un mensaje como `Subagents should return findings as text, not write report files`. Lo rechaza Claude Code, no el hook de NexusAgil, y el propio mensaje pide devolver el contenido como texto. Visto en una corrida real con `report.md`.
+
+En ese caso, y solo en ese:
+1. El agente devuelve el contenido completo entre las líneas `<<<ARTEFACTO report.md` y `ARTEFACTO>>>`, sin resumirlo.
+2. El orquestador lo escribe tal cual con Write en `HU_DIR`, sin cambiar nada, y anota en la bitácora el mensaje literal y el sha256 del archivo.
+3. Si hace falta corregir algo del contenido, lo decide una persona y la corrección se muestra como diff aparte.
+
+No cuenta como rodeo: el rechazo pide exactamente eso. Escribir el artefacto con otro contenido, o por Bash, sí lo es.
+
 ## Importante
-- Vos sos el ORQUESTADOR. NO escribas el report.md vos mismo.
+- Vos sos el ORQUESTADOR. NO escribas el report.md vos mismo, salvo en el caso de arriba, copiándolo tal cual.
 - DONE es solo cierre documental. No mergea, no pushea, no hace deploy.

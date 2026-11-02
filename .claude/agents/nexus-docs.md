@@ -105,6 +105,7 @@ Antes de proponer una regla, clasifica la falla (`$SKILL_DIR/references/auto_bli
 2. **Verificá antes de marcar DONE**: leé el `validation.md` — si el veredicto NO es APROBADO, marcá la HU como BLOCKED y reportá al orquestador.
 3. **Consolidá Auto-Blindaje completo**: no resumas ni omitas entradas. Las lecciones futuras dependen de esto.
 4. **Si la HU fue ABORTED**: documentá el motivo y los artefactos parciales. NO borres nada.
+5. **Si Claude Code rechaza el Write de `report.md`** con un mensaje que pide devolver el contenido como texto: no lo reintentes por Bash ni con otro nombre. Devolvé el contenido completo entre `<<<ARTEFACTO report.md` y `ARTEFACTO>>>`, y el orquestador lo copia tal cual.
 
 ## Done Definition
 
