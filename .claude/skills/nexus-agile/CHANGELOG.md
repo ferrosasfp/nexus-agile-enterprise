@@ -30,10 +30,14 @@
 - Cada gate guarda una copia del documento aprobado en `.versions/`.
 - Politica de commits explicita antes de F3; los revisores y `review_package.sh` tambien ven el trabajo sin commitear.
 - Eval que usa un comando real: los casos anteriores armaban los prompts a mano y no vieron los defectos de las plantillas.
-- Bloqueo por destino real (`PostToolUse(Bash)`): si un Bash de un agente cambia un archivo de `HU_DIR` sin Write ni Edit, queda como `VIOLATION` en `.gates.jsonl` y el agente se frena. En la corrida real, el unico rodeo efectivo (un script de Python que edito `sdd.md`) paso el filtro por texto.
+- Bloqueo por destino real (`PostToolUse(Bash)`): si un Bash de un agente cambia un archivo de `HU_DIR` sin Write ni Edit, se restaura, la version modificada queda en `.violations/`, se registra como `VIOLATION` en `.gates.jsonl` y el agente se frena. Verificado en Claude Code real. En la corrida real, el unico rodeo efectivo (un script de Python que edito `sdd.md`) paso el filtro por texto.
 - Nota sobre proxies que reescriben comandos (rtk): la evidencia se toma con el comando sin reescribir.
+- Con el plugin, el hook frena un `SKILL_DIR` ausente, sin resolver o fuera del plugin (en el eval del 2-nov, 1 de 3 corridas del comando real apunto a otra version).
+- Casos de eval `ar-script-cambia-artefacto` y `hook-script-disimulado` (en `_requieren-bash/`): un script que borra un riesgo o un AC del documento aprobado.
+- Antes de un push, el orquestador muestra que dispara (CI, migraciones, preview).
 
 ### Cambiado
+- El bloque MCP de Engram paso de `.mcp.json` a `setup/mcp.json`: en la raiz, el plugin arrancaba su propio engram. `setup.sh` lo sigue copiando al proyecto.
 - El arquitecto puede correr la suite en una copia desechable para medir el impacto.
 
 ## Sin publicar — Harness: enforcement, medicion y seguridad

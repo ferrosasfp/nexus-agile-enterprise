@@ -358,7 +358,7 @@ mkdir -p your-project/.claude/skills your-project/.claude/agents your-project/.c
 cp -r /tmp/nexus-agile/.claude/skills/nexus-agile/ your-project/.claude/skills/
 cp /tmp/nexus-agile/.claude/agents/nexus-*.md your-project/.claude/agents/
 cp /tmp/nexus-agile/.claude/commands/nexus-*.md your-project/.claude/commands/
-cp /tmp/nexus-agile/.mcp.json your-project/        # engram MCP — merge if you already have one
+cp /tmp/nexus-agile/setup/mcp.json your-project/.mcp.json   # engram MCP — merge if you already have one
 rm -rf /tmp/nexus-agile
 ```
 
@@ -394,7 +394,7 @@ NexusAgile, sprint planning
 
 ```
 setup.sh                                 # 🆕 one-command install (skill + agents + commands + Engram memory)
-.mcp.json                                # 🆕 wires the Engram MCP server (mem_save / mem_search) into your project
+setup/mcp.json                           # Engram MCP block that setup.sh copies to your project as .mcp.json (kept out of the repo root so the plugin does not start its own engram)
 README.md
 
 .claude/

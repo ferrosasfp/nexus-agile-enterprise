@@ -11,10 +11,12 @@ No es una frontera de seguridad: frena errores honestos y racionalizaciones. Un
 agente decidido puede escribir por Bash de formas que el filtro no ve, y por eso
 `stop` compara el arbol de git al terminar.
 """
+import base64
 import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -172,6 +174,27 @@ def require_gate(hu_dir, gate, session, phase, consume_override):
         consume_override(f"{doc} cambio despues de {gate}. Pidele a la persona que lo revise y vuelva a escribir {gate}")
 
 
+def check_skill_dir(prompt):
+    """Con el plugin, SKILL_DIR debe apuntar al plugin: en la prueba real apuntaba a la version vieja de ~/.claude."""
+    root = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if not root:
+        return
+    expected = f"{root.rstrip('/')}/.claude/skills/nexus-agile"
+    found = re.search(r"SKILL_DIR=([^·\n]*?)\s*(?:·|$)", prompt, re.M)
+    if not found:
+        deny(f"RUTAS: falta SKILL_DIR=. Con el plugin es {expected}")
+    value = found.group(1).strip()
+    if "CLAUDE_PLUGIN_ROOT" in value:
+        return
+    if not value or value.startswith("[valor"):
+        deny(f"RUTAS: tiene SKILL_DIR sin resolver. Con el plugin es {expected}")
+    if value.startswith("["):
+        return  # instruccion para el agente, que busca primero en el plugin
+    real = os.path.realpath(os.path.expanduser(value))
+    if not real.startswith(os.path.realpath(root) + os.sep):
+        deny(f"SKILL_DIR={value} esta fuera del plugin y correria otra version. Usa {expected}")
+
+
 def check_phase(data, session):
     tool_input = data.get("tool_input") or {}
     prompt = tool_input.get("prompt") or ""
@@ -185,6 +208,7 @@ def check_phase(data, session):
     hu_dir = abs_path(hu_value, data)
     if os.environ.get("CLAUDE_PLUGIN_ROOT") and ":" not in (tool_input.get("subagent_type") or ""):
         deny(f"esta sesion usa el plugin: lanza nexus-agile:{agent}. Sin prefijo correria otra version instalada")
+    check_skill_dir(prompt)
     routes = re.search(r"CODE_ROOT=([^\s·]+)", prompt)
     if routes and routes.group(1).startswith("["):
         deny("RUTAS: tiene CODE_ROOT sin resolver. Pasa la ruta real")
@@ -413,7 +437,10 @@ def snapshot_artifacts(data):
     """Antes de cada Bash de un agente: hash de los artefactos de la HU, para ver despues si el comando los cambio."""
     hu_dir = load_session(data).get("hu_dir")
     if hu_dir and Path(hu_dir).is_dir():
-        snapshot_file(data).write_text(json.dumps({"hu_dir": hu_dir, "ts": time.time(), "hashes": artifact_hashes(hu_dir)}), encoding="utf-8")
+        contents = {str(p): base64.b64encode(p.read_bytes()).decode() for p in Path(hu_dir).glob("*")
+                    if p.is_file() and p.name not in (".nexus-state.json", ".gates.jsonl") and p.stat().st_size <= 1_000_000}
+        snapshot_file(data).write_text(json.dumps({"hu_dir": hu_dir, "ts": time.time(), "hashes": artifact_hashes(hu_dir),
+                                                   "contents": contents}), encoding="utf-8")
 
 
 def cmd_after_bash(data):
@@ -441,13 +468,35 @@ def cmd_after_bash(data):
     if not changed:
         return
     agent = (data.get("agent_type") or "").split(":")[-1]
+    restored = restore(before, changed)
     with (Path(before["hu_dir"]) / ".gates.jsonl").open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps({"gate": "VIOLATION", "by": agent, "files": changed,
+        handle.write(json.dumps({"gate": "VIOLATION", "by": agent, "files": changed, "restored": restored,
                                  "command": ((data.get("tool_input") or {}).get("command") or "")[:300], "ts": int(time.time())}) + "\n")
     names = ", ".join(Path(f).name for f in changed)
     print(f"NEXUS GATE: este comando Bash cambio {names}. Los artefactos solo se escriben con Write o Edit, y solo los de tu rol. "
-          "Quedo registrado en .gates.jsonl. Detente y reportalo al orquestador; no lo corrijas por tu cuenta.", file=sys.stderr)
+          "El hook restauro la version anterior y guardo la modificada en .violations/. Quedo registrado en .gates.jsonl. "
+          "Detente y reportalo al orquestador con el comando literal; no vuelvas a intentarlo.", file=sys.stderr)
     sys.exit(2)
+
+
+def restore(before, changed):
+    """Deja el artefacto como estaba antes del Bash. La version modificada queda en .violations/ para la persona."""
+    keep = Path(before["hu_dir"]) / ".violations"
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    restored = []
+    for name in changed:
+        path = Path(name)
+        if path.is_file():
+            keep.mkdir(exist_ok=True)
+            shutil.copy2(path, keep / f"{path.name}.{stamp}")
+        old = before.get("contents", {}).get(name)
+        if old is not None:
+            path.write_bytes(base64.b64decode(old))
+            restored.append(path.name)
+        elif name not in before["hashes"] and path.is_file():
+            path.unlink()  # creado por el Bash: queda solo en .violations/
+            restored.append(path.name)
+    return restored
 
 
 def find_hu_dir(data, session, reference):

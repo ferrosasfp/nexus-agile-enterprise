@@ -64,7 +64,7 @@ if [ -f "${MCP_FILE}" ]; then
     warn '  "engram": { "command": "engram", "args": ["mcp", "--tools=agent"] }'
   fi
 else
-  cp "${REPO_ROOT}/.mcp.json" "${MCP_FILE}"
+  cp "${REPO_ROOT}/setup/mcp.json" "${MCP_FILE}"
   ok "Wrote ${MCP_FILE} (engram MCP server)."
 fi
 

@@ -37,7 +37,7 @@ class HookCase(unittest.TestCase):
                               capture_output=True, text=True, env=self.env)
 
     def spawn(self, phase, agent="nexus-architect"):
-        prompt = f"RUTAS: CODE_ROOT={self.repo}\nFASE: {phase}\nHU_DIR: {self.hu}\nhaz"
+        prompt = f"RUTAS: CODE_ROOT={self.repo} · SKILL_DIR=[usa la que exista]\nFASE: {phase}\nHU_DIR: {self.hu}\nhaz"
         return self.run_hook("gate", tool_name="Agent", tool_input={"subagent_type": agent, "prompt": prompt})
 
     def type_gate(self, gate):
@@ -70,6 +70,21 @@ class Fases(HookCase):
         self.env["CLAUDE_PLUGIN_ROOT"] = "/x"
         self.assertBlocked(self.spawn("F1", "nexus-analyst"), "nexus-agile:nexus-analyst")
         self.assertAllowed(self.spawn("F1", "nexus-agile:nexus-analyst"))
+
+    def test_skill_dir_con_plugin(self):
+        root = self.tmp / "plugin"
+        (root / ".claude/skills/nexus-agile").mkdir(parents=True)
+        self.env["CLAUDE_PLUGIN_ROOT"] = str(root)
+        launch = lambda skill: self.run_hook("gate", tool_name="Agent", tool_input={"subagent_type": "nexus-agile:nexus-analyst",
+                                             "prompt": f"RUTAS: CODE_ROOT={self.repo}{skill}\nFASE: F1\nHU_DIR: {self.hu}"})
+        for skill in (f" · SKILL_DIR={root}/.claude/skills/nexus-agile", " · SKILL_DIR=${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile"):
+            with self.subTest(skill=skill):
+                self.assertAllowed(launch(skill))
+        # Defecto real: la version vieja de ~/.claude, el placeholder de la plantilla, o nada
+        for skill, reason in ((" · SKILL_DIR=~/.claude/skills/nexus-agile", "fuera del plugin"), (" · SKILL_DIR=[valor]", "sin resolver"),
+                              ("", "falta SKILL_DIR"), (f" · SKILL_DIR={root}/../otra/nexus-agile", "fuera del plugin")):
+            with self.subTest(skill=skill):
+                self.assertBlocked(launch(skill), reason)
 
     def test_copia_sin_plugin_no_exige_prefijo(self):
         self.assertAllowed(self.spawn("F1", "nexus-analyst"))
@@ -518,8 +533,17 @@ class PorDestino(HookCase):
         self.assertBlocked(self.run_hook("after-bash", **data), "work-item.md")
         gates = [json.loads(l) for l in (self.hu / ".gates.jsonl").read_text().splitlines()]
         self.assertEqual(gates[-1]["gate"], "VIOLATION")
+        self.assertEqual((self.hu / "work-item.md").read_text(), "v1\n")  # restaurado
+        self.assertEqual([p.read_text() for p in (self.hu / ".violations").iterdir()], ["v2\n"])  # lo modificado, para la persona
         stop = self.run_hook("stop", agent_type="nexus-agile:nexus-analyst")
         self.assertIn("con Bash", stop.stdout)
+
+    def test_archivo_creado_por_bash_se_retira(self):
+        _, data = self.bash("nexus-analyst", "F1", "python3 /tmp/s/x.py")
+        self.write("sdd.md", "inventado\n")
+        self.assertBlocked(self.run_hook("after-bash", **data), "sdd.md")
+        self.assertFalse((self.hu / "sdd.md").exists())
+        self.assertTrue(any((self.hu / ".violations").glob("sdd.md.*")))
 
     def test_bash_que_no_cambia_nada(self):
         self.write("sdd.md", "v1\n")
