@@ -22,6 +22,7 @@
 |---------|-----------|
 | `HU_DIR/.gates.jsonl` | Gate, quien lo dio (`human`, `claude-delegated`), hash y fecha. Tambien cada override |
 | `HU_DIR/.nexus-state.json` | Fase, agente y estado, para retomar |
+| `HU_DIR/.versions/` | Copia de cada documento en el momento en que se aprobo |
 
 ## Falsos positivos
 

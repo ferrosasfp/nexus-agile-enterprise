@@ -22,15 +22,16 @@ from pathlib import Path
 
 GATES = ("HU_APPROVED", "SPEC_APPROVED", "RELEASE_APPROVED")
 GATE_DOC = {"HU_APPROVED": "work-item.md", "SPEC_APPROVED": "sdd.md"}
-READ_ONLY_BASH = {"nexus-adversary", "nexus-qa", "nexus-analyst", "nexus-architect", "nexus-docs"}
+READ_ONLY_BASH = {"nexus-adversary", "nexus-qa", "nexus-analyst", "nexus-architect", "nexus-docs", "nexus-supervisor"}
 INLINE_WRITE = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b.*(open\(|write|unlink|rename|remove|rmtree|copy|move|mkdir|>)", re.S)
-PHASES = ("F0F1", "F1", "F2", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE")
+PHASES = ("F0F1", "F1", "F2", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE", "SUPERVISION")
 PHASE_OUTPUT = {
     "F0F1": "work-item.md", "F1": "work-item.md", "F2": "sdd.md", "F2.5": "story-file.md",
     "AR": "ar-report.md", "CR": "cr-report.md", "VERIFY": "blq-verification.md",
     "F4": "validation.md", "DONE": "report.md",
 }
 WRITE_RULES = {
+    "nexus-supervisor": r"(?!)",
     "nexus-adversary": r"/(ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?)\.md$",
     "nexus-qa": r"/validation(-\d+)?\.md$",
     "nexus-docs": r"/(report\.md|_INDEX\.md)$",
@@ -96,6 +97,14 @@ def read_gates(hu_dir):
 def record_gate(hu_dir, gate, by):
     doc = GATE_DOC.get(gate)
     entry = {"gate": gate, "by": by, "sha256": sha(hu_dir / doc) if doc else None, "ts": int(time.time())}
+    if doc and entry["sha256"]:
+        # Copia de lo aprobado: para comparar despues sin reconstruirlo desde un transcript.
+        versions = hu_dir / ".versions"
+        versions.mkdir(exist_ok=True)
+        target = versions / f"{Path(doc).stem}-{entry['sha256'][:12]}.md"
+        if not target.exists():
+            target.write_bytes((hu_dir / doc).read_bytes())
+        entry["copy"] = str(target.relative_to(hu_dir))
     with (hu_dir / ".gates.jsonl").open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(entry) + "\n")
 
@@ -180,7 +189,7 @@ def check_phase(data, session):
     if routes and routes.group(1).startswith("["):
         deny("RUTAS: tiene CODE_ROOT sin resolver. Pasa la ruta real")
     code_root = str(abs_path(routes.group(1), data)) if routes else (data.get("cwd") or os.getcwd())
-    if phase not in ("F0F1", "F1") and not is_git_repo(code_root):
+    if phase not in ("F0F1", "F1", "SUPERVISION") and not is_git_repo(code_root):
         deny(f"{code_root} no es un repo git. Pasa CODE_ROOT= en la linea RUTAS:")
     nexus = re.search(r"NEXUS_ROOT=([^\s·]+)", prompt)
     if nexus and not nexus.group(1).startswith("["):

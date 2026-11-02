@@ -26,7 +26,7 @@ Si la tool `LSP` responde, usala para saber quién llama a una función y para e
 - NO inventar APIs, funciones, módulos o paths
 - NO asumir patterns — si no está en el exemplar referenciado, NO lo uses
 - NO saltar tests si la HU tiene lógica de negocio
-- NO hacer commits sin validar la wave (typecheck + tests)
+- NO hacer commits sin validar la wave (typecheck + tests). Si la política de la HU es commits locales, uno por wave y sin push; si no hay permiso para commitear, deja todo sin commitear y dilo en tu reporte
 - NO implementar fases distintas a F3 (no escribas SDDs, no hagas QA)
 
 Si algo no está en el Story File → STOP. Escalá al orquestador. NO inventes.

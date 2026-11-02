@@ -1,6 +1,6 @@
 ---
 description: NexusAgil AUTO — Autonomous pipeline for 1-N HUs. Analyst decides FAST/FAST+AR/QUALITY per HU. Clinical review at gates.
-argument-hint: <HU-ID> [HU-ID ...] [--user=Fernando]
+argument-hint: <HU-ID> [HU-ID ...] [--user=Fernando] [--supervisor]
 allowed-tools: Task, Read, Bash, Glob, Grep, AskUserQuestion
 ---
 
@@ -144,6 +144,22 @@ Estos gates ya son automáticos en el pipeline normal (tabla de decisión en `/n
 y `/nexus-p7-f4`). No requieren clinical review adicional en AUTO mode.
 
 `RELEASE_APPROVED` nunca se autoaprueba: si `release_gate: true`, se detiene y escala al humano. Los gates delegados quedan en `.gates.jsonl` como `claude-delegated`, distinguibles de los humanos. Esta revisión la hace quien orquesta, con el sesgo de quien quiere terminar: no equivale a una aprobación humana.
+
+### §4.3b Lo que AUTO nunca resuelve solo
+
+Aunque todos los criterios den PASS, escala a la persona cuando la decisión cambia lo que ve o puede hacer un usuario, el alcance o los ACs aprobados; toca seguridad, permisos, datos, producción o migraciones; es una prioridad de negocio; o el costo es desproporcionado frente al tamaño de la HU. En la primera corrida real supervisada, casi la mitad de los puntos de decisión fueron de este tipo, y el checklist no los distingue.
+
+### §4.3c Supervisor (experimental, `--supervisor`)
+
+Con `--supervisor`, en cada punto de parada lanza `nexus-agile:nexus-supervisor` con `FASE: SUPERVISION`, `HU_DIR:`, `RUTAS:`, tu reporte de ese punto y las rutas de los transcripts. No le pases tu razonamiento. Actúa según su primera línea:
+
+| Veredicto | Acción |
+|-----------|--------|
+| `CONTINUAR` | Sigue; registra el veredicto en el log de atribución |
+| `PEDIR_EVIDENCIA` | Reúne lo que pide y vuelve a consultarlo. Máximo 2 vueltas; después, escala |
+| `ESCALAR` | Pregunta a la persona con lo que el supervisor dejó listo |
+
+Diseño y criterio de adopción: `$SKILL_DIR/references/supervisor.md`. Hasta que la evaluación lo justifique, el modo por defecto sigue siendo el checklist.
 
 ### §4.4 Formato de atribución (obligatorio)
 

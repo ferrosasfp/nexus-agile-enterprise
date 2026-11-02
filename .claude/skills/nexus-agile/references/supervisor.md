@@ -1,6 +1,6 @@
-# Supervisor de AUTO (borrador, no activo)
+# Supervisor de AUTO (experimental)
 
-> Estado: diseno. Ningun comando lo usa todavia. Se activa solo si gana en la evaluacion de abajo.
+> Estado: experimental. Existe el agente `nexus-supervisor` y `/nexus-auto --supervisor` lo usa. Por defecto, AUTO sigue con el checklist hasta que gane la evaluacion de abajo.
 
 ## Problema
 

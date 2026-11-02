@@ -37,7 +37,7 @@ check_count() {
 field() { sed -n "s/^$2: //p" "$A/nexus-$1.md" | head -1; }
 
 # --- Inventario y nombres que no pueden cambiar
-check_count "agentes" 6 "$(ls $A/nexus-*.md | wc -l)"
+check_count "agentes" 7 "$(ls $A/nexus-*.md | wc -l)"
 check_count "comandos" 11 "$(ls $C/nexus-*.md | wc -l)"
 for art in work-item.md sdd.md story-file.md ar-report.md cr-report.md validation.md report.md; do
   grep -rq -- "$art" $A $C || fail "artefacto sin mencionar: $art"
@@ -57,7 +57,7 @@ check_absent "sin '6 checks' viejos" '(^|[^0-9])6 checks' .claude README.md
 check_absent "sin 'una de las 8'" 'una de las 8' .claude
 
 # --- Modelos y tools: el frontmatter manda
-for ag in analyst architect dev adversary qa docs; do
+for ag in analyst architect dev adversary qa docs supervisor; do
   model=$(field "$ag" model)
   for doc in $S/SKILL.md README.md; do
     row=$(grep -E "^\| \`nexus-$ag\` " "$doc" | head -1)
@@ -162,9 +162,12 @@ for f in $C/nexus-*.md; do
   grep -q 'lanzá cada agente con el prefijo' "$f" || fail "$(basename "$f") sin regla de prefijo"
   grep -q 'CLAUDE_PLUGIN_ROOT' "$f" || fail "$(basename "$f") sin SKILL_DIR del plugin"
 done
-for ag in analyst architect dev adversary qa docs; do grep -q 'No lo rodees' $A/nexus-$ag.md || fail "nexus-$ag sin regla de no rodear hooks"; done
+for ag in analyst architect dev adversary qa docs supervisor; do grep -q 'No lo rodees' $A/nexus-$ag.md || fail "nexus-$ag sin regla de no rodear hooks"; done
 grep -q '^## PREGUNTAS PARA EL HUMANO' $A/nexus-analyst.md || fail "analista sin seccion de preguntas en el artefacto"
 for f in $C/nexus-*.md; do grep -q 'termina sin entregarte su reporte' "$f" || fail "$(basename "$f") sin regla de reporte perdido"; done
+grep -q 'VEREDICTO: ESCALAR' $A/nexus-supervisor.md || fail "supervisor sin formato de veredicto"
+grep -q 'nunca resuelve solo' $C/nexus-auto.md || fail "AUTO sin clases de decision que escala"
+grep -q 'Política de commits' $C/nexus-p4-f3.md || fail "p4 sin politica de commits"
 grep -q 'forbidden_commands' $R/project_context_template.md || fail "plantilla sin forbidden_commands"
 pass "correcciones de la corrida real revisadas"
 

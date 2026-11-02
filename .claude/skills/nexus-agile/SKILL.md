@@ -57,6 +57,7 @@ NexusAgil distribuye **6 agentes custom** en `.claude/agents/` y **11 slash comm
 | `nexus-adversary` | AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `ar-report.md`, `cr-report.md`, `blq-verification.md` |
 | `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
 | `nexus-docs` | DONE | haiku | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
+| `nexus-supervisor` | AUTO, experimental | opus (effort high) | Read, Glob, Grep, Bash | veredicto en su respuesta |
 
 Cada agente tiene su bloque `Prohibido en esta fase` integrado en el system prompt. El orquestador no puede olvidar incluirlo porque ya está en el archivo del agente.
 

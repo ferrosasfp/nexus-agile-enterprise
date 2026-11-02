@@ -43,7 +43,7 @@ Reglas:
 
 ## Input
 
-- **AR**: el contrato (`$NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md`, o la sección `Contrato de implementación` de `sdd.md` con `contract_mode: unified`) + lista de archivos modificados por el Dev (`git -C "$CODE_ROOT" diff --name-only`)
+- **AR**: el contrato (`$NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md`, o la sección `Contrato de implementación` de `sdd.md` con `contract_mode: unified`) + lista de archivos modificados por el Dev: `git -C "$CODE_ROOT" diff --name-only $BASE_REF...HEAD`, y además `git -C "$CODE_ROOT" status --short` por si hay trabajo sin commitear, que también se revisa contra `$BASE_REF`
 - **CR**: mismo input + el `ar-report.md` previo
 
 ## Output esperado

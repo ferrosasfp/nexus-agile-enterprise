@@ -135,6 +135,7 @@ Six specialized Claude Code agents — one per pipeline phase — with the role,
 | `nexus-adversary` | AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `ar-report.md`, `cr-report.md`, `blq-verification.md` |
 | `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
 | `nexus-docs` | DONE | haiku | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
+| `nexus-supervisor` | AUTO, experimental | opus (effort high) | Read, Glob, Grep, Bash | verdict in its reply |
 
 `nexus-adversary` and `nexus-qa` have no Edit tool. They have Write for their own report and Bash to run things, so they could technically change code: the role rule forbids it, and Drift Detection catches it.
 

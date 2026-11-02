@@ -23,6 +23,7 @@ Antes de lanzar el sub-agente Dev, verificá:
 [ ] BASE_REF es la base real de la HU y está actualizada
 [ ] El branch feature de la HU existe y está checked out
 [ ] Las env vars necesarias están configuradas
+[ ] Política de commits decidida: commits locales por wave, sin push (recomendado). Si el proyecto exige permiso para commitear, pedíselo a la persona antes de lanzar. Sin commits, los revisores comparan el árbol de trabajo contra BASE_REF
 [ ] No hay otro sub-agente Dev corriendo sobre el mismo directorio
     → Si paralelismo necesario: un worktree por HU, con CODE_ROOT apuntando a él (ver subagent_protocol.md)
 ```

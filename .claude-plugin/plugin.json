@@ -15,6 +15,7 @@
     "./.claude/agents/nexus-dev.md",
     "./.claude/agents/nexus-adversary.md",
     "./.claude/agents/nexus-qa.md",
-    "./.claude/agents/nexus-docs.md"
+    "./.claude/agents/nexus-docs.md",
+    "./.claude/agents/nexus-supervisor.md"
   ]
 }

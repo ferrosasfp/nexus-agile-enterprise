@@ -119,6 +119,21 @@ class Fases(HookCase):
         self.type_gate("HU_APPROVED")
         self.assertAllowed(self.spawn("F2"))
 
+    def test_gate_guarda_copia_de_lo_aprobado(self):
+        self.write("work-item.md", "version uno\n")
+        self.type_gate("HU_APPROVED")
+        copies = list((self.hu / ".versions").glob("work-item-*.md"))
+        self.assertEqual(len(copies), 1)
+        self.assertEqual(copies[0].read_text(), "version uno\n")
+        self.assertIn(".versions/", (self.hu / ".gates.jsonl").read_text())
+
+    def test_reaprobar_guarda_otra_copia(self):
+        self.write("work-item.md", "uno\n")
+        self.type_gate("HU_APPROVED")
+        self.write("work-item.md", "dos\n")
+        self.type_gate("HU_APPROVED")
+        self.assertEqual(len(list((self.hu / ".versions").glob("work-item-*.md"))), 2)
+
     def test_documento_cambiado_tras_aprobar(self):
         self.write("work-item.md")
         self.type_gate("HU_APPROVED")
@@ -280,6 +295,13 @@ class Escritura(HookCase):
 
     def test_qa_escribe_en_copia_desechable(self):
         self.assertAllowed(self.run_hook("gate", agent_type="nexus-qa", tool_name="Write", cwd="/home/x/repo", tool_input={"file_path": "/tmp/copia/x.ts"}))
+
+    def test_supervisor_no_escribe_nada(self):
+        self.assertBlocked(self.write_as("nexus-supervisor", self.hu / "work-item.md"))
+        self.assertBlocked(self.bash_as("nexus-supervisor", "echo x > notas.md"))
+
+    def test_supervisor_se_lanza_sin_precondiciones(self):
+        self.assertAllowed(self.spawn("SUPERVISION", "nexus-supervisor"))
 
     def test_arquitecto_no_toca_codigo(self):
         self.assertBlocked(self.write_as("nexus-architect", self.repo / "app.ts"))

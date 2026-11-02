@@ -18,7 +18,10 @@
 - Regla en todos los agentes: si un hook bloquea, detente y reporta.
 - Guia para componer el gate unico desde el CI.
 - Experimento E10: verificador independiente del SDD.
-- `references/supervisor.md`: diseno del supervisor de AUTO (E8), sin activar.
+- Supervisor de AUTO (E8): agente `nexus-supervisor` de solo lectura y `/nexus-auto --supervisor`. Por defecto sigue el checklist.
+- AUTO escala siempre las decisiones de producto, seguridad, alcance y costo, aunque el checklist de PASS.
+- Cada gate guarda una copia del documento aprobado en `.versions/`.
+- Politica de commits explicita antes de F3; los revisores y `review_package.sh` tambien ven el trabajo sin commitear.
 - Eval que usa un comando real: los casos anteriores armaban los prompts a mano y no vieron los defectos de las plantillas.
 
 ### Cambiado
