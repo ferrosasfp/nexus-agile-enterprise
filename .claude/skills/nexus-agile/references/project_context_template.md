@@ -95,7 +95,7 @@
 |-------|-------|
 | **validation_env** | local / ci / staging / preview |
 | **migrations_policy** | aplicadas-en-entorno / ventana-manual / sin-migraciones |
-| **migrations_build_cmd** | [arma una base desde cero con todas las migraciones; para ventana-manual] |
+| **migrations_build_cmd** | [opcional: comando que arma una base desde cero con todas las migraciones. Si el proyecto no lo tiene, `no disponible`: QA no lo inventa] |
 | **migrations_check** | [comando que lista lo aplicado en el entorno, si aplica] |
 | **remote_access** | ninguno / solo-lectura |
 | **env_vars_check** | [comando que lista variables del destino; o `manual`] |

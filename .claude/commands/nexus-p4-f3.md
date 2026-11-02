@@ -20,9 +20,9 @@ Antes de lanzar el sub-agente Dev, verificá:
 
 ```
 [ ] El contrato existe: story-file.md, o la sección "Contrato de implementación" de sdd.md con contract_mode: unified
-[ ] BASE_REF es la base real de la HU y está actualizada
+[ ] BASE_REF es la base real de la HU: en una HU apilada, el commit sobre el que se apila, no main
 [ ] El branch feature de la HU existe y está checked out
-[ ] Las env vars necesarias están configuradas
+[ ] Si los tests de la HU usan variables de entorno o servicios, están listadas en el contrato y existen (sin imprimir valores). Si no los usan, no aplica
 [ ] Política de commits decidida: commits locales por wave, sin push (recomendado). Si el proyecto exige permiso para commitear, pedíselo a la persona antes de lanzar. Sin commits, los revisores comparan el árbol de trabajo contra BASE_REF
 [ ] No hay otro sub-agente Dev corriendo sobre el mismo directorio
     → Si paralelismo necesario: un worktree por HU, con CODE_ROOT apuntando a él (ver subagent_protocol.md)

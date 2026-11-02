@@ -7,7 +7,8 @@
       { "matcher": "Agent|Task|Write|Edit|Bash", "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py gate", "onFailure": "block", "timeout": 30 }] }
     ],
     "PostToolUse": [
-      { "matcher": "AskUserQuestion", "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py answer", "timeout": 10 }] }
+      { "matcher": "AskUserQuestion", "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py answer", "timeout": 10 }] },
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py after-bash", "timeout": 30 }] }
     ],
     "SubagentStop": [
       { "matcher": ".*nexus-.*", "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py stop", "onFailure": "block", "timeout": 30 }] }

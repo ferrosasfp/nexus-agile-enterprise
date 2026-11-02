@@ -142,20 +142,20 @@
 
 ### Wave -1: Environment Gate (OBLIGATORIO — verificar antes de tocar código)
 
+Solo comprobaciones de lectura. Instalar dependencias, cambiar variables de entorno o conectarse a servicios es decisión de la persona, no del Dev.
+
 ```bash
-# Verificar dependencias instaladas
-npm install 2>/dev/null || echo "Sin package.json"
+# Dependencias ya instaladas (sin instalar nada)
+ls node_modules/.modules.yaml node_modules/.package-lock.json 2>/dev/null || echo "FALTAN dependencias: avisar, no instalar"
 
-# Verificar env vars requeridas (ajustar según el proyecto)
-# [lista de vars necesarias para esta HU]
-echo "SUPABASE_URL=${SUPABASE_URL:?FALTA}" 2>/dev/null || true
+# Variables que esta HU necesita en F3: solo si los tests las usan. Comprobar que existen, sin imprimir el valor
+# [ -n "${VAR:-}" ] && echo "VAR definida" || echo "FALTA VAR"
 
-# Verificar acceso a servicios externos (si aplica)
-# curl -s [endpoint] | head -1
-
-# Verificar que los archivos base del Scope IN existen
+# Archivos base del Scope IN
 ls [archivo1] [archivo2] 2>/dev/null || echo "FALTA archivo base"
 ```
+
+Si los tests de la HU no tocan servicios externos, la Wave -1 se reduce a dependencias y archivos base.
 
 **Si algo falla en Wave -1:** PARAR y reportar al orquestador antes de continuar. No implementar sobre un entorno roto.
 

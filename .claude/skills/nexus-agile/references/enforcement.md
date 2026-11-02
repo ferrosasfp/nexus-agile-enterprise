@@ -13,7 +13,8 @@
 | `PreToolUse(Agent)` | Bloquea la fase sin `FASE:`, `HU_DIR:`, artefacto o gate; si el documento cambio despues de aprobarlo; si quedan preguntas sin responder en el work-item (F2 y F3); si `CODE_ROOT` no esta resuelto o no es un repo git; y si la sesion usa el plugin y el agente va sin prefijo |
 | `PreToolUse(Write, Edit)` | Cada agente de especificacion o revision escribe solo sus artefactos |
 | `PreToolUse(Bash)` | Solo lectura para quienes no implementan, incluidos interpretes en linea que escriben. Nadie usa `--no-verify`. `forbidden_commands` del proyecto vale para todos, incluida la sesion principal |
-| `SubagentStop` | Exige el reporte y su linea `STATUS:`; exige la seccion de preguntas en el work-item; compara el arbol de git de todo agente que no implementa; QA debe haber ejecutado al menos un comando |
+| `PostToolUse(Bash)` | Bloqueo por destino real: compara los archivos de `HU_DIR` antes y despues de cada Bash de un agente. Si cambio alguno que no se escribio con Write o Edit, lo registra como `VIOLATION` en `.gates.jsonl` y frena al agente, sin importar como estaba escrito el comando |
+| `SubagentStop` | Frena al agente que tiene una `VIOLATION` propia en esta fase; exige el reporte y su linea `STATUS:`; exige la seccion de preguntas en el work-item; compara el arbol de git de todo agente que no implementa; QA debe haber ejecutado al menos un comando |
 | `SessionStart(compact, resume)` | Recuerda la HU activa y su estado |
 
 ## Archivos que escribe
@@ -35,7 +36,9 @@ La persona escribe `NEXUS_OVERRIDE <motivo>`: pasa el proximo bloqueo y queda re
 
 ## Lo que NO garantiza
 
-- **No es una frontera de seguridad.** En una corrida real, un agente bloqueado edito su artefacto con `python3 -c`. Ese camino ya se cierra, pero `python3 script.py` sigue pasando el filtro. La comparacion del arbol lo detecta despues, y no cubre artefactos fuera del repo.
+- **No es una frontera de seguridad.** En una corrida real, un agente bloqueado edito `sdd.md` con un script de Python lanzado por Bash, y el filtro por texto no lo vio. Ahora la comparacion despues de cada Bash lo detecta, pero despues de que paso: el cambio queda hecho y registrado, y lo revierte una persona. Tampoco ve un proceso que siga escribiendo en segundo plano despues de que el comando termina.
+- **El filtro previo es por texto.** Resuelve un `cd` inicial a `/tmp`, variables asignadas en el mismo comando, comillas y heredocs. Fuera de eso puede dar falsos positivos: en la prueba real de noviembre, 9 de 11 bloqueos fueron falsos, todos de esos tipos.
+- **Herramientas que reescriben comandos.** Un proxy como rtk puede cambiar la salida de `cat`, `grep` o `diff` (en la prueba real devolvio salidas vacias o lineas que no estaban). La evidencia de AR, CR, QA y del supervisor se toma con el comando sin reescribir (`rtk proxy <cmd>` o la ruta absoluta, como `/usr/bin/diff`).
 - **`forbidden_commands` compara texto.** Un alias o un script que envuelve el comando no coincide. Reduce errores; no reemplaza quitar las credenciales de produccion del entorno.
 - **La fase la declara el orquestador.** Una fase mal declarada pasa como esa fase.
 - **La sesion principal no esta limitada.** Un orquestador que implementa por su cuenta no se bloquea.

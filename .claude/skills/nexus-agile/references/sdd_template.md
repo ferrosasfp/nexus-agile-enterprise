@@ -22,7 +22,7 @@
 ```markdown
 # SDD #NNN: [Titulo]
 
-> SPEC_APPROVED: no
+> Aprobación: la registra el hook en `.gates.jsonl` (`SPEC_APPROVED`). No se anota aquí: cambiar el documento cambia su hash.
 > Fecha: YYYY-MM-DD
 > Tipo: feature | improvement
 > SDD_MODE: full
@@ -214,7 +214,7 @@ Una fila por paquete de terceros cuyo API se va a usar. **La version se LEE del 
 ```markdown
 # SDD #NNN: [BUG] [Titulo]
 
-> SPEC_APPROVED: no
+> Aprobación: la registra el hook en `.gates.jsonl` (`SPEC_APPROVED`). No se anota aquí: cambiar el documento cambia su hash.
 > Fecha: YYYY-MM-DD
 > Tipo: bugfix
 > SDD_MODE: bugfix
@@ -303,7 +303,7 @@ Una fila por paquete de terceros cuyo API se va a usar. **La version se LEE del 
 ```markdown
 # SDD #NNN: [Titulo]
 
-> SPEC_APPROVED: no
+> Aprobación: la registra el hook en `.gates.jsonl` (`SPEC_APPROVED`). No se anota aquí: cambiar el documento cambia su hash.
 > Fecha: YYYY-MM-DD
 > Tipo: [tech-task | refactor | feature | improvement]
 > SDD_MODE: mini

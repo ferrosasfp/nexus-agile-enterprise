@@ -501,5 +501,49 @@ class AlTerminar(HookCase):
         self.assertIn("001-demo", self.run_hook("session").stdout)
 
 
+class PorDestino(HookCase):
+    """Rodeo real de la prueba: el arquitecto escribio sdd.md con un script de Python lanzado por Bash."""
+
+    def bash(self, agent, phase, command, tool_use_id="t1"):
+        self.assertAllowed(self.spawn(phase, agent))
+        data = dict(agent_type=f"nexus-agile:{agent}", tool_name="Bash", tool_use_id=tool_use_id, tool_input={"command": command})
+        before = self.run_hook("gate", **data)
+        return before, data
+
+    def test_script_que_cambia_un_artefacto(self):
+        self.write("work-item.md", "v1\n")
+        before, data = self.bash("nexus-analyst", "F1", "python3 /tmp/s/ajustar.py")
+        self.assertAllowed(before)
+        self.write("work-item.md", "v2\n")  # lo que hizo el script
+        self.assertBlocked(self.run_hook("after-bash", **data), "work-item.md")
+        gates = [json.loads(l) for l in (self.hu / ".gates.jsonl").read_text().splitlines()]
+        self.assertEqual(gates[-1]["gate"], "VIOLATION")
+        stop = self.run_hook("stop", agent_type="nexus-agile:nexus-analyst")
+        self.assertIn("con Bash", stop.stdout)
+
+    def test_bash_que_no_cambia_nada(self):
+        self.write("sdd.md", "v1\n")
+        _, data = self.bash("nexus-analyst", "F1", "grep -n x sdd.md")
+        self.assertAllowed(self.run_hook("after-bash", **data))
+        self.assertFalse((self.hu / ".gates.jsonl").exists() and "VIOLATION" in (self.hu / ".gates.jsonl").read_text())
+
+    def test_write_concurrente_no_es_violacion(self):
+        # AR y CR en paralelo: el AR escribe su reporte con Write mientras el CR corre un Bash.
+        _, data = self.bash("nexus-analyst", "F1", "npx vitest run", tool_use_id="cr1")
+        self.assertTrue(any(self.tmp.glob("data/bash-*.json")))
+        report = self.hu / "ar-report.md"
+        self.assertAllowed(self.run_hook("gate", agent_type="nexus-agile:nexus-adversary", tool_name="Write", tool_input={"file_path": str(report)}))
+        report.write_text("STATUS: APROBADO open_blq=0\n")
+        self.assertAllowed(self.run_hook("after-bash", **data))
+
+    def test_sesion_principal_no_se_vigila(self):
+        self.write("sdd.md", "v1\n")
+        self.assertAllowed(self.spawn("F1", "nexus-analyst"))
+        data = dict(tool_name="Bash", tool_use_id="m1", tool_input={"command": "cp /tmp/x sdd.md"})
+        self.assertAllowed(self.run_hook("gate", **data))
+        self.write("sdd.md", "v2\n")
+        self.assertAllowed(self.run_hook("after-bash", **data))
+
+
 if __name__ == "__main__":
     unittest.main()

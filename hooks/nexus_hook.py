@@ -259,7 +259,8 @@ def check_phase(data, session):
             require_gate(hu_dir, "RELEASE_APPROVED", session, phase, blocked)
 
     session["hu_dir"] = str(hu_dir)
-    session["spawns"].append({"agent": agent, "phase": phase, "hu_dir": str(hu_dir), "code_root": code_root, "tree": tree_hash(code_root)})
+    session["spawns"].append({"agent": agent, "phase": phase, "hu_dir": str(hu_dir), "code_root": code_root, "tree": tree_hash(code_root),
+                              "ts": int(time.time())})
     save_session(data, session)
     if hu_dir.is_dir():
         write_state(hu_dir, phase=phase, agent=agent, pipeline=pipeline, status="running")
@@ -391,8 +392,62 @@ def cmd_gate(data):
         rule = WRITE_RULES.get(agent)
         if rule and not disposable(path, data) and not re.search(rule, path):
             deny(f"{agent} no puede escribir {path}. Reporta el hallazgo en lugar de modificarlo")
+    if tool in ("Write", "Edit") and agent:
+        with (state_dir() / "writes.log").open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"path": path, "ts": time.time()}) + "\n")
     elif tool == "Bash":
         check_bash(agent, tool_input.get("command") or "", data)
+        if agent.startswith("nexus-"):
+            snapshot_artifacts(data)
+
+
+def artifact_hashes(hu_dir):
+    return {str(p): sha(p) for p in sorted(Path(hu_dir).glob("*")) if p.is_file() and p.name != ".nexus-state.json"}
+
+
+def snapshot_file(data):
+    return state_dir() / ("bash-" + re.sub(r"[^\w-]", "_", data.get("tool_use_id") or "sin-id") + ".json")
+
+
+def snapshot_artifacts(data):
+    """Antes de cada Bash de un agente: hash de los artefactos de la HU, para ver despues si el comando los cambio."""
+    hu_dir = load_session(data).get("hu_dir")
+    if hu_dir and Path(hu_dir).is_dir():
+        snapshot_file(data).write_text(json.dumps({"hu_dir": hu_dir, "ts": time.time(), "hashes": artifact_hashes(hu_dir)}), encoding="utf-8")
+
+
+def cmd_after_bash(data):
+    """Bloqueo por destino real: si un Bash de un agente cambio un artefacto, no importa como estaba escrito el comando."""
+    path = snapshot_file(data)
+    if not path.exists():
+        return
+    before = json.loads(path.read_text(encoding="utf-8"))
+    path.unlink()
+    since = before["ts"]
+    written = set()
+    log = state_dir() / "writes.log"
+    if log.exists():
+        recent = []
+        for line in log.read_text(encoding="utf-8").splitlines():
+            entry = json.loads(line)
+            if entry["ts"] >= since - 1:
+                written.add(entry["path"])
+            if entry["ts"] >= time.time() - 86400:
+                recent.append(line)
+        log.write_text("".join(l + "\n" for l in recent), encoding="utf-8")
+    after = artifact_hashes(before["hu_dir"])
+    changed = sorted(f for f in set(before["hashes"]) | set(after)
+                     if before["hashes"].get(f) != after.get(f) and f not in written and not f.endswith(".gates.jsonl"))
+    if not changed:
+        return
+    agent = (data.get("agent_type") or "").split(":")[-1]
+    with (Path(before["hu_dir"]) / ".gates.jsonl").open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps({"gate": "VIOLATION", "by": agent, "files": changed,
+                                 "command": ((data.get("tool_input") or {}).get("command") or "")[:300], "ts": int(time.time())}) + "\n")
+    names = ", ".join(Path(f).name for f in changed)
+    print(f"NEXUS GATE: este comando Bash cambio {names}. Los artefactos solo se escriben con Write o Edit, y solo los de tu rol. "
+          "Quedo registrado en .gates.jsonl. Detente y reportalo al orquestador; no lo corrijas por tu cuenta.", file=sys.stderr)
+    sys.exit(2)
 
 
 def find_hu_dir(data, session, reference):
@@ -491,6 +546,10 @@ def cmd_stop(data):
     problems = []
     if agent in READ_ONLY_BASH and spawn.get("tree") and tree_hash(spawn["code_root"]) != spawn["tree"]:
         problems.append("el arbol de git cambio mientras corrias, y tu rol no modifica codigo. Restauralo y reporta por que")
+    violations = [g for g in read_gates(hu_dir) if g.get("gate") == "VIOLATION" and g.get("by") == agent and g.get("ts", 0) >= spawn.get("ts", 0)]
+    if violations:
+        files = sorted({Path(f).name for g in violations for f in g.get("files", [])})
+        problems.append(f"cambiaste {', '.join(files)} con Bash. Reportalo al orquestador con el comando literal; no lo corrijas por tu cuenta")
     expected = PHASE_OUTPUT.get(spawn["phase"])
     if expected and spawn["phase"] != "F2.5":
         stem = expected[:-3]
@@ -522,7 +581,8 @@ def cmd_session(data):
               "Antes de lanzar otra fase, relee .gates.jsonl y los artefactos de esa carpeta.")
 
 
-COMMANDS = {"gate": cmd_gate, "prompt": cmd_prompt, "answer": cmd_answer, "stop": cmd_stop, "session": cmd_session}
+COMMANDS = {"gate": cmd_gate, "prompt": cmd_prompt, "answer": cmd_answer, "stop": cmd_stop, "session": cmd_session,
+            "after-bash": cmd_after_bash}
 
 
 def main():

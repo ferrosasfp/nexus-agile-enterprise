@@ -8,6 +8,13 @@
 - `SKILL_DIR` busca primero dentro del plugin.
 - Sin `CODE_ROOT` valido, el hook bloquea en lugar de usar la carpeta actual.
 - `/nexus-p1-f0-f1` ya no se contradice con la edicion de `_INDEX.md`.
+- Falsos positivos del hook (9 de 11 bloqueos en la corrida real): leer `.gates.jsonl`, rutas relativas despues de un `cd` a `/tmp`, variables asignadas en el mismo comando, y `>` entre comillas o en un heredoc.
+- `check_contract.py` reconoce titulos numerados y filas "Modificar" con nota, y falla en voz alta si no reviso nada.
+- DONE admite "APROBADO con observaciones" si la persona decide cerrar; procedimiento para cuando Claude Code rechaza que un subagente escriba `report.md`.
+- La plantilla del SDD ya no lleva `SPEC_APPROVED: no`: el estado vive en `.gates.jsonl`, y cambiar la cabecera rompia el hash.
+- La Wave -1 del Story File y el pre-flight de F3 solo comprueban, sin `npm install` ni variables que los tests no usan.
+- `migrations_build_cmd` es opcional y puede ser `no disponible`.
+- El supervisor no trata como rodeo que un agente siga la instruccion del propio mensaje del hook.
 
 ### Agregado
 - Las preguntas del analista quedan en `work-item.md`, y el hook frena F2 y F3 mientras haya alguna abierta. En la corrida real, el reporte no llego y sus preguntas se habrian perdido.
@@ -23,6 +30,8 @@
 - Cada gate guarda una copia del documento aprobado en `.versions/`.
 - Politica de commits explicita antes de F3; los revisores y `review_package.sh` tambien ven el trabajo sin commitear.
 - Eval que usa un comando real: los casos anteriores armaban los prompts a mano y no vieron los defectos de las plantillas.
+- Bloqueo por destino real (`PostToolUse(Bash)`): si un Bash de un agente cambia un archivo de `HU_DIR` sin Write ni Edit, queda como `VIOLATION` en `.gates.jsonl` y el agente se frena. En la corrida real, el unico rodeo efectivo (un script de Python que edito `sdd.md`) paso el filtro por texto.
+- Nota sobre proxies que reescriben comandos (rtk): la evidencia se toma con el comando sin reescribir.
 
 ### Cambiado
 - El arquitecto puede correr la suite en una copia desechable para medir el impacto.
