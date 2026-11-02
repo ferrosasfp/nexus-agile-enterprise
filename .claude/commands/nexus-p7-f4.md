@@ -64,7 +64,7 @@ Task tool:
 | Veredicto | Acción |
 |-----------|--------|
 | APROBADO PARA DONE | Con `release_gate: true`: correr F5 (`quality_pipeline.md`) y esperar `RELEASE_APPROVED`. Después, o sin ese campo, lanzar `/nexus-p8-done` |
-| APROBADO con observaciones | Presentar al humano para decidir |
+| APROBADO con observaciones | Presentar al humano para decidir. Si acepta cerrar, lanzar `/nexus-p8-done` con las observaciones como deuda |
 | RECHAZADO | Re-lanzar `/nexus-p4-f3` con AC fallidos |
 
 ## Importante

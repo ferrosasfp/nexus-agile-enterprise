@@ -16,7 +16,7 @@ Lanza el sub-agente `nexus-docs` para cerrar la HU: reporte final, actualizació
 
 ## Pre-requisitos
 
-- F4 completado con veredicto APROBADO PARA DONE, y `RELEASE_APPROVED` si `project-context.md` declara `release_gate: true`
+- F4 completado con veredicto APROBADO PARA DONE, o APROBADO con observaciones si la persona decidió cerrar igual (cada observación va como deuda en `report.md`, con su fuente), y `RELEASE_APPROVED` si `project-context.md` declara `release_gate: true`
 - Todos los artefactos en `$NEXUS_ROOT/doc/sdd/NNN-titulo/`:
   - work-item.md, sdd.md, story-file.md (no existe con contract_mode: unified)
   - ar-report.md, cr-report.md, validation.md
