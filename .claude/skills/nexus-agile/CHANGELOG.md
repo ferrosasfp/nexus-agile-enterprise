@@ -18,6 +18,7 @@
 - Regla en todos los agentes: si un hook bloquea, detente y reporta.
 - Guia para componer el gate unico desde el CI.
 - Experimento E10: verificador independiente del SDD.
+- `references/supervisor.md`: diseno del supervisor de AUTO (E8), sin activar.
 - Eval que usa un comando real: los casos anteriores armaban los prompts a mano y no vieron los defectos de las plantillas.
 
 ### Cambiado

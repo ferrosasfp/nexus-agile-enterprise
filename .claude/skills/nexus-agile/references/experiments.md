@@ -11,6 +11,6 @@
 | E5 | Un solo autor para F0 a F2.5 | Comparar costo y calidad del contrato | Mismo resultado, menos costo. Pierde separacion de roles |
 | E6 | Quitar waves o la autoverificacion del Dev | Comparar por modelo | Sin perdida en F3 y AR. El revisor independiente no se toca |
 | E7 | Umbrales de FAST, FAST+AR y QUALITY | Casos de punta a punta | QUALITY atrapa suficiente mas para pagar su costo |
-| E8 | Verificador ciego al razonamiento para gates de AUTO | Brazo en casos `gates/*` | Menos aprobaciones indebidas sin bloquear de mas |
+| E8 | Supervisor de AUTO, ciego al razonamiento del orquestador (`references/supervisor.md`) | Puntos de decision de corridas reales supervisadas, contra el checklist actual | Menos aprobaciones indebidas sin escalar de mas. En la primera corrida real, el checklist habria atrapado 3 de 21 puntos de decision |
 | E10 | Verificador independiente de las afirmaciones del SDD antes de `SPEC_APPROVED` | Agente nuevo, solo lectura, en casos con afirmaciones falsas sembradas | Encuentra errores que el Readiness Check dejo pasar, a costo aceptable. En una corrida real, el Readiness Check valido un dato falso |
 | E9 | Pasada de convergencia al salir de F3 | Brazo en QUALITY | Baja los hallazgos de AR |
