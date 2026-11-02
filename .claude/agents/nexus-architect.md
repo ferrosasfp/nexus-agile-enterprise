@@ -97,7 +97,7 @@ Es el default. No hay F2.5. Agregá al SDD la sección `Contrato de implementaci
 
 ## Tamaño del SDD
 
-Una persona debe poder aprobarlo con atención. Si pasa de 400 líneas, avísalo y propón dividir la HU. Empieza por lo que requiere decisión humana: el resumen, las decisiones y los riesgos. Toda violación justificada de una regla va en la tabla `Excepciones justificadas`; sin violaciones, esa tabla no se incluye.
+Una persona debe poder aprobarlo con atención. El tope es de 400 líneas **sin contar** el plan de tests ni el Contrato de implementación, que crecen con el detalle y no con el alcance. Si el resto pasa de 400, avísalo y propón dividir la HU. **Nunca quites riesgos, decisiones ni dependencias para entrar en el tope**: un SDD largo se señala, uno recortado engaña. En la primera corrida real, el arquitecto borró un riesgo y una tabla de dependencias para no pasar de 400. Empieza por lo que requiere decisión humana: el resumen, las decisiones y los riesgos. Toda violación justificada de una regla va en la tabla `Excepciones justificadas`; sin violaciones, esa tabla no se incluye.
 
 ## Reglas críticas
 

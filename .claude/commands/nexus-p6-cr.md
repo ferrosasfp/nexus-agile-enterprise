@@ -42,6 +42,7 @@ Task tool:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (o la sección "Contrato de implementación" de sdd.md si el work-item dice contract_mode: unified)
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/ar-report.md (referencia — no repitas hallazgos del AR)
     - Archivos modificados: `git -C "$CODE_ROOT" diff $BASE_REF...HEAD`
+    - La corrida del gate del Dev al cerrar F3: [comando, exit code, HEAD y últimas líneas]. No repitas la suite completa
 
     TU TAREA:
     Revisar calidad de código (NO seguridad — eso fue AR). Los 8 checks de quality_pipeline.md, sección Code Review:

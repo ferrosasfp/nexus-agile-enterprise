@@ -40,6 +40,8 @@
 - Antes de un push, el orquestador muestra que dispara (CI, migraciones, preview).
 
 ### Cambiado
+- El tope de 400 lineas del SDD no cuenta el plan de tests ni el contrato, y prohibe quitar riesgos, decisiones o dependencias para entrar. En la corrida real, el arquitecto borro un riesgo para no pasarse.
+- La suite completa corre dos veces por HU, no cuatro: el Dev al cerrar F3 (con HEAD y salida en su reporte) y QA en F4. AR y CR corren solo lo que reproduce sus hallazgos.
 - `contract_mode: unified` es el default: el contrato del Dev va en el SDD y no hay F2.5. `classic` (Story File) queda para tareas L o si la persona lo pide. Una HU con `story-file.md` previo sigue valiendo. En la corrida real, el Story File repitio casi todo el SDD y cada correccion se hizo dos veces.
 - El bloque MCP de Engram paso de `.mcp.json` a `setup/mcp.json`: en la raiz, el plugin arrancaba su propio engram. `setup.sh` lo sigue copiando al proyecto.
 - El arquitecto puede correr la suite en una copia desechable para medir el impacto.

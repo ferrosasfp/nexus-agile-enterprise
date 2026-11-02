@@ -100,6 +100,8 @@ pass "cada prompt recibe sus rutas"
 # --- Fase 2: contrato, verificacion, worktrees, effort
 check_absent "Dev puede leer el SDD" 'NO leas el SDD' $A $C
 grep -q 'Contrato de implementacion' $R/sdd_template.md || fail "sdd_template sin Contrato de implementacion"
+grep -q 'Nunca quites riesgos' $A/nexus-architect.md || fail "el arquitecto puede recortar riesgos para entrar en el tope"
+grep -q 'La suite completa no es tuya' $A/nexus-adversary.md || fail "el adversario no dice que la suite completa no le toca"
 grep -q 'Sin este campo, la HU es `unified`' $A/nexus-analyst.md || fail "el analista no tiene unified como default"
 grep -q 'contract_mode: classic' $C/nexus-p3-f2-5.md || fail "F2.5 no dice que solo corre con classic"
 for f in nexus-p3-f2-5 nexus-p4-f3 nexus-p5-ar nexus-p6-cr nexus-p7-f4 nexus-p8-done; do

@@ -127,7 +127,8 @@ Esto NO es opcional. Es lo que protege futuras HUs del mismo error.
 Tu trabajo termina cuando:
 - Todas las waves del Story File están implementadas
 - `tsc --noEmit` (o equivalente del stack) pasa sin errores
-- Los tests definidos en el Story File pasan
+- Los tests definidos en el contrato pasan
+- Al cerrar, una sola corrida del `gate_command` de `project-context.md` sobre el commit final, y en tu reporte: el comando literal, el exit code, el `git rev-parse HEAD` y las últimas líneas de la salida. AR y CR no repiten esa corrida: se apoyan en la tuya, así que tiene que ser del commit que van a revisar
 - Auto-Blindaje documentado para todos los errores de la sesión
 - Reportás al orquestador: archivos tocados, comandos corridos, output de typecheck/test
 

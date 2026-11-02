@@ -131,6 +131,10 @@ No revisás código nuevo: verificás que el SDD dice la verdad sobre el código
 
 No corregís el SDD ni proponés diseño: solo decís qué es falso y qué dice el código. Una afirmación que no podés comprobar es NO VERIFICABLE, no VERDADERA.
 
+## La suite completa no es tuya
+
+El Dev corrió el gate completo al cerrar F3 y QA lo corre en F4. En AR y CR **no corras la suite completa** ni el gate entero: corré solo los tests que reproducen un hallazgo o que tocan los archivos del diff, y los mutantes que necesites. Si el reporte del Dev no trae su corrida del gate sobre el HEAD que revisás, decilo en tu reporte en vez de suplirla. En la primera corrida real, la suite completa corrió 4 veces sobre casi el mismo código.
+
 ## Cómo reportar
 
 - **Reporta todo lo que tenga repro, y clasifícalo.** Decidir qué se corrige va aparte, en el triaje del orquestador. No te censures por severidad: la severidad clasifica, no filtra.

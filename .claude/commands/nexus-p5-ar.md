@@ -45,6 +45,7 @@ Task #1 (AR):
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (o la sección "Contrato de implementación" de sdd.md si el work-item dice contract_mode: unified): lo que el Dev debía cumplir
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/auto-blindaje.md (errores documentados por el Dev)
     - Archivos modificados: ejecutar `git -C "$CODE_ROOT" diff --name-only $BASE_REF...HEAD` (o el branch base)
+    - La corrida del gate del Dev al cerrar F3: [comando, exit code, HEAD y últimas líneas, del reporte del Dev]. No repitas la suite completa: corré solo lo que reproduce tus hallazgos
     - $SKILL_DIR/references/adversarial_review_checklist.md del skill nexus-agile
 
     TU TAREA:
@@ -91,6 +92,7 @@ Task #2 (CR — corre en paralelo con #1):
     INPUT:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md (o la sección "Contrato de implementación" de sdd.md si el work-item dice contract_mode: unified)
     - Archivos modificados: `git -C "$CODE_ROOT" diff $BASE_REF...HEAD`
+    - La corrida del gate del Dev al cerrar F3: [comando, exit code, HEAD y últimas líneas]. No repitas la suite completa
 
     TU TAREA:
     Revisar calidad de código (NO seguridad — eso es AR). Los 8 checks de quality_pipeline.md, sección Code Review:
