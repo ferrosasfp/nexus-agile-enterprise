@@ -129,7 +129,7 @@ Six specialized Claude Code agents — one per pipeline phase — with the role,
 
 | Agent | Phases | Model | Tools | Output |
 |---|---|---|---|---|
-| `nexus-analyst` | F0, F1 | sonnet (opus in AUTO QUALITY) | Read, Glob, Grep, Bash, Write, WebFetch, Jira read | `project-context.md`, `work-item.md` |
+| `nexus-analyst` | F0, F1 | sonnet (opus in AUTO QUALITY) | Read, Glob, Grep, Bash, Write, Edit, WebFetch, Jira read | `project-context.md`, `work-item.md` |
 | `nexus-architect` | F2, F2.5 | opus (effort high) | Read, Glob, Grep, Write, Edit, Bash, LSP | `sdd.md`, `story-file.md` |
 | `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash, LSP | code + `auto-blindaje.md` |
 | `nexus-adversary` | AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `ar-report.md`, `cr-report.md`, `blq-verification.md` |

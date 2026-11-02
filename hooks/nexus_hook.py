@@ -125,6 +125,18 @@ def pipeline_of(hu_dir):
     return found.group(1).upper() if found else "QUALITY"
 
 
+def questions_section(hu_dir):
+    item = hu_dir / "work-item.md"
+    if not item.is_file():
+        return None
+    found = re.search(r"^#+ *PREGUNTAS PARA EL HUMANO[^\n]*\n(.*?)(?=^#+ |\Z)", item.read_text(encoding="utf-8"), re.M | re.S)
+    return found.group(1) if found else None
+
+
+def open_questions(hu_dir):
+    return len(re.findall(r"^\s*- \[ \]", questions_section(hu_dir) or "", re.M))
+
+
 def release_required(data, code_root):
     candidates = [abs_path(p, data) for p in (".", ".nexus", "docs")]
     if code_root:
@@ -191,6 +203,11 @@ def check_phase(data, session):
     unified = hu_dir.is_dir() and any(
         (hu_dir / n).exists() and re.search(r"contract_mode\W{0,6}unified", (hu_dir / n).read_text(encoding="utf-8"))
         for n in ("work-item.md", "sdd.md"))
+
+    if phase in ("F2", "F3") and hu_dir.is_dir():
+        pending = open_questions(hu_dir)
+        if pending:
+            blocked(f"work-item.md tiene {pending} pregunta(s) sin responder en PREGUNTAS PARA EL HUMANO")
 
     if phase == "F2":
         need("work-item.md")
@@ -427,6 +444,8 @@ def cmd_stop(data):
             problems.append(f"falta {hu_dir / expected}")
         elif spawn["phase"] in ("AR", "CR", "F4") and not re.search(r"^STATUS:", report.read_text(encoding="utf-8"), re.M):
             problems.append(f"{report.name} no tiene la linea STATUS:")
+    if spawn["phase"] in ("F0F1", "F1") and (hu_dir / "work-item.md").is_file() and questions_section(hu_dir) is None:
+        problems.append("work-item.md no tiene la seccion PREGUNTAS PARA EL HUMANO. Agregala, aunque diga Ninguna")
     if spawn["phase"] == "F4" and transcript and Path(transcript).is_file():
         if '"name":"Bash"' not in Path(transcript).read_text(encoding="utf-8").replace('": "', '":"'):
             problems.append("QA no ejecuto ningun comando: su evidencia debe ser comando y salida")

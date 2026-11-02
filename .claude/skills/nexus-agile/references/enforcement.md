@@ -10,10 +10,10 @@
 |--------|----------|
 | `UserPromptSubmit` | Registra `HU_APPROVED`, `SPEC_APPROVED` y `RELEASE_APPROVED` escritos por una persona, con el hash del documento |
 | `PostToolUse(AskUserQuestion)` | Registra el gate si se elige la opcion con su nombre |
-| `PreToolUse(Agent)` | Bloquea la fase sin `FASE:`, `HU_DIR:`, artefacto o gate; si el documento cambio despues de aprobarlo; si `CODE_ROOT` no esta resuelto o no es un repo git; y si la sesion usa el plugin y el agente va sin prefijo |
+| `PreToolUse(Agent)` | Bloquea la fase sin `FASE:`, `HU_DIR:`, artefacto o gate; si el documento cambio despues de aprobarlo; si quedan preguntas sin responder en el work-item (F2 y F3); si `CODE_ROOT` no esta resuelto o no es un repo git; y si la sesion usa el plugin y el agente va sin prefijo |
 | `PreToolUse(Write, Edit)` | Cada agente de especificacion o revision escribe solo sus artefactos |
 | `PreToolUse(Bash)` | Solo lectura para quienes no implementan, incluidos interpretes en linea que escriben. Nadie usa `--no-verify`. `forbidden_commands` del proyecto vale para todos, incluida la sesion principal |
-| `SubagentStop` | Exige el reporte y su linea `STATUS:`; compara el arbol de git de todo agente que no implementa; QA debe haber ejecutado al menos un comando |
+| `SubagentStop` | Exige el reporte y su linea `STATUS:`; exige la seccion de preguntas en el work-item; compara el arbol de git de todo agente que no implementa; QA debe haber ejecutado al menos un comando |
 | `SessionStart(compact, resume)` | Recuerda la HU activa y su estado |
 
 ## Archivos que escribe

@@ -163,6 +163,8 @@ for f in $C/nexus-*.md; do
   grep -q 'CLAUDE_PLUGIN_ROOT' "$f" || fail "$(basename "$f") sin SKILL_DIR del plugin"
 done
 for ag in analyst architect dev adversary qa docs; do grep -q 'No lo rodees' $A/nexus-$ag.md || fail "nexus-$ag sin regla de no rodear hooks"; done
+grep -q '^## PREGUNTAS PARA EL HUMANO' $A/nexus-analyst.md || fail "analista sin seccion de preguntas en el artefacto"
+for f in $C/nexus-*.md; do grep -q 'termina sin entregarte su reporte' "$f" || fail "$(basename "$f") sin regla de reporte perdido"; done
 grep -q 'forbidden_commands' $R/project_context_template.md || fail "plantilla sin forbidden_commands"
 pass "correcciones de la corrida real revisadas"
 

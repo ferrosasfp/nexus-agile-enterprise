@@ -10,6 +10,9 @@
 - `/nexus-p1-f0-f1` ya no se contradice con la edicion de `_INDEX.md`.
 
 ### Agregado
+- Las preguntas del analista quedan en `work-item.md`, y el hook frena F2 y F3 mientras haya alguna abierta. En la corrida real, el reporte no llego y sus preguntas se habrian perdido.
+- Regla del orquestador: si un agente no entrega su reporte, leer artefacto y transcript antes de seguir.
+- El analista tiene `Edit`, para no reescribir el archivo entero en cada cambio.
 - `forbidden_commands` en `project-context.md`: comandos que el hook bloquea para todos, incluida la sesion principal.
 - Bloqueo de interpretes en linea que escriben, y comparacion del arbol en todo agente que no implementa, despues de que un arquitecto rodeara un bloqueo con `python3 -c`.
 - Regla en todos los agentes: si un hook bloquea, detente y reporta.

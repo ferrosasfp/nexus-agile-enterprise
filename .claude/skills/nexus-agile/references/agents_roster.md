@@ -19,7 +19,7 @@
 
 **Fases**: F0, F1
 
-**Herramientas**: Read, Glob, Grep, Bash (lectura), Write (artefactos), WebFetch, lectura de Jira. No pregunta directo: devuelve sus preguntas al orquestador
+**Herramientas**: Read, Glob, Grep, Bash (lectura), Write y Edit (artefactos), WebFetch, lectura de Jira. No pregunta directo: devuelve sus preguntas al orquestador
 
 ---
 

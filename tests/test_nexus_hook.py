@@ -99,6 +99,21 @@ class Fases(HookCase):
         self.write("work-item.md")
         self.assertBlocked(self.spawn("F2"), "HU_APPROVED")
 
+    def test_pregunta_abierta_frena_f2(self):
+        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\n- [ ] que formato\n")
+        self.type_gate("HU_APPROVED")
+        self.assertBlocked(self.spawn("F2"), "sin responder")
+
+    def test_pregunta_abierta_frena_f3_en_fast(self):
+        self.write("work-item.md", "- Pipeline: FAST\n## PREGUNTAS PARA EL HUMANO\n- [ ] que formato\n")
+        self.type_gate("HU_APPROVED")
+        self.assertBlocked(self.spawn("F3", "nexus-dev"), "sin responder")
+
+    def test_pregunta_respondida_no_frena(self):
+        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\n- [x] que formato: CSV\n\n## Otra\n- [ ] no es pregunta\n")
+        self.type_gate("HU_APPROVED")
+        self.assertAllowed(self.spawn("F2"))
+
     def test_f2_con_gate(self):
         self.write("work-item.md")
         self.type_gate("HU_APPROVED")
@@ -371,6 +386,16 @@ class AlTerminar(HookCase):
         self.spawn("AR", "nexus-adversary")
         self.write("ar-report.md", "STATUS: APROBADO open_blq=0\n")
         self.assertEqual(self.stop("nexus-adversary").stdout, "")
+
+    def test_analista_sin_seccion_de_preguntas(self):
+        self.spawn("F1", "nexus-analyst")
+        self.write("work-item.md", "# WI\n")
+        self.assertIn("PREGUNTAS PARA EL HUMANO", self.stop("nexus-analyst").stdout)
+
+    def test_analista_con_seccion(self):
+        self.spawn("F1", "nexus-analyst")
+        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n")
+        self.assertEqual(self.stop("nexus-analyst").stdout, "")
 
     def test_falta_reporte(self):
         self.write("work-item.md")
