@@ -339,6 +339,19 @@ class Escritura(HookCase):
         result = self.run_hook("gate", agent_type="nexus-qa", tool_name="Bash", cwd="/home/x/repo", tool_input={"command": "npm test > /tmp/salida.txt"})
         self.assertAllowed(result)
 
+    def test_cd_a_tmp_y_ruta_relativa(self):
+        # Falso bloqueo real: el AR de SCRUM-545 escribia en su scratchpad con cd y ruta relativa.
+        for command in ("cd /tmp/claude-1/scratch && cat > vitest.ar.config.ts <<'EOF'\nx\nEOF",
+                        "cd '/tmp/s' ; npx vitest run > salida.txt"):
+            with self.subTest(command=command):
+                self.assertAllowed(self.run_hook("gate", agent_type="nexus-adversary", tool_name="Bash", cwd="/home/x/repo", tool_input={"command": command}))
+
+    def test_cd_que_no_vuelve_desechable(self):
+        for command in ("cd /tmp/s && echo x > ../../home/x/repo/app.ts", "cd /tmp/s && cd /home/x/repo && echo x > app.ts",
+                        "cd /home/x/repo && echo x > app.ts", "cd /tmp/s && rm -rf /home/x/repo/src", "echo x > app.ts"):
+            with self.subTest(command=command):
+                self.assertBlocked(self.run_hook("gate", agent_type="nexus-adversary", tool_name="Bash", cwd="/home/x/repo", tool_input={"command": command}))
+
     def test_repo_bajo_tmp_no_es_desechable(self):
         self.assertTrue(str(self.repo).startswith(("/tmp", tempfile.gettempdir())))
         self.assertBlocked(self.bash_as("nexus-adversary", f"echo x > {self.repo}/app.ts"))

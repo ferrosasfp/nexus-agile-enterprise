@@ -278,6 +278,20 @@ def disposable(path, data):
     return path.startswith("/tmp/") and not path.startswith(cwd.rstrip("/") + "/")
 
 
+def leading_cd(command):
+    """Directorio de un `cd /ruta &&` inicial, si es el unico cd del comando. Sin el, una ruta relativa queda sin resolver."""
+    found = re.match(r"\s*cd\s+(['\"]?)(/[^'\"\s;&|]+)\1\s*(&&|;)", command)
+    if not found or len(re.findall(r"\b(cd|pushd)\b", command)) != 1:
+        return None
+    return os.path.normpath(found.group(2))
+
+
+def absolute(target, base):
+    if base and not target.startswith(("/", "$", "~")):
+        return os.path.normpath(os.path.join(base, target))
+    return target
+
+
 def is_git_repo(path):
     try:
         return subprocess.run(["git", "-C", path, "rev-parse", "--git-dir"], capture_output=True, timeout=20).returncode == 0
@@ -321,11 +335,18 @@ def check_bash(agent, command, data):
         deny(f"{agent} no modifica el repo con git: {command[:80]}")
     if INLINE_WRITE.search(command) and not any(disposable(w.strip("'\"()"), data) for w in re.split(r"[\s,]+", command)):
         deny(f"{agent} no escribe con un interprete en linea. Si necesita un cambio, usa Write o Edit donde su rol lo permite, o reportalo")
+    base = leading_cd(command)
     for target in REDIRECT.findall(command):
-        if not (target == "/dev/null" or disposable(target, data) or target.startswith(("$TMPDIR", "${TMPDIR"))):
+        if not (target == "/dev/null" or disposable(absolute(target, base), data) or target.startswith(("$TMPDIR", "${TMPDIR"))):
             deny(f"{agent} no escribe archivos por Bash ({target}). Usa una copia en /tmp")
-    outside = [w for w in command.split() if disposable(w, data) or "TMPDIR" in w]
-    if FILE_MUTATION.search(command) and not outside:
+    if base:
+        # Dentro de un cd a /tmp, toda ruta absoluta tambien debe ser desechable, y nada sube con "..".
+        rest = command.split("&&", 1)[-1] if "&&" in command else command.split(";", 1)[-1]
+        paths = [w.strip("'\"") for w in rest.split() if w.strip("'\"").startswith("/")]
+        safe = disposable(base + "/", data) and ".." not in rest and all(disposable(p, data) or p == "/dev/null" for p in paths)
+    else:
+        safe = any(disposable(w, data) or "TMPDIR" in w for w in command.split())
+    if FILE_MUTATION.search(command) and not safe:
         deny(f"{agent} tiene Bash de solo lectura: {command[:80]}")
 
 
