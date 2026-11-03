@@ -1,6 +1,6 @@
 # Plan hacia NexusAgil 2.0
 
-> Origen: la prueba real en la primera HU real (2-nov-2026) y su informe final. Cada paso dice que problema medido resuelve y como se verifica.
+> Origen: la primera HU real (2-nov-2026) y su informe final. Cada paso dice que problema medido resuelve y como se verifica.
 
 | # | Paso | Problema que resuelve (prueba real) | Verificacion | Estado |
 |---|------|-------------------------------------|--------------|--------|
