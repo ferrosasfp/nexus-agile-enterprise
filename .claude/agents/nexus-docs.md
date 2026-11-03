@@ -78,8 +78,8 @@ Y el índice histórico: `$NEXUS_ROOT/doc/sdd/_INDEX.md`.
 ## Dependencias de merge
 - Base de la HU: `BASE_REF` [commit] — [rama publicada, o "merge local de #A sobre #B"]
 - PRs de los que depende, en el orden en que tienen que entrar: [#A, #B] → este PR. Sin dependencias: "ninguna, sale de main"
-- Commit aprobado por QA: [`git rev-parse HEAD`] y su árbol: [`git rev-parse HEAD^{tree}`]
-- Después de mergear las dependencias, la resolución de conflictos es correcta si el árbol de la rama vuelve a ser el aprobado, o si `git diff <commit aprobado> HEAD` solo muestra lo que trajeron las dependencias
+- Commit aprobado por QA: [`git -C "$CODE_ROOT" rev-parse HEAD`] y su árbol: [`git -C "$CODE_ROOT" rev-parse HEAD^{tree}`]
+- Después de mergear las dependencias, la resolución de conflictos es correcta si el árbol de la rama vuelve a ser el aprobado, o si `git -C "$CODE_ROOT" diff <commit aprobado> HEAD` solo muestra lo que trajeron las dependencias
 
 ## Decisiones diferidas a backlog
 - [Si hubo spinoffs, listar tickets creados — ej: WKH-33 mainnet support]
