@@ -75,11 +75,11 @@ Load everything as a plugin with `claude --plugin-dir .`, or copy the files with
 
 **What has been measured (November 2026):**
 
-- **Eval suite:** 28 cases, 3 runs each, 84/84 perfect runs (AR, gates, dev, analyst, security, roles, supervisor, AUTO checklist, real command template). About USD 15 per full pass.
+- **Eval suite:** 29 cases, 3 runs each, 87/87 perfect runs (AR, gates, dev, analyst, security, roles, supervisor, AUTO checklist, SDD verification, real command template). About USD 16 per full pass.
 - **One real HU, end to end** (a 2-point feature in a production Next.js/Supabase monorepo, with a human supervising every stop): DONE with CI green, 20 agent launches, 2.6 M tokens, 1 h 48 min of agent time. The methodology alone found 6 of 26 defects; the rest came from an extra SDD verification, the human, and the supervising session. Those findings are what this version fixes: the SDD verification is now a phase, the hook blocks by real destination and restores artifacts, and the contract lives in the SDD by default.
-- **Hook tests without a model:** 90+ in `tests/`, run by CI on every push.
+- **Hook tests without a model:** 100+ in `tests/`, run by CI on every push.
 
-**What has not been measured:** QA in the eval (its cases need Bash, which the eval sandbox refused on the test machine); more than one real HU; any comparison against another methodology. One real run is a case study, not a benchmark.
+**What has not been measured:** QA in the eval (its cases need Bash, which the eval sandbox refused on the test machine); AUTO with the supervisor on a real HU without a human preparing the answers (the second real run, in progress, measures exactly that); any comparison against another methodology. One real run is a case study, not a benchmark.
 
 Per-HU metrics come from `scripts/nexus_metrics.py`, which reads the Claude Code transcripts and `.gates.jsonl`.
 
@@ -89,9 +89,9 @@ Per-HU metrics come from `scripts/nexus_metrics.py`, which reads the Claude Code
 |---|---|---|---|---|
 | **Best for** | Fix a bug, tweak a style, update text | Small change that touches auth, DB writes, RLS, streaming | Ship a feature to real users | Batch of 1-N HUs, hands-off execution |
 | **You get** | Working code in ~12 min | AR + CR security review in ~25 min | Full audit trail in ~60-120 min | All of the above, pipeline auto-selected per HU |
-| **Human gates** | `HU_APPROVED` | `HU_APPROVED` | `HU_APPROVED` + `SPEC_APPROVED` | Clinical review (self-approved or escalated) |
+| **Human gates** | `HU_APPROVED` | `HU_APPROVED` | `HU_APPROVED` + `SPEC_APPROVED` (after `SPEC_VERIFY`) | Delegated: clinical review or supervisor; product decisions still escalate |
 | **AR/CR** | Skipped | Yes (parallel) | Yes (parallel) | Yes (when pipeline requires it) |
-| **Command** | `/nexus-fast-pipeline` | `/nexus-fast-plus-ar` | `/nexus-p1-f0-f1` → `p8` | `/nexus-auto` |
+| **Command** | `/nexus-fast-pipeline` | `/nexus-fast-plus-ar` | `/nexus-p1-f0-f1` → `p8` | `/nexus-auto [--supervisor]` |
 | **When in doubt** | | | Use this one | |
 
 
@@ -99,23 +99,27 @@ Per-HU metrics come from `scripts/nexus_metrics.py`, which reads the Claude Code
 
 ### AUTO Mode — Autonomous Multi-HU Orchestrator
 
-One command, N user stories, zero human gates (unless something fails):
+One command, N user stories. The human delegates two gates and keeps every product decision:
 
 ```
-/nexus-auto WKH-42                          # single HU
-/nexus-auto WKH-42 WKH-43 WKH-44           # batch of 3
-/nexus-auto WKH-42 --user=Fernando          # explicit attribution
+/nexus-agile:nexus-auto WKH-42                          # single HU
+/nexus-agile:nexus-auto WKH-42 WKH-43 WKH-44           # batch of 3
+/nexus-agile:nexus-auto WKH-42 --user=Fernando --supervisor
 ```
+
+**Delegation is the human's act.** The hook marks the session as delegated only when a person types the command at the start of a line, and says so ("sesion delegada (AUTO)"). An agent invoking AUTO on its own does not delegate anything.
 
 **How it works:**
-1. All analysts run in parallel (one per HU)
-2. Each analyst's Smart Sizing determines the pipeline: FAST, FAST+AR, or QUALITY
-3. At gates (`HU_APPROVED`, `SPEC_APPROVED`), Claude executes a **clinical review** — a 7-criterion checklist — and self-approves if all pass
-4. Any criterion fails → escalates to the human with the full checklist
-5. Dependent HUs (overlapping Scope IN) are serialized automatically
-6. Dashboard at the end with status, time, and branch per HU
+1. All analysts run in parallel (one per HU), and Smart Sizing picks FAST, FAST+AR or QUALITY. The orchestrator may raise the pipeline, never lower it.
+2. At `HU_APPROVED` and `SPEC_APPROVED`, the gate is reviewed instead of asked:
+   - **Default: clinical review.** A 7-criterion checklist run by the orchestrator. All PASS → it records the gate as `claude-delegated`; any FAIL → it asks the human.
+   - **`--supervisor` (experimental):** at every stop, a separate read-only agent (`nexus-supervisor`) gets the orchestrator's report and the artifacts, never its reasoning, and answers `CONTINUAR`, `PEDIR_EVIDENCIA` or `ESCALAR`. It exists because an orchestrator that approves its own work wants to finish: in the first real run, most serious defects were caught by a second context asking for evidence, not by the checklist.
+3. In QUALITY, `SPEC_VERIFY` checks every claim of the SDD against the code before the spec gate; the hook won't let F3 start with false claims open.
+4. **Always escalated, even if every check passes:** anything that changes what a user sees or can do, the scope or the approved ACs; security, permissions, data, production or migrations; business priority; disproportionate cost. `RELEASE_APPROVED` is never delegated.
+5. The hooks apply exactly as in manual mode: phases need their artifacts and gates, reviewers can't write outside their reports, and a Bash command that changes an artifact is reverted and logged.
+6. Dependent HUs (overlapping Scope IN) are serialized; a completion report closes the batch.
 
-**10 escalation rules** ensure Claude stops and asks when: clinical review fails, fix-pack loops ≥3 times, analyst aborts, domain knowledge needed, circular dependencies, sub-agent crashes, or scope conflicts.
+**Status:** the supervisor matched the human's verdict in 5 of 5 real stop points run in shadow, and passes 18/18 synthetic cases. Until a real AUTO run confirms it, the checklist remains the default.
 
 ### FAST+AR — The Sweet Spot
 
@@ -135,14 +139,14 @@ Four structural additions that eliminate context overload AND prevent the orches
 
 ### Custom Sub-Agents (`.claude/agents/`)
 
-Six specialized Claude Code agents — one per pipeline phase — with the role, allowed tools, and forbidden-actions block baked into the agent file itself. The orchestrator literally **cannot** invoke them without inheriting the constraints.
+Seven specialized Claude Code agents — one per pipeline role — with the role, allowed tools, and forbidden-actions block baked into the agent file itself. The orchestrator literally **cannot** invoke them without inheriting the constraints.
 
 | Agent | Phases | Model | Tools | Output |
 |---|---|---|---|---|
 | `nexus-analyst` | F0, F1 | sonnet (opus in AUTO QUALITY) | Read, Glob, Grep, Bash, Write, Edit, WebFetch, Jira read | `project-context.md`, `work-item.md` |
-| `nexus-architect` | F2, F2.5 | opus (effort high) | Read, Glob, Grep, Write, Edit, Bash, LSP | `sdd.md`, `story-file.md` |
+| `nexus-architect` | F2, F2.5 (`classic` only) | opus (effort high) | Read, Glob, Grep, Write, Edit, Bash, LSP | `sdd.md` with its contract, `story-file.md` |
 | `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash, LSP | code + `auto-blindaje.md` |
-| `nexus-adversary` | AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `ar-report.md`, `cr-report.md`, `blq-verification.md` |
+| `nexus-adversary` | SPEC_VERIFY, AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `sdd-verification.md`, `ar-report.md`, `cr-report.md`, `blq-verification.md` |
 | `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
 | `nexus-docs` | DONE | haiku | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
 | `nexus-supervisor` | AUTO, experimental | opus (effort high) | Read, Glob, Grep, Bash | verdict in its reply |
@@ -156,9 +160,9 @@ Eleven typed shortcuts that wrap each phase. The orchestrator types one command 
 | Command | Phase | Sub-agent launched | Pre-requisite |
 |---|---|---|---|
 | `/nexus-p1-f0-f1 <HU>` | F0 + F1 | `nexus-analyst` | — |
-| `/nexus-p2-f2 <HU>` | F2 (SDD) | `nexus-architect` | `HU_APPROVED` |
-| `/nexus-p3-f2-5 <HU>` | F2.5 (Story File) | `nexus-architect` | `SPEC_APPROVED` |
-| `/nexus-p4-f3 <HU>` | F3 (impl) | `nexus-dev` | `story-file.md` exists |
+| `/nexus-p2-f2 <HU>` | F2 (SDD) + SPEC_VERIFY | `nexus-architect`, then `nexus-adversary` | `HU_APPROVED` |
+| `/nexus-p3-f2-5 <HU>` | F2.5 (Story File, `classic` only) | `nexus-architect` | `SPEC_APPROVED` |
+| `/nexus-p4-f3 <HU>` | F3 (impl) | `nexus-dev` | the contract exists and `SPEC_VERIFY` has no open false claims |
 | `/nexus-p5-ar <HU>` | AR + CR | `nexus-adversary` x2 | F3 finished |
 | `/nexus-p6-cr <HU>` | CR | `nexus-adversary` | AR APPROVED |
 | `/nexus-p7-f4 <HU>` | F4 (QA) | `nexus-qa` | CR APPROVED |
@@ -259,11 +263,13 @@ Then writes the SDD: routes, schema, UI spec, Constraint Directives (REQUIRED / 
 
 No `[NEEDS CLARIFICATION]` items allowed at the gate.
 
-Output: `sdd.md`
+**SPEC_VERIFY.** Before the gate, the adversary, in a fresh context, checks every verifiable claim of the SDD against the code (paths, signatures, configuration, cited lines) and marks each TRUE, FALSE or NOT VERIFIABLE. False claims go back to the architect. In the first real run, the architect's own Readiness Check passed with 4 false claims that an independent check found. Turn it off with `spec_verify: false`.
+
+Output: `sdd.md`, `sdd-verification.md`
 
 Gate: `SPEC_APPROVED`
 
-### F2.5: Story File
+### F2.5: Story File (only with `contract_mode: classic`)
 
 The self-contained contract Dev implements. Dev may read the SDD to understand the why, but only the contract defines the work. Contains: goal in 1-2 sentences, ACs from the SDD, files to create/modify each with a real Exemplar, Integration Contract, Constraint Directives, Waves, and an Escalation Rule.
 
