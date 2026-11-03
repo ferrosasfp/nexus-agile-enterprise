@@ -59,6 +59,7 @@ Task tool:
        - Decisiones diferidas a backlog (spinoffs)
        - Lecciones para próximas HUs
        - Métricas: la tabla de nexus_metrics.py que te paso, tal cual, sin recalcular
+       - Dependencias de merge: base, PRs de los que depende en orden, commit y árbol aprobados por QA (te los paso)
     2. Actualizar $NEXUS_ROOT/doc/sdd/_INDEX.md con status final (DONE/ABORTED/BLOCKED), fecha, branch, link al report
     3. Verificar que el validation.md tiene veredicto APROBADO. Si no → marcar BLOCKED.
 
@@ -81,6 +82,7 @@ Task tool:
 - El humano decide cuándo mergear el PR y cerrar el ticket en Jira
 - **Antes de un push o de abrir el PR**, mostrale a la persona qué va a disparar, leyendo los workflows completos (no buscando palabras): cada job de CI que corre con ese push o PR y qué hace (por ejemplo, migraciones sobre una base desechable), y si hay deploy de preview. Pedí la autorización con esa lista. En una corrida real, el push disparó un job de migraciones y un preview que nadie había anticipado
 - Si la base de la HU no existe en el remoto (HU apilada), la descripción del PR lo dice y trae el enlace de comparación contra `BASE_REF`
+- **HU apilada**: la descripción del PR y `report.md` nombran los PRs de los que depende, en el orden en que tienen que entrar, y el commit y el árbol (`git rev-parse HEAD^{tree}`) que aprobó QA. Avisá a la persona que la guía de merges del sprint tiene que sumar este PR después de esas dependencias. Al mergearlas, este PR va a chocar en los archivos que comparten: la resolución es correcta si el árbol vuelve a ser el aprobado, o si el diff contra el commit aprobado solo trae lo de las dependencias. Un QA nuevo hace falta solo si eso no se cumple
 
 ## Si Claude Code rechaza la escritura del artefacto
 

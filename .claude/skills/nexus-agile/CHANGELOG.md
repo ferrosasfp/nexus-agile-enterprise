@@ -17,6 +17,7 @@
 - El supervisor no trata como rodeo que un agente siga la instruccion del propio mensaje del hook.
 
 ### Agregado
+- `report.md` y la descripcion del PR traen las dependencias de merge de una HU apilada: PRs en orden, y commit y arbol aprobados por QA para comprobar la resolucion de conflictos sin repetir QA. En la primera HU real, el PR quedo fuera de la guia de merges del sprint.
 - `marketplace.json`: instalacion con `/plugin marketplace add` y `/plugin install`.
 - README con lo medido y lo no medido.
 - Fase `SPEC_VERIFY` en QUALITY (era el experimento E10): el adversario, en un contexto nuevo, verifica cada afirmacion del SDD contra el codigo y escribe `sdd-verification.md` con el hash del SDD. El hook no deja pasar a F3 con falsas abiertas ni con la verificacion de otra version. Se apaga con `spec_verify: false`.
