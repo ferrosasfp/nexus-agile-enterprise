@@ -79,7 +79,7 @@ Y el índice histórico: `$NEXUS_ROOT/doc/sdd/_INDEX.md`.
 - Base de la HU: `BASE_REF` [commit] — [rama publicada, o "merge local de #A sobre #B"]
 - PRs de los que depende, en el orden en que tienen que entrar: [#A, #B] → este PR. Sin dependencias: "ninguna, sale de main"
 - Commit aprobado por QA: [`git -C "$CODE_ROOT" rev-parse HEAD`] y su árbol: [`git -C "$CODE_ROOT" rev-parse HEAD^{tree}`]
-- Después de mergear las dependencias, la resolución de conflictos es correcta si el árbol de la rama vuelve a ser el aprobado, o si `git -C "$CODE_ROOT" diff <commit aprobado> HEAD` solo muestra lo que trajeron las dependencias
+- Cómo comprobar el rebase sin repetir QA, cuando ya entraron las dependencias: `git -C "$CODE_ROOT" range-diff <BASE_REF>..<commit aprobado> origin/main..HEAD`. Cada commit propio tiene que salir con `=` (mismo cambio que el aprobado); un `!` es un conflicto resuelto distinto y se revisa antes de mergear. El árbol no va a coincidir con el aprobado si `main` trae otros merges: no es la comprobación
 
 ## Decisiones diferidas a backlog
 - [Si hubo spinoffs, listar tickets creados — ej: WKH-33 mainnet support]
