@@ -3,6 +3,8 @@
 ## 2.0.0-rc.2 — Correcciones de la primera corrida real (sin publicar)
 
 ### Corregido
+- AUTO se delega con el comando al inicio de cualquier linea del mensaje (tambien tras un guion o un verbo como "Lanza"), y el hook lo confirma. En la segunda HU real, el comando venia dentro de un bloque de instrucciones y la sesion quedo sin delegar.
+- Nombrar `.gates.jsonl` dentro de comillas o de un heredoc (una nota en la bitacora) ya no bloquea; escribir en el sigue bloqueado.
 - Los comandos ya no comparan contra `main` fijo: cada prompt lleva `BASE_REF`, la base real de la HU.
 - Con el plugin, el hook exige el prefijo `nexus-agile:`. Sin prefijo se usaba en silencio otra version instalada.
 - `SKILL_DIR` busca primero dentro del plugin.

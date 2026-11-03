@@ -23,6 +23,8 @@ si todos los criterios pasan. Si alguno falla, escala al humano con detalle.
 - Primera ejecución de NexusAgil en un proyecto (corré manual primero para calibrar)
 - HUs con alta ambigüedad en requisitos — mejor `/nexus-p1-f0-f1` manual
 
+**La delegación la da la persona, no el orquestador.** El hook marca la sesión como delegada cuando la persona escribe `/nexus-agile:nexus-auto` al inicio de una línea de su mensaje, y lo confirma con "sesion delegada (AUTO)". Invocar este comando con la herramienta Skill no delega. Si no ves esa confirmación en el contexto, antes de F2 pedile a la persona que escriba el comando al inicio de una línea: si no, el primer gate te va a frenar.
+
 ---
 
 ## §2 Argumentos e invocación

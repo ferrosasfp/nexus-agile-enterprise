@@ -311,6 +311,18 @@ class Delegacion(HookCase):
         entries = (self.hu / ".gates.jsonl").read_text()
         self.assertIn("claude-delegated", entries)
 
+    def test_auto_en_medio_de_instrucciones(self):
+        # Segunda HU real: el comando venia en una linea de un bloque de instrucciones y no delego.
+        out = self.run_hook("prompt", prompt="Vamos a probar AUTO.\n\nCOMO CORRER\n- Lanza /nexus-agile:nexus-auto X-1 --supervisor.")
+        self.assertIn("delegada", out.stdout)
+        self.write("work-item.md")
+        self.assertAllowed(self.spawn("F2"))
+
+    def test_mencionar_auto_no_delega(self):
+        self.run_hook("prompt", prompt="La HU anterior uso el comando nexus-auto, explicalo")
+        self.write("work-item.md")
+        self.assertBlocked(self.spawn("F2"), "al inicio de una linea")
+
     def test_auto_nunca_delega_release(self):
         self.write("work-item.md")
         self.write("validation.md", "STATUS: APROBADO PARA DONE\n")
@@ -436,6 +448,17 @@ class Escritura(HookCase):
         for command in ("echo x >\"/home/x/repo/a.ts\"", "grep x a > 'src/salida.txt'", "cat > src/a.ts <<'EOF'\nx\nEOF"):
             with self.subTest(command=command):
                 self.assertBlocked(self.bash_as("nexus-adversary", command))
+
+    def test_nombrar_gates_en_una_nota_no_bloquea(self):
+        # Segunda HU real: una entrada de bitacora con un heredoc que mencionaba .gates.jsonl.
+        for command in ("cat >> doc/sdd/prueba.md <<'EOF'\nel hook escribio .gates.jsonl\nEOF", "echo 'ver .gates.jsonl' >> notas.md",
+                        "cat doc/sdd/001/.gates.jsonl", "grep VIOLATION doc/sdd/001/.gates.jsonl | wc -l"):
+            with self.subTest(command=command):
+                self.assertAllowed(self.bash_as("", command))
+        for command in ("echo x >> doc/sdd/001/.gates.jsonl", "sed -i 's/a/b/' doc/sdd/001/.gates.jsonl", "rm doc/sdd/001/.gates.jsonl",
+                        "python3 -c \"open('.gates.jsonl','a').write('x')\"", "tee -a .gates.jsonl < x"):
+            with self.subTest(command=command):
+                self.assertBlocked(self.bash_as("", command), "gates")
 
     def test_repo_bajo_tmp_no_es_desechable(self):
         self.assertTrue(str(self.repo).startswith(("/tmp", tempfile.gettempdir())))

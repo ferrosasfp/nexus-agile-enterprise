@@ -166,7 +166,8 @@ def require_gate(hu_dir, gate, session, phase, consume_override):
         entries = read_gates(hu_dir)
         entries = [e for e in entries if e["gate"] == gate]
     if not entries:
-        consume_override(f"{phase} requiere el gate {gate}, escrito por una persona. Registrados en {hu_dir}: {[e['gate'] for e in read_gates(hu_dir)] or 'ninguno'}")
+        hint = "" if session.get("delegated") else ". Si era una corrida AUTO, la sesion no quedo delegada: la persona escribe /nexus-agile:nexus-auto al inicio de una linea"
+        consume_override(f"{phase} requiere el gate {gate}, escrito por una persona. Registrados en {hu_dir}: {[e['gate'] for e in read_gates(hu_dir)] or 'ninguno'}{hint}")
         return
     doc = GATE_DOC.get(gate)
     current = sha(hu_dir / doc) if doc else None
@@ -356,11 +357,15 @@ def expand_vars(command):
     return command
 
 
+def masked(command):
+    """El comando con el contenido de comillas y de heredocs tapado, mismas posiciones."""
+    text = HEREDOC.sub(lambda m: m.group(0)[: m.group(0).index("\n")] + re.sub(r"[^\n]", "x", m.group(0)[m.group(0).index("\n"):]), command)
+    return QUOTED.sub(lambda m: m.group(0)[0] + "x" * (len(m.group(0)) - 2) + m.group(0)[-1], text)
+
+
 def redirect_targets(command):
     """Destinos de > y >> reales: ignora los que estan dentro de comillas o en el cuerpo de un heredoc."""
-    masked = HEREDOC.sub(lambda m: m.group(0)[: m.group(0).index("\n")] + re.sub(r"[^\n]", "x", m.group(0)[m.group(0).index("\n"):]), command)
-    masked = QUOTED.sub(lambda m: m.group(0)[0] + "x" * (len(m.group(0)) - 2) + m.group(0)[-1], masked)
-    return [command[m.start(1):m.end(1)].strip("'\"") for m in REDIRECT.finditer(masked)]
+    return [command[m.start(1):m.end(1)].strip("'\"") for m in REDIRECT.finditer(masked(command))]
 
 
 def leading_cd(command):
@@ -409,7 +414,11 @@ def check_forbidden(command, data):
 
 
 def check_bash(agent, command, data):
-    if ".gates.jsonl" in command and (REDIRECT.search(command) or FILE_MUTATION.search(command) or INLINE_WRITE.search(command)):
+    # Solo si el comando escribe en .gates.jsonl. Nombrarlo dentro de comillas o de un heredoc (una nota en la bitacora) no cuenta.
+    visible = masked(command)
+    if any(t.endswith(".gates.jsonl") for t in redirect_targets(command)) or \
+            (".gates.jsonl" in visible and FILE_MUTATION.search(visible)) or \
+            (INLINE_WRITE.search(command) and ".gates.jsonl" in command):
         deny("los gates solo los registra el hook")
     check_forbidden(command, data)
     if NO_VERIFY.search(command):
@@ -551,9 +560,13 @@ def find_hu_dir(data, session, reference):
 def cmd_prompt(data):
     prompt = (data.get("prompt") or "").strip()
     session = load_session(data)
-    if re.match(r"/(nexus-agile:)?nexus-auto\b", prompt):
+    # El comando al inicio de cualquier linea: en la segunda HU real venia en medio de un bloque de instrucciones
+    # y la sesion quedo sin delegar. Se confirma en voz alta para que la persona sepa que delego.
+    if re.search(r"^\s*(?:[-*]\s*)?(?:(?:lanza|lanz[aá]|corre|corr[eé]|usa|us[aá]|run)\s+)?/(nexus-agile:)?nexus-auto\b", prompt, re.M | re.I):
         session["delegated"] = True
         save_session(data, session)
+        print("NexusAgil: sesion delegada (AUTO). HU_APPROVED y SPEC_APPROVED los registra Claude tras la revision clinica; "
+              "RELEASE_APPROVED sigue siendo humano.")
         return
     override = re.match(r"NEXUS_OVERRIDE\s+(\S.*)$", prompt, re.S)
     if override:
