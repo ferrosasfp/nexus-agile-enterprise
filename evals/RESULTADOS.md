@@ -14,7 +14,7 @@ Sigue sin medirse QA (`_requieren-bash/`).
 
 ## Foto del 2 de noviembre de 2026: ramas integradas, despues de la prueba real
 
-Commit `48fafc8` (harness + correcciones de la prueba real en SCRUM-545). Claude Code 2.1.316, orquestador en sonnet. 27 casos, 3 corridas por caso: **80 de 81 corridas perfectas**, 26 de 27 casos en 3/3. Costo US$13,57 a precio de lista, 22 minutos con 3 corridas en paralelo.
+Commit `48fafc8` (harness + correcciones de la prueba real en la primera HU real). Claude Code 2.1.316, orquestador en sonnet. 27 casos, 3 corridas por caso: **80 de 81 corridas perfectas**, 26 de 27 casos en 3/3. Costo US$13,57 a precio de lista, 22 minutos con 3 corridas en paralelo.
 
 | Grupo | Casos | Resultado |
 |-------|------:|-----------|
