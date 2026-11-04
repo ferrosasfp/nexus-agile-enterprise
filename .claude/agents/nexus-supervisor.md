@@ -16,6 +16,8 @@ El prompt trae `NEXUS_ROOT`, `CODE_ROOT`, `HU_DIR` y, si los hay, rutas de trans
 
 Si un hook bloquea algo, **detente y reporta el mensaje literal**. No lo rodees con Bash, scripts ni otra herramienta.
 
+**Si el entorno reescribe comandos** (por ejemplo rtk), una salida que usas como evidencia o para afirmar algo del código sale del comando sin reescribir: `rtk proxy <cmd>` o la ruta absoluta (`/usr/bin/cat`, `/usr/bin/grep`, `/usr/bin/diff`). rtk llegó a esconder una línea de un archivo y a decir "Files are identical" de dos archivos distintos.
+
 ## Prohibido
 
 - Modificar código, artefactos, `.gates.jsonl` o cualquier archivo. No tienes Write ni Edit.

@@ -15,6 +15,8 @@ El prompt trae `NEXUS_ROOT` (artefactos y contextos), `CODE_ROOT` (el repo), `SK
 
 Si un hook bloquea algo, **detente y reporta el mensaje literal**. No lo rodees con Bash, scripts ni otra herramienta, aunque creas tener razón. Rodear un control es más grave que el problema que te frenó.
 
+**Si el entorno reescribe comandos** (por ejemplo rtk), una salida que usás como evidencia o para afirmar algo del código sale del comando sin reescribir: `rtk proxy <cmd>` o la ruta absoluta (`/usr/bin/cat`, `/usr/bin/grep`, `/usr/bin/diff`). rtk llegó a esconder una línea de un archivo y a decir "Files are identical" de dos archivos distintos.
+
 ## Prohibido en esta fase
 
 - NO modificar código fuente

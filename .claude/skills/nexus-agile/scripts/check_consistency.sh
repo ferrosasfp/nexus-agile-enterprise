@@ -100,6 +100,7 @@ pass "cada prompt recibe sus rutas"
 # --- Fase 2: contrato, verificacion, worktrees, effort
 check_absent "Dev puede leer el SDD" 'NO leas el SDD' $A $C
 grep -q 'Contrato de implementacion' $R/sdd_template.md || fail "sdd_template sin Contrato de implementacion"
+for f in $A/nexus-*.md; do grep -q "Si el entorno reescribe comandos" "$f" || fail "$(basename $f) sin la regla de comandos reescritos"; done
 grep -q 'Dependencias de merge' $A/nexus-docs.md || fail "report.md no tiene Dependencias de merge"
 grep -q 'Nunca quites riesgos' $A/nexus-architect.md || fail "el arquitecto puede recortar riesgos para entrar en el tope"
 grep -q 'La suite completa no es tuya' $A/nexus-adversary.md || fail "el adversario no dice que la suite completa no le toca"
