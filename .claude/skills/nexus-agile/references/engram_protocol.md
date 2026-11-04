@@ -32,7 +32,7 @@ Cada vez que un agente comprueba algo del codigo que otra HU puede volver a nece
 
 ```
 python3 $SKILL_DIR/scripts/nexus_memory.py hecho --repo $CODE_ROOT --file vitest.config.ts \
-  --claim "vitest incluye tests/**" --evidence "vitest.config.ts:30" --source "HU-546, 2026-11-03"
+  --claim "vitest incluye tests/**" --evidence "vitest.config.ts:30" --source "HU-12, 2026-11-03"
 ```
 
 Devuelve el `topic_key` y el `content` con el **blob SHA de git** de cada archivo (`git hash-object`: el mismo hash que guarda git, sin depender de rtk). Un hecho que depende de varios archivos lleva un par por archivo.

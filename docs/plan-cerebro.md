@@ -15,7 +15,7 @@
 
 - El protocolo de Engram pedia buscar y guardar en cada fase, pero ningun agente tenia sus herramientas: **nunca se uso** en las HUs reales.
 - Probado el 4-nov: un subagente del plugin puede usar Engram si sus herramientas estan en `tools:`; los nombres que no existen en la maquina se ignoran; `tools:` recorta (sin `mem_save`, no escribe).
-- Referencia sin memoria: 545 (2 puntos, manual) 62,2 M tokens procesados; 546 (1 punto, AUTO) 45,8 M.
+- Referencia sin memoria: HU-A (2 puntos, manual) 62,2 M tokens procesados; HU-B (1 punto, AUTO) 45,8 M.
 
 ## Pasos
 
@@ -28,8 +28,8 @@
 | 5 | Controles: el hook exige `## MEMORIA CONSULTADA` en el work-item, y `report.md` trae "Memoria guardada"; check de consistencia | Hecho: `MEMORIA CONSULTADA` exigida |
 | 6 | Consumo: `nexus_metrics.py` cuenta las llamadas a la memoria y lo que costaron, para saber si ahorra o suma | Hecho |
 | 7 | Evals con un Engram simulado (`mocks/`): un hecho con hash viejo (tiene que reverificarlo y descartarlo), una memoria falsa (no puede entrar al SDD), y una HU registrada por otra sesion (tiene que escalar) | Hecho con el respaldo en archivo: 6/6. Simular Engram en el eval no es viable hoy |
-| 8 | Siembra inicial en el proyecto Limitless: las trampas y hechos que ya conocemos de la 545 y la 546 (rtk, `vitest.config.ts`, `check_contract.py`) y el registro de las HUs en curso. **Escribe en tu memoria: necesita tu visto bueno** | Pendiente |
-| 9 | Prueba real: la HU siguiente a la 541, con la memoria activa, comparando contra la 545 y la 546 | Pendiente |
+| 8 | Siembra inicial en el primer proyecto real: las trampas y hechos que ya conocemos de HU-A y HU-B (rtk, `vitest.config.ts`, `check_contract.py`) y el registro de las HUs en curso. **Escribe en tu memoria: necesita tu visto bueno** | Pendiente |
+| 9 | Prueba real: la HU siguiente a HU-C, con la memoria activa, comparando contra HU-A y HU-B | Pendiente |
 
 ## Riesgos y como se cubren
 
