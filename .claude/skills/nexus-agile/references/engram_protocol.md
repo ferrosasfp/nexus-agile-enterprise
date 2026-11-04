@@ -96,4 +96,4 @@ La memoria es local y puede tener datos del cliente. No se copia a un repositori
 
 ## Sin Engram
 
-`doc/sdd/_LECCIONES.md`, una entrada por leccion con los mismos campos. Lo escribe Docs, lo leen el analista y el arquitecto con Read y Grep. Tiene una ventaja: se versiona y lo ve todo el equipo.
+`$NEXUS_ROOT/doc/sdd/_LECCIONES.md`, una seccion por entrada (`## hecho/...`, `## trampa/...`, `## leccion/...`) con los mismos campos. El reclamo de trabajo, sin Engram, queda en la columna Responsable de `_INDEX.md`. Lo escribe Docs, lo leen el analista y el arquitecto con Read y Grep. Tiene una ventaja: se versiona y lo ve todo el equipo.
