@@ -673,5 +673,15 @@ class PorDestino(HookCase):
         self.assertAllowed(self.run_hook("after-bash", **data))
 
 
+class Versiones(HookCase):
+    def test_cada_entrega_queda_en_versions(self):
+        # Segunda HU real: la v1 del work-item se perdio porque .versions/ solo se llenaba al aprobar.
+        for text in ("v1\n## PREGUNTAS PARA EL HUMANO\n- [ ] x\n", "v2\n## PREGUNTAS PARA EL HUMANO\nNinguna\n"):
+            self.assertAllowed(self.spawn("F1", "nexus-analyst"))
+            self.write("work-item.md", text)
+            self.run_hook("stop", agent_type="nexus-agile:nexus-analyst")
+        self.assertEqual(len(list((self.hu / ".versions").glob("work-item-*.md"))), 2)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -28,6 +28,7 @@ READ_ONLY_BASH = {"nexus-adversary", "nexus-qa", "nexus-analyst", "nexus-archite
 INLINE_CMD = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b")
 INLINE_WRITE = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b.*(open\(|write|unlink|rename|remove|rmtree|copy|move|mkdir|>)", re.S)
 PHASES = ("F0F1", "F1", "F2", "SPEC_VERIFY", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE", "SUPERVISION")
+VERSIONED = {"F0F1": ("work-item.md",), "F1": ("work-item.md",), "F2": ("sdd.md",), "F2.5": ("story-file.md",)}
 PHASE_OUTPUT = {
     "F0F1": "work-item.md", "F1": "work-item.md", "F2": "sdd.md", "F2.5": "story-file.md",
     "AR": "ar-report.md", "CR": "cr-report.md", "VERIFY": "blq-verification.md", "SPEC_VERIFY": "sdd-verification.md",
@@ -97,17 +98,25 @@ def read_gates(hu_dir):
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+def save_version(hu_dir, name):
+    """Copia de un documento por su hash en .versions/. Idempotente."""
+    digest = sha(hu_dir / name)
+    if digest is None:
+        return None
+    versions = hu_dir / ".versions"
+    versions.mkdir(exist_ok=True)
+    target = versions / f"{Path(name).stem}-{digest[:12]}.md"
+    if not target.exists():
+        target.write_bytes((hu_dir / name).read_bytes())
+    return target
+
+
 def record_gate(hu_dir, gate, by):
     doc = GATE_DOC.get(gate)
     entry = {"gate": gate, "by": by, "sha256": sha(hu_dir / doc) if doc else None, "ts": int(time.time())}
     if doc and entry["sha256"]:
         # Copia de lo aprobado: para comparar despues sin reconstruirlo desde un transcript.
-        versions = hu_dir / ".versions"
-        versions.mkdir(exist_ok=True)
-        target = versions / f"{Path(doc).stem}-{entry['sha256'][:12]}.md"
-        if not target.exists():
-            target.write_bytes((hu_dir / doc).read_bytes())
-        entry["copy"] = str(target.relative_to(hu_dir))
+        entry["copy"] = str(save_version(hu_dir, doc).relative_to(hu_dir))
     with (hu_dir / ".gates.jsonl").open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(entry) + "\n")
 
@@ -656,6 +665,9 @@ def cmd_stop(data):
     session["spawns"].remove(spawn)
     save_session(data, session)
     hu_dir = Path(spawn["hu_dir"])
+    # Cada version que entrega un agente, no solo la aprobada: en la segunda HU real se perdio la v1 del work-item.
+    for name in VERSIONED.get(spawn["phase"], ()):
+        save_version(hu_dir, name)
     problems = []
     if agent in READ_ONLY_BASH and spawn.get("tree") and tree_hash(spawn["code_root"]) != spawn["tree"]:
         problems.append("el arbol de git cambio mientras corrias, y tu rol no modifica codigo. Restauralo y reporta por que")
