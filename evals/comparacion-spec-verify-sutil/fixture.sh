@@ -5,10 +5,24 @@ git config user.email eval@example.com
 git config user.name eval
 mkdir -p lib app/facturas supabase/migrations doc/sdd/001-exportar-facturas
 cat > lib/auth.ts <<'TS'
+import { getSession } from "./session";
 // Devuelve la organizacion del usuario de la sesion o lanza 401.
-export async function requireOrganizationId(): Promise<string> { return "org-de-la-sesion"; }
+export async function requireOrganizationId(): Promise<string> {
+  const session = await getSession();
+  if (!session) throw Object.assign(new Error("no autenticado"), { status: 401 });
+  return session.organizationId;
+}
 // Lanza 403 si el miembro no tiene el modulo.
-export async function requireModule(modulo: "facturacion" | "ventas"): Promise<void> { void modulo; }
+export async function requireModule(modulo: "facturacion" | "ventas"): Promise<void> {
+  const session = await getSession();
+  if (!session) throw Object.assign(new Error("no autenticado"), { status: 401 });
+  if (!session.modulos.includes(modulo)) throw Object.assign(new Error("sin modulo"), { status: 403 });
+}
+TS
+cat > lib/session.ts <<'TS'
+// Lee la sesion de la cookie firmada; null si no hay sesion valida.
+export type Session = { userId: string; organizationId: string; modulos: ("facturacion" | "ventas")[] };
+export async function getSession(): Promise<Session | null> { return null; }
 TS
 cat > lib/db.ts <<'TS'
 // createClient: respeta RLS con el usuario de la sesion.

@@ -1,5 +1,11 @@
 # Resultados de evaluacion
 
+## Foto del 4 de noviembre de 2026, version 2.0.0-rc.4
+
+34 casos, 3 corridas por caso: 33/34 casos en 3/3 en la pasada completa (US$18,30, 29 minutos). El que fallo, `security-diseno-limpio` (2 de 3), tenia un error del caso: el repo de juguete traia `requireModule` como un stub que nunca lanza, y el agente marco con razon que el diseno "correcto" se apoyaba en un chequeo que no hace nada. Corregido el stub, el agente encontro hallazgos reales en el diseno de control (la politica RLS no acotaba a la organizacion de la sesion; faltaban tests de autorizacion). Con un diseno limpio de verdad, 3/3 sin hallazgos. Es la tercera vez que un agente de verificacion encuentra un defecto en un caso armado a mano: los casos se revisan con el mismo rigor que el codigo.
+
+Nuevos en esta version: seguridad del diseno (4 casos), memoria con un hecho viejo y HU ajena (2 casos), todos 3/3.
+
 ## Agente de seguridad (3 de noviembre de 2026)
 
 | Caso | Resultado |
