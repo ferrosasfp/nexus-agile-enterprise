@@ -42,7 +42,7 @@ Pipeline compacto para Historias de Usuario que **no justifican** el overhead de
 | **GATE** | HU_APPROVED | humano | — | — |
 | F3 fast | p4 (F3) | nexus-dev | opus | usa work-item como contrato (sin SDD ni Story File) |
 | F4 fast | p7 (F4) | nexus-qa | sonnet | solo quality gates (typecheck/tests/lint), sin AC verification exhaustiva |
-| DONE fast | p8 (DONE) | nexus-docs | haiku | mini-report (5 líneas) + update _INDEX.md |
+| DONE fast | p8 (DONE) | nexus-docs | haiku (`model: haiku`) | mini-report (5 líneas) + update _INDEX.md |
 | **SKIPPED** | p2 (F2 SDD) | — | — | El work-item compacto sirve de spec |
 | **SKIPPED** | p3 (F2.5 Story File) | — | — | El dev usa el work-item como contrato |
 | **SKIPPED** | p5/p6 (AR + CR) | — | — | NO hay adversarial review — riesgo asumido |

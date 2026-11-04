@@ -148,7 +148,7 @@ Seven specialized Claude Code agents — one per pipeline role — with the role
 | `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash, LSP | code + `auto-blindaje.md` |
 | `nexus-adversary` | SPEC_VERIFY, AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `sdd-verification.md`, `ar-report.md`, `cr-report.md`, `blq-verification.md` |
 | `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
-| `nexus-docs` | DONE | haiku | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
+| `nexus-docs` | DONE | sonnet | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
 | `nexus-supervisor` | AUTO, experimental | opus (effort high) | Read, Glob, Grep, Bash | verdict in its reply |
 
 `nexus-adversary` and `nexus-qa` have no Edit tool. They have Write for their own report and Bash to run things, so they could technically change code: the role rule forbids it, and Drift Detection catches it.
@@ -429,7 +429,7 @@ README.md
 │   ├── nexus-dev.md                     #     F3 — opus
 │   ├── nexus-adversary.md               #     AR, CR — opus
 │   ├── nexus-qa.md                      #     F4 — sonnet
-│   └── nexus-docs.md                    #     DONE — haiku
+│   └── nexus-docs.md                    #     DONE — sonnet
 │
 ├── commands/                            # 11 slash commands
 │   ├── nexus-p1-f0-f1.md                #     /nexus-p1-f0-f1 — bootstrap + work-item

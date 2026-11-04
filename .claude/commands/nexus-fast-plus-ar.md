@@ -54,7 +54,7 @@ HUs donde **pocos archivos + scope acotado** coinciden con **superficie de riesg
 | **AR + CR paralelo** | p5 (AR+CR) | nexus-adversary x2 | opus | **Misma lógica que `/nexus-p5-ar`** — 2 Task calls en mismo mensaje |
 | fix-pack | (re-F3) | nexus-dev | opus | Si AR encontró BLQ, el dev corrige — loop hasta APROBADO |
 | F4 compact | p7 (F4) | nexus-qa | sonnet | Runtime-first + report compacto (el nexus-qa ya sabe hacer ambos) |
-| DONE fast | p8 (DONE) | nexus-docs | haiku | Mini-report + _INDEX.md update |
+| DONE fast | p8 (DONE) | nexus-docs | haiku (`model: haiku`) | Mini-report + _INDEX.md update |
 | **SKIPPED** | p2 (F2 SDD) | — | — | El work-item compacto sirve de spec |
 | **SKIPPED** | p3 (F2.5 Story File) | — | — | El dev usa el work-item como contrato |
 

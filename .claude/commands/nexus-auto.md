@@ -270,7 +270,7 @@ Fase 3 — F4 QA
 Fase 4 — DONE
   Prompt: usar el de /nexus-fast-pipeline "Fase 4 — Docs FAST"
   Sub-agente: nexus-docs
-  Modelo: haiku
+  Modelo: haiku (pasar `model: haiku`: el mini-report de FAST alcanza; el default del agente es sonnet)
 ```
 
 **Diferencia vs manual:** el gate HU_APPROVED es clinical review en vez de pregunta al humano.
@@ -313,7 +313,7 @@ Fase 4 — F4 QA compact
 Fase 5 — DONE
   Prompt: usar el de /nexus-fast-plus-ar "Fase 6 — DONE fast"
   Sub-agente: nexus-docs
-  Modelo: haiku
+  Modelo: haiku (pasar `model: haiku`)
 ```
 
 **Diferencia vs manual:** el gate HU_APPROVED es clinical review en vez de pregunta al humano.
@@ -378,7 +378,7 @@ Fase 7 — F4 QA
 Fase 8 — DONE
   Prompt: usar el de /nexus-p8-done
   Sub-agente: nexus-docs
-  Modelo: haiku
+  Modelo: sonnet (en la segunda corrida real, haiku metió 5 errores en report.md)
 ```
 
 **Diferencias vs manual:**
