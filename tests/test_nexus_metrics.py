@@ -42,6 +42,9 @@ class Metricas(unittest.TestCase):
             result("t1", "2026-11-02T10:00:20Z", "PreToolUse:Bash hook error: NEXUS GATE: nexus-adversary no escribe", error=True),
             result("t2", "2026-11-02T10:00:21Z", "el reporte anterior cita NEXUS GATE: algo"),  # una cita no es un bloqueo
             assistant("m2", "2026-11-02T10:01:40Z", usage2),
+            # una segunda vuelta, una hora despues: la espera no es tiempo activo
+            line(type="user", timestamp="2026-11-02T11:01:40Z", message={"role": "user", "content": "sigue"}),
+            assistant("m3", "2026-11-02T11:01:50Z", usage1),
         ]
         (self.session / "subagents/agent-a1.jsonl").write_text("\n".join(rows) + "\n")
         (self.session / "subagents/agent-a1.meta.json").write_text(json.dumps({"agentType": "nexus-agile:nexus-adversary", "description": "AR"}))
@@ -60,10 +63,13 @@ class Metricas(unittest.TestCase):
         data = json.loads(self.run_script("--hu-dir", str(self.hu), "--json"))
         self.assertEqual(data["totals"]["launches"], 1)
         agent = data["agents"][0]
-        self.assertEqual(agent["tokens"], 1000)  # contexto final del ultimo mensaje
-        self.assertEqual(agent["seconds"], 100)
+        self.assertEqual(agent["tokens"], 135)  # contexto final del ultimo mensaje (m3)
+        self.assertEqual(agent["seconds"], 110)  # 100 s de la primera vuelta + 10 s de la segunda, sin la hora de espera
+        self.assertEqual(agent["span_seconds"], 3710)
+        self.assertEqual(agent["rounds"], 2)
+        self.assertEqual(agent["processed"], 135 + 1000 + 135)
         self.assertEqual(agent["tool_uses"], 2)  # sin contar dos veces la respuesta partida
-        self.assertEqual(agent["usage"]["output"], 68)
+        self.assertEqual(agent["usage"]["output"], 88)
         self.assertEqual(len(agent["hook_blocks"]), 1)  # la cita del reporte no cuenta
         self.assertEqual(len(data["orchestrator_hook_blocks"]), 1)
         self.assertEqual(data["gates"]["counts"], {"HU_APPROVED": 1, "VIOLATION": 1})

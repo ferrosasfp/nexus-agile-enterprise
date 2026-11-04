@@ -3,6 +3,11 @@
 ## 2.0.0-rc.2 — Correcciones de la primera corrida real (sin publicar)
 
 ### Corregido
+- Segunda HU real (AUTO con supervisor): 11 falsos bloqueos del hook a lecturas (`merge-base`, patrones de grep entre comillas, variables encadenadas, `..` dentro de un texto). Las variantes que escriben siguen bloqueadas.
+- `check_contract.py`: titulo numerado del contrato en el SDD, rutas relativas a un subdirectorio declarado y ACs eliminados. 0 fallas falsas en las dos HUs reales.
+- El re-CR acotado es obligatorio cuando el CR rechazo: el comando decia que era opcional y el hook lo exigia.
+- `nexus_metrics.py`: tiempo activo (sin las esperas entre vueltas de un agente reanudado), vueltas y tokens procesados. El contexto final se quedaba corto con reanudaciones: en la segunda HU, 1,57 M de contexto final contra 45,8 M procesados.
+- `.versions/` guarda cada entrega del analista y del arquitecto, no solo la aprobada.
 - AUTO se delega con el comando al inicio de cualquier linea del mensaje (tambien tras un guion o un verbo como "Lanza"), y el hook lo confirma. En la segunda HU real, el comando venia dentro de un bloque de instrucciones y la sesion quedo sin delegar.
 - Nombrar `.gates.jsonl` dentro de comillas o de un heredoc (una nota en la bitacora) ya no bloquea; escribir en el sigue bloqueado.
 - Los comandos ya no comparan contra `main` fijo: cada prompt lleva `BASE_REF`, la base real de la HU.
@@ -19,6 +24,10 @@
 - El supervisor no trata como rodeo que un agente siga la instruccion del propio mensaje del hook.
 
 ### Agregado
+- AUTO regla 11: un BLQ abierto despues de un fix-pack, o un costo de mas del doble de la implementacion, se escala con el costo y las opciones.
+- Supervisor: no decide por costo hundido, y una regla escrita que dice "presentar a la persona" es `ESCALAR`.
+- SPEC_VERIFY senala controles debiles del plan de tests (`debiles=`), con la forma de evadirlos.
+- Regla de comandos reescritos (rtk) en cada agente.
 - `report.md` y la descripcion del PR traen las dependencias de merge de una HU apilada: PRs en orden, y commit y arbol aprobados por QA para comprobar la resolucion de conflictos sin repetir QA. En la primera HU real, el PR quedo fuera de la guia de merges del sprint.
 - `marketplace.json`: instalacion con `/plugin marketplace add` y `/plugin install`.
 - README con lo medido y lo no medido.
@@ -45,6 +54,7 @@
 - Antes de un push, el orquestador muestra que dispara (CI, migraciones, preview).
 
 ### Cambiado
+- El agente de docs pasa a sonnet; FAST sigue con `model: haiku` para el mini-report. En la segunda HU real, haiku metio 5 errores en `report.md`.
 - El tope de 400 lineas del SDD no cuenta el plan de tests ni el contrato, y prohibe quitar riesgos, decisiones o dependencias para entrar. En la corrida real, el arquitecto borro un riesgo para no pasarse.
 - La suite completa corre dos veces por HU, no cuatro: el Dev al cerrar F3 (con HEAD y salida en su reporte) y QA en F4. AR y CR corren solo lo que reproduce sus hallazgos.
 - `contract_mode: unified` es el default: el contrato del Dev va en el SDD y no hay F2.5. `classic` (Story File) queda para tareas L o si la persona lo pide. Una HU con `story-file.md` previo sigue valiendo. En la corrida real, el Story File repitio casi todo el SDD y cada correccion se hizo dos veces.

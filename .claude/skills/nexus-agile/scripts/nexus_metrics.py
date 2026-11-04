@@ -18,6 +18,9 @@ from datetime import datetime
 from pathlib import Path
 
 
+IDLE_SECONDS = 300
+
+
 def parse_ts(value):
     return datetime.fromisoformat(value.replace("Z", "+00:00")) if value else None
 
@@ -107,6 +110,11 @@ def agent_metrics(transcript):
         final_context = sum(last_usage.get(k, 0) for k in
                             ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens", "output_tokens"))
     duration = (max(timestamps) - min(timestamps)).total_seconds() if len(timestamps) > 1 else 0
+    # Tiempo activo: un agente reanudado deja huecos de espera entre vueltas. Un hueco de mas de IDLE no cuenta.
+    ordered = sorted(timestamps)
+    gaps = [(b - a).total_seconds() for a, b in zip(ordered, ordered[1:])]
+    active = sum(g for g in gaps if g <= IDLE_SECONDS)
+    rounds = 1 + sum(1 for g in gaps if g > IDLE_SECONDS)
     return {
         "agent_id": transcript.stem.replace("agent-", ""),
         "agent": (meta.get("agentType") or "?").split(":")[-1],
@@ -117,7 +125,11 @@ def agent_metrics(transcript):
         "tokens": final_context,
         "usage": totals,
         "models": sorted(models),
-        "seconds": round(duration),
+        "seconds": round(active),
+        "span_seconds": round(duration),
+        "rounds": rounds,
+        # Lo que el modelo proceso en todas sus llamadas: con reanudaciones, el contexto final se queda corto.
+        "processed": sum(totals.values()),
         "tool_uses": sum(tools.values()),
         "bash": tools.get("Bash", 0),
         "hook_blocks": blocks_hook,
@@ -163,9 +175,10 @@ def collect(session, hu_dir=None, projects="~/.claude/projects"):
     agents.sort(key=lambda a: a["started"])
     phases = {}
     for a in agents:
-        p = phases.setdefault(a["phase"], {"launches": 0, "tokens": 0, "seconds": 0})
+        p = phases.setdefault(a["phase"], {"launches": 0, "tokens": 0, "processed": 0, "seconds": 0})
         p["launches"] += 1
         p["tokens"] += a["tokens"]
+        p["processed"] += a["processed"]
         p["seconds"] += a["seconds"]
     main_blocks = [b for folder in folders if folder.with_suffix(".jsonl").exists()
                    for b in hook_blocks_in(read_entries(folder.with_suffix(".jsonl")))]
@@ -175,6 +188,7 @@ def collect(session, hu_dir=None, projects="~/.claude/projects"):
         "agents": agents,
         "phases": phases,
         "totals": {"launches": len(agents), "tokens": sum(a["tokens"] for a in agents),
+                   "processed": sum(a["processed"] for a in agents), "rounds": sum(a["rounds"] for a in agents),
                    "seconds": sum(a["seconds"] for a in agents),
                    "hook_blocks": sum(len(a["hook_blocks"]) for a in agents) + len(main_blocks)},
         "gates": gates_summary(hu_dir) if hu_dir else None,
@@ -187,16 +201,18 @@ def number(value):
 
 def render(data):
     out = [f"# Metricas de la HU", "", f"Sesion: `{data['session']}`", ""]
-    out += ["| # | Fase | Agente | Descripcion | Tokens | Tiempo | Herramientas | Bash | Bloqueos del hook |",
-            "|---|------|--------|-------------|-------:|-------:|-------------:|-----:|------------------:|"]
+    out += ["| # | Fase | Agente | Descripcion | Vueltas | Contexto final | Procesados | Tiempo activo | Herramientas | Bash | Bloqueos del hook |",
+            "|---|------|--------|-------------|--------:|---------------:|-----------:|--------------:|-------------:|-----:|------------------:|"]
     for i, a in enumerate(data["agents"], 1):
-        out.append(f"| {i} | {a['phase']} | {a['agent']} | {a['description'][:50]} | {number(a['tokens'])} | {a['seconds']} s | "
-                   f"{a['tool_uses']} | {a['bash']} | {len(a['hook_blocks'])} |")
+        out.append(f"| {i} | {a['phase']} | {a['agent']} | {a['description'][:50]} | {a['rounds']} | {number(a['tokens'])} | "
+                   f"{number(a['processed'])} | {a['seconds']} s | {a['tool_uses']} | {a['bash']} | {len(a['hook_blocks'])} |")
     t = data["totals"]
-    out += [f"| | **Total** | | | **{number(t['tokens'])}** | **{number(t['seconds'])} s** | | | **{t['hook_blocks']}** |", ""]
-    out += ["## Por fase", "", "| Fase | Lanzamientos | Tokens | Tiempo |", "|------|------------:|-------:|-------:|"]
+    out += [f"| | **Total** | | | **{t['rounds']}** | **{number(t['tokens'])}** | **{number(t['processed'])}** | "
+            f"**{number(t['seconds'])} s** | | | **{t['hook_blocks']}** |", ""]
+    out += ["## Por fase", "", "| Fase | Lanzamientos | Contexto final | Procesados | Tiempo activo |",
+            "|------|------------:|---------------:|-----------:|--------------:|"]
     for phase, p in data["phases"].items():
-        out.append(f"| {phase} | {p['launches']} | {number(p['tokens'])} | {number(p['seconds'])} s |")
+        out.append(f"| {phase} | {p['launches']} | {number(p['tokens'])} | {number(p['processed'])} | {number(p['seconds'])} s |")
     blocks = [(a["phase"], a["agent"], b) for a in data["agents"] for b in a["hook_blocks"]]
     blocks += [("-", "orquestador", b) for b in data["orchestrator_hook_blocks"]]
     if blocks:
@@ -208,7 +224,9 @@ def render(data):
             out.append(f"- VIOLATION de {v.get('by')}: {', '.join(Path(f).name for f in v.get('files', []))}")
         for o in g["overrides"]:
             out.append(f"- OVERRIDE: {o.get('reason')}")
-    out += ["", "Tokens: contexto final de cada agente, igual que la notificacion del harness. Tiempo: primer a ultimo evento del transcript.",
+    out += ["", "Contexto final: el ultimo contexto de cada agente, igual que la notificacion del harness. Con un agente reanudado se queda corto.",
+            "Procesados: entrada, cache y salida sumadas en todas sus llamadas; es la base para calcular costo con tus precios (la cache se cobra distinto).",
+            f"Tiempo activo: suma de los tramos entre eventos, sin los huecos de mas de {IDLE_SECONDS} s (esperas entre vueltas).",
             "No incluye la sesion principal ni el tiempo de la persona."]
     return "\n".join(out)
 
