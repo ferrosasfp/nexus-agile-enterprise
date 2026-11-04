@@ -1,6 +1,17 @@
 # Changelog — NexusAgil
 
-## 2.0.0-rc.3 — Correcciones de las dos primeras corridas reales (sin publicar)
+## 2.0.0-rc.4 — Cerebro, seguridad del diseno y costo (sin publicar)
+
+### Agregado
+- **Memoria del proyecto (el cerebro)**: hechos atados al blob SHA de git (`scripts/nexus_memory.py`), lecciones que aprueba la persona, reclamos de trabajo con vencimiento. El analista y el arquitecto leen (5 busquedas como maximo), Docs escribe. Antes ningun agente tenia las herramientas de Engram: el protocolo no se podia usar. Diseno: `docs/plan-cerebro.md`; protocolo: `references/engram_protocol.md`.
+- **Gate de propiedad con cualquier tracker** (`references/tracker.md`): Jira, Linear, GitHub Issues, archivo o una herramienta propia. El hook no deja lanzar el primer analista sin `PROPIEDAD:` ni con una HU ajena.
+- Evals: memoria con un hecho viejo y HU ajena, 6/6.
+
+### Cambiado
+- Lectura minima por agente, reporte de 25 lineas como maximo y salidas largas a archivo; el orquestador pasa rutas, no contenido.
+- El fix-pack empieza por convertir cada reproduccion en un test en rojo; un hallazgo sin reproduccion no se arregla.
+
+## 2.0.0-rc.3 — Correcciones de las dos primeras corridas reales
 
 ### Corregido
 - Segunda HU real (AUTO con supervisor): 11 falsos bloqueos del hook a lecturas (`merge-base`, patrones de grep entre comillas, variables encadenadas, `..` dentro de un texto). Las variantes que escriben siguen bloqueadas.

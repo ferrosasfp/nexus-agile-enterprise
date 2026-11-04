@@ -79,6 +79,8 @@ Load everything as a plugin with `claude --plugin-dir .`, or copy the files with
 - **One real HU, end to end** (a 2-point feature in a production Next.js/Supabase monorepo, with a human supervising every stop): DONE with CI green, 20 agent launches, 2.6 M tokens, 1 h 48 min of agent time. The methodology alone found 6 of 26 defects; the rest came from an extra SDD verification, the human, and the supervising session. Those findings are what this version fixes: the SDD verification is now a phase, the hook blocks by real destination and restores artifacts, and the contract lives in the SDD by default.
 - **Hook tests without a model:** 100+ in `tests/`, run by CI on every push.
 
+**Project memory and ownership (rc.4).** Before the first analyst, an ownership gate asks the team's tracker (Jira, Linear, GitHub Issues, a file, or your own tool) who owns the story, and the hook refuses to start one owned by someone else. Facts the agents verified are stored tied to the git blob SHA of their files and reused without re-reading only while the hash matches; lessons go to memory only after a person approves them. See `references/tracker.md` and `references/engram_protocol.md`.
+
 **What has not been measured:** QA in the eval (its cases need Bash, which the eval sandbox refused on the test machine); AUTO with the supervisor on a real HU without a human preparing the answers (the second real run, in progress, measures exactly that); any comparison against another methodology. One real run is a case study, not a benchmark.
 
 Per-HU metrics come from `scripts/nexus_metrics.py`, which reads the Claude Code transcripts and `.gates.jsonl`.
