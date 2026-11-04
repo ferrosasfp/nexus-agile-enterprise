@@ -113,5 +113,34 @@ class CheckSpecIds(unittest.TestCase):
         self.assertIn("falta REQ-B", out.stdout)
 
 
+class NexusMemory(unittest.TestCase):
+    """Hechos atados al blob SHA de git: vigentes si el archivo no cambio, invalidos si cambio."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp)
+        subprocess.run(["git", "init", "-q", str(self.tmp)], check=True)
+        (self.tmp / "vitest.config.ts").write_text("export default { test: { include: ['tests/**'] } }\n")
+        (self.tmp / "b.ts").write_text("x\n")
+
+    def test_hecho_y_vigencia(self):
+        out = run("nexus_memory.py", "hecho", "--repo", self.tmp, "--file", "vitest.config.ts", "--file", "b.ts",
+                  "--claim", "vitest incluye tests/**", "--evidence", "vitest.config.ts:1", "--source", "HU-1, 2026-11-04")
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertIn("topic_key: hecho/vitest.config.ts+1", out.stdout)
+        verify = out.stdout.split("Verify: nexus_memory.py vigente --repo <CODE_ROOT> ")[1].split()
+        pairs = [verify[i + 1] for i in range(0, len(verify), 2)]
+        check = lambda: run("nexus_memory.py", "vigente", "--repo", self.tmp, *sum((["--pair", p] for p in pairs), []))
+        self.assertEqual(check().returncode, 0)
+        (self.tmp / "b.ts").write_text("y\n")
+        changed = check()
+        self.assertEqual(changed.returncode, 1)
+        self.assertIn("b.ts", changed.stdout)
+
+    def test_no_guarda_hechos_de_archivos_que_no_existen(self):
+        out = run("nexus_memory.py", "hecho", "--repo", self.tmp, "--file", "no-existe.ts", "--claim", "x", "--evidence", "x", "--source", "x")
+        self.assertNotEqual(out.returncode, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

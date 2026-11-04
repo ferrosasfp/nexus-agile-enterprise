@@ -132,6 +132,7 @@ def agent_metrics(transcript):
         "processed": sum(totals.values()),
         "tool_uses": sum(tools.values()),
         "bash": tools.get("Bash", 0),
+        "memory_calls": {name.split("__")[-1]: count for name, count in tools.items() if name and "engram" in name},
         "hook_blocks": blocks_hook,
     }
 
@@ -217,6 +218,12 @@ def render(data):
     blocks += [("-", "orquestador", b) for b in data["orchestrator_hook_blocks"]]
     if blocks:
         out += ["", "## Bloqueos del hook", ""] + [f"- {phase} / {agent}: `{text}`" for phase, agent, text in blocks]
+    memory = {}
+    for a in data["agents"]:
+        for name, count in a.get("memory_calls", {}).items():
+            memory[name] = memory.get(name, 0) + count
+    out += ["", "## Memoria", "", ("Llamadas a Engram: " + ", ".join(f"{k} {v}" for k, v in sorted(memory.items()))) if memory
+            else "Ningun agente uso la memoria."]
     if data["gates"]:
         g = data["gates"]
         out += ["", "## Gates", "", ", ".join(f"{k}: {v}" for k, v in g["counts"].items())]

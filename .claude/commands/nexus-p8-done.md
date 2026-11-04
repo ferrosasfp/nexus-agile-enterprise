@@ -77,6 +77,7 @@ Task tool:
 
 ## Después de DONE
 
+- **Lecciones**: presentale a la persona `lecciones.md`. Las que apruebe, guardalas con `mem_save` (o en `$NEXUS_ROOT/doc/sdd/_LECCIONES.md` sin Engram), con su fecha de revisión. Las que rechace no se guardan. En AUTO, esta aprobación queda para el cierre del lote: no frena la HU
 - **Cerrar el reclamo**: actualizá `trabajo/[HU]` en memoria con el estado final, la rama y el commit aprobado. Con `tracker_write: true`, comentá en el ticket el PR o la rama, el commit y el costo de la HU (`$SKILL_DIR/references/tracker.md`). Mover el ticket de estado lo hace la persona
 
 - Presentá el resumen ejecutivo al humano

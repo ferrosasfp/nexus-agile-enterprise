@@ -48,10 +48,10 @@ Y el índice histórico: `$NEXUS_ROOT/doc/sdd/_INDEX.md`.
 
 Si tenés `mem_save`, guardá con `topic_key`, siguiendo `$SKILL_DIR/references/engram_protocol.md`:
 
-1. **Lecciones y trampas** de la HU que sirvan a otra HU (Auto-Blindaje, problemas del entorno, decisiones con su porqué), cada una con evidencia y con cómo volver a comprobarla.
-2. **Hechos verificados** del código que otra HU puede necesitar, con el sha256 del archivo cuando se verificó (sacalo con `sha256sum`).
-3. **Cierre de `trabajo/<HU>`**: estado final, rama y commit aprobado.
-4. Una memoria que la HU encontró desactualizada (DESCARTADA en `## MEMORIA CONSULTADA`) se corrige con su mismo `topic_key`.
+1. **Hechos verificados** del código que otra HU puede necesitar. Armá cada entrada con `python3 $SKILL_DIR/scripts/nexus_memory.py hecho ...` (pone el hash de git de cada archivo): no copies hashes a mano.
+2. **Cierre de `trabajo/<HU>`**: estado final, rama y commit aprobado.
+3. Una memoria que la HU encontró desactualizada (DESCARTADA en `## MEMORIA CONSULTADA`) se corrige con su mismo `topic_key`.
+4. **Las lecciones no las guardás vos**: escribilas en `$NEXUS_ROOT/doc/sdd/NNN-titulo/lecciones.md` con el formato del protocolo, cada una con evidencia y con cómo volver a comprobarla. Se guardan cuando la persona las aprueba.
 
 No guardes lo que ya está en el repo, el detalle de la HU ni defectos de la metodología. Si una lección es un hecho estable del proyecto, proponé agregarlo a `project-context.md` en `report.md`: lo decide la persona. Sin Engram, escribí lo mismo en `$NEXUS_ROOT/doc/sdd/_LECCIONES.md`.
 

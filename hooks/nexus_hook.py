@@ -39,7 +39,7 @@ WRITE_RULES = {
     "nexus-security": r"/security-review(-\d+)?\.md$",
     "nexus-adversary": r"/(ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?|sdd-verification(-\d+)?)\.md$",
     "nexus-qa": r"/validation(-\d+)?\.md$",
-    "nexus-docs": r"/(report\.md|_INDEX\.md)$",
+    "nexus-docs": r"/(report\.md|_INDEX\.md|lecciones\.md|_LECCIONES\.md)$",
     "nexus-architect": r"/doc/sdd/[^/]+/[^/]+\.md$",
     "nexus-analyst": r"(/doc/sdd/[^/]+/[^/]+\.md|/doc/sdd/_INDEX\.md|/doc/prd/.+|/(project|product)-context\.md)$",
 }
@@ -722,6 +722,9 @@ def cmd_stop(data):
             problems.append(f"{report.name} no tiene la linea STATUS:")
     if spawn["phase"] in ("F0F1", "F1") and (hu_dir / "work-item.md").is_file() and questions_section(hu_dir) is None:
         problems.append("work-item.md no tiene la seccion PREGUNTAS PARA EL HUMANO. Agregala, aunque diga Ninguna")
+    if spawn["phase"] in ("F0F1", "F1") and (hu_dir / "work-item.md").is_file() and \
+            not re.search(r"^#+ *MEMORIA CONSULTADA", (hu_dir / "work-item.md").read_text(encoding="utf-8"), re.M | re.I):
+        problems.append("work-item.md no tiene la seccion MEMORIA CONSULTADA. Agregala, aunque diga Ninguna y por que")
     if spawn["phase"] == "F4" and transcript and Path(transcript).is_file():
         if '"name":"Bash"' not in Path(transcript).read_text(encoding="utf-8").replace('": "', '":"'):
             problems.append("QA no ejecuto ningun comando: su evidencia debe ser comando y salida")

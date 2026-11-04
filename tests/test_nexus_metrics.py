@@ -37,7 +37,7 @@ class Metricas(unittest.TestCase):
         usage2 = {"input_tokens": 2, "cache_read_input_tokens": 900, "cache_creation_input_tokens": 50, "output_tokens": 48}
         rows = [
             line(type="user", timestamp="2026-11-02T10:00:00Z", message={"role": "user", "content": f"RUTAS: x\nFASE: AR\nHU_DIR: {self.hu}\nrevisa"}),
-            assistant("m1", "2026-11-02T10:00:10Z", usage1, tools=[("t1", "Bash"), ("t2", "Read")]),
+            assistant("m1", "2026-11-02T10:00:10Z", usage1, tools=[("t1", "Bash"), ("t2", "Read"), ("t9", "mcp__plugin_engram_engram__mem_search")]),
             assistant("m1", "2026-11-02T10:00:10Z", usage1, tools=[("t1", "Bash")]),  # la misma respuesta partida en dos lineas
             result("t1", "2026-11-02T10:00:20Z", "PreToolUse:Bash hook error: NEXUS GATE: nexus-adversary no escribe", error=True),
             result("t2", "2026-11-02T10:00:21Z", "el reporte anterior cita NEXUS GATE: algo"),  # una cita no es un bloqueo
@@ -68,7 +68,8 @@ class Metricas(unittest.TestCase):
         self.assertEqual(agent["span_seconds"], 3710)
         self.assertEqual(agent["rounds"], 2)
         self.assertEqual(agent["processed"], 135 + 1000 + 135)
-        self.assertEqual(agent["tool_uses"], 2)  # sin contar dos veces la respuesta partida
+        self.assertEqual(agent["tool_uses"], 3)  # sin contar dos veces la respuesta partida
+        self.assertEqual(agent["memory_calls"], {"mem_search": 1})
         self.assertEqual(agent["usage"]["output"], 88)
         self.assertEqual(len(agent["hook_blocks"]), 1)  # la cita del reporte no cuenta
         self.assertEqual(len(data["orchestrator_hook_blocks"]), 1)
@@ -93,6 +94,7 @@ class Metricas(unittest.TestCase):
         out = self.run_script("--hu-dir", str(self.hu))
         self.assertIn("| 1 | AR | nexus-adversary |", out)
         self.assertIn("VIOLATION de nexus-dev: sdd.md", out)
+        self.assertIn("Llamadas a Engram: mem_search 1", out)
 
 
 if __name__ == "__main__":

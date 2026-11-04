@@ -627,8 +627,13 @@ class AlTerminar(HookCase):
 
     def test_analista_con_seccion(self):
         self.spawn("F1", "nexus-analyst")
-        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n")
+        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n## MEMORIA CONSULTADA\nNinguna: sin Engram\n")
         self.assertEqual(self.stop("nexus-analyst").stdout, "")
+
+    def test_analista_sin_memoria_consultada(self):
+        self.spawn("F1", "nexus-analyst")
+        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n")
+        self.assertIn("MEMORIA CONSULTADA", self.stop("nexus-analyst").stdout)
 
     def test_falta_reporte(self):
         self.write("work-item.md")
