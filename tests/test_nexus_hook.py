@@ -460,6 +460,38 @@ class Escritura(HookCase):
             with self.subTest(command=command):
                 self.assertBlocked(self.bash_as("", command), "gates")
 
+    def test_lecturas_reales_de_la_segunda_hu(self):
+        # Comandos de solo lectura que el hook bloqueo en la segunda HU real (rutas genericas).
+        lecturas = (
+            ("nexus-adversary", "cd /home/x/repo; git -C /home/x/repo log --oneline -5; git -C /home/x/repo branch -a --contains abc | head; "
+                                "git -C /home/x/repo merge-base --is-ancestor abc origin/main && echo IN || echo OUT"),
+            ("nexus-adversary", "cd /tmp/s/copia/apps/web && cp components/a.tsx /tmp/s/a.orig && "
+                                "sed -i '3a import { x } from \"../../lib/dato\";' components/a.tsx && head -8 components/a.tsx"),
+            ("nexus-adversary", "S=/tmp/s; W=$S/copia/apps/web; cp $S/f.orig $W/components/f.tsx && mkdir -p \"$W/app/zz\" && "
+                                "printf 'x' > \"$W/app/zz/error.tsx\" && cat \"$W/app/zz/error.tsx\""),
+            ("nexus-supervisor", "cd /tmp; T=/home/x/.claude/projects/p/s/subagents/agent-a.jsonl; wc -l $T; "
+                                 "jq -r '.input.command' $T | grep -n -E 'mv |cp |rm |>>|> [^&]|tee |sed -i|python|node -e|perl|git (commit|add)' | cut -c1-300"),
+            ("nexus-supervisor", "T=/home/x/.claude/projects/p/s/subagents/agent-a.jsonl; grep -c \"NEXUS GATE\" $T; "
+                                 "grep -o '\"command\":\"[^\"]\\{0,200\\}' $T | grep -E \">|tee|sed -i|cp |mv |git (commit|checkout)\" | head"),
+            ("nexus-supervisor", "cd /home/x/.claude/projects/p/s/subagents && for f in a.jsonl b.jsonl; do jq -r '.x' $f | "
+                                 "grep -n -i \"python\\|node -e\\|tee \\|> *[/$a-zA-Z]\\|cat <<\\|sed -i\\|cp \\|git \" | head -40; done"),
+            ("nexus-adversary", "W=/tmp/s/cr/repo/apps/web; F=$W/components/v.tsx; cp $F.orig $F"),
+        )
+        for agent, command in lecturas:
+            with self.subTest(command=command[:60]):
+                self.assertAllowed(self.bash_as(agent, command))
+        escrituras = (
+            ("nexus-adversary", "git -C /home/x/repo merge feat/x"),
+            ("nexus-adversary", "cd /tmp/s && cp a.tsx /home/x/repo/src/a.tsx"),
+            ("nexus-adversary", "cd /tmp/s && sed -i 's/a/b/' ../../home/x/repo/a.ts"),
+            ("nexus-adversary", "S=/tmp/s; W=$S/../../home/x/repo; printf 'x' > \"$W/a.ts\""),
+            ("nexus-supervisor", "T=/home/x/repo/a.ts; sed -i 's/a/b/' $T"),
+            ("nexus-supervisor", "python3 -c \"open('/home/x/repo/a.ts','w').write('x')\""),
+        )
+        for agent, command in escrituras:
+            with self.subTest(command=command[:60]):
+                self.assertBlocked(self.bash_as(agent, command))
+
     def test_repo_bajo_tmp_no_es_desechable(self):
         self.assertTrue(str(self.repo).startswith(("/tmp", tempfile.gettempdir())))
         self.assertBlocked(self.bash_as("nexus-adversary", f"echo x > {self.repo}/app.ts"))

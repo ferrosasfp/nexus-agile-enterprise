@@ -25,6 +25,7 @@ from pathlib import Path
 GATES = ("HU_APPROVED", "SPEC_APPROVED", "RELEASE_APPROVED")
 GATE_DOC = {"HU_APPROVED": "work-item.md", "SPEC_APPROVED": "sdd.md"}
 READ_ONLY_BASH = {"nexus-adversary", "nexus-qa", "nexus-analyst", "nexus-architect", "nexus-docs", "nexus-supervisor"}
+INLINE_CMD = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b")
 INLINE_WRITE = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b.*(open\(|write|unlink|rename|remove|rmtree|copy|move|mkdir|>)", re.S)
 PHASES = ("F0F1", "F1", "F2", "SPEC_VERIFY", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE", "SUPERVISION")
 PHASE_OUTPUT = {
@@ -42,7 +43,7 @@ WRITE_RULES = {
 }
 GIT_DESTRUCTIVE = re.compile(r"\bgit\b[^|;&]*\s(reset\s+--hard|checkout\s+--|checkout\s+\.|clean\s|restore\s|stash\b|pull\b)")
 NO_VERIFY = re.compile(r"\bgit\b[^|;&]*\s(commit|push)\b[^|;&]*\s--no-verify\b")
-GIT_WRITE = re.compile(r"\bgit\b[^|;&]*\s(commit|push|merge|rebase|apply|add|rm|mv|tag)\b")
+GIT_WRITE = re.compile(r"\bgit\b[^|;&]*\s(commit|push|merge(?!-base)|rebase|apply|add|rm|mv|tag)\b")
 FILE_MUTATION = re.compile(r"\btee\b|\b(sed|perl)\b[^|;&]*\s-[a-zA-Z]*i|\b(rm|mv|cp|chmod|chown|truncate|dd)\s")
 REDIRECT = re.compile(r"(?<![0-9&<>])>>?\s*([^\s&|;]+)")
 
@@ -345,14 +346,22 @@ HEREDOC = re.compile(r"<<-?\s*(['\"]?)(\w+)\1[^\n]*\n.*?\n\s*\2\b", re.S)
 ASSIGN = re.compile(r"(?:^|[;&|]\s*|\bexport\s+)([A-Za-z_]\w*)=(['\"]?)(/[^\s'\"$`;&|]*)\2(?=\s*(?:$|[;&|]))")
 
 
+ASSIGN_ANY = re.compile(r"(?:^|[;&|]\s*|\bexport\s+)([A-Za-z_]\w*)=(['\"]?)([^\s'\";&|`]*)\2(?=\s*(?:$|[;&|]))")
+
+
 def expand_vars(command):
-    """Expande $X y ${X} cuando el mismo comando asigna X a una ruta literal. Lo que viene de otra llamada no se adivina."""
-    literal = ASSIGN.findall(command)
-    values = {name: os.path.normpath(value) for name, _, value in literal}
+    """Expande $X y ${X} cuando el mismo comando asigna X a una ruta, tambien encadenada (W=$S/copia).
+    Lo que viene de otra llamada, se reasigna con otro valor o no queda en una ruta literal, no se adivina."""
+    values, seen = {}, {}
+    for name, _, raw in ASSIGN_ANY.findall(command):
+        value = re.sub(r"\$\{(\w+)\}|\$(\w+)", lambda m: values.get(m.group(1) or m.group(2), m.group(0)), raw)
+        resolved = os.path.normpath(value) if value.startswith("/") and "$" not in value else None
+        seen.setdefault(name, set()).add(resolved)
+        if resolved:
+            values[name] = resolved
     for name, value in values.items():
-        if len(re.findall(r"\b" + name + r"=", command)) != sum(1 for n, _, _ in literal if n == name) or \
-                len({os.path.normpath(v) for n, _, v in literal if n == name}) != 1:
-            continue  # se reasigna con otro valor o con algo no literal: no se adivina
+        if len(seen[name]) != 1:
+            continue
         command = re.sub(r"\$\{" + name + r"\}|\$" + name + r"\b", lambda _: value, command)
     return command
 
@@ -425,10 +434,13 @@ def check_bash(agent, command, data):
         deny("no se usa --no-verify: arregla lo que el hook del repo rechaza")
     if agent not in READ_ONLY_BASH:
         return
-    if GIT_DESTRUCTIVE.search(command) or GIT_WRITE.search(command):
+    if GIT_DESTRUCTIVE.search(visible) or GIT_WRITE.search(visible):
         deny(f"{agent} no modifica el repo con git: {command[:80]}")
     command = expand_vars(command)
-    if INLINE_WRITE.search(command) and not any(disposable(w.strip("'\"()"), data) for w in re.split(r"[\s,]+", command)):
+    visible = masked(command)
+    # El interprete tiene que estar fuera de comillas (un grep que busca "python -c" no es un interprete); lo que escribe va adentro.
+    if INLINE_CMD.search(visible) and INLINE_WRITE.search(command) and \
+            not any(disposable(w.strip("'\"()"), data) for w in re.split(r"[\s,]+", command)):
         deny(f"{agent} no escribe con un interprete en linea. Si necesita un cambio, usa Write o Edit donde su rol lo permite, o reportalo")
     base = leading_cd(command)
     for target in redirect_targets(command):
@@ -436,12 +448,15 @@ def check_bash(agent, command, data):
             deny(f"{agent} no escribe archivos por Bash ({target}). Usa una ruta absoluta en /tmp, escrita en el mismo comando")
     if base:
         # Dentro de un cd a /tmp, toda ruta absoluta tambien debe ser desechable, y nada sube con "..".
-        rest = command.split("&&", 1)[-1] if "&&" in command else command.split(";", 1)[-1]
+        # El ".." que cuenta es el de una ruta, no el de un texto entre comillas (un import en un sed).
+        cut = visible.index("&&") + 2 if "&&" in visible else visible.index(";") + 1
+        rest, rest_visible = command[cut:], visible[cut:]
         paths = [w.strip("'\"") for w in rest.split() if w.strip("'\"").startswith("/")]
-        safe = disposable(base + "/", data) and ".." not in rest and all(disposable(p, data) or p == "/dev/null" for p in paths)
+        safe = disposable(base + "/", data) and ".." not in rest_visible and all(disposable(p, data) or p == "/dev/null" for p in paths)
     else:
         safe = any(disposable(w, data) or "TMPDIR" in w for w in command.split())
-    if FILE_MUTATION.search(command) and not safe:
+    # Un patron de grep entre comillas ('cp |tee |sed -i') no es una mutacion.
+    if FILE_MUTATION.search(visible) and not safe:
         deny(f"{agent} tiene Bash de solo lectura: {command[:80]}")
 
 
