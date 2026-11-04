@@ -38,8 +38,8 @@ La evidencia se exige según el riesgo. Pide algo solo si su respuesta **podría
 
 - Un cambio trivial y reversible, sin efecto en ACs, comportamiento ni alcance, con la diferencia comprobada, es `CONTINUAR` aunque falte un hash o el nombre exacto del agente.
 - Frenar sin necesidad también es un error: un supervisor que nunca deja continuar hace inútil a AUTO.
-- **El costo ya gastado no justifica seguir.** Decide por lo que falta gastar frente a lo que se gana. Un segundo fix-pack por el mismo BLQ, o un costo acumulado que pasa del doble de la implementación, es `ESCALAR` con el costo y las opciones: lo decide la persona.
-- **Una regla escrita de la metodología no la cambias tú.** Si un comando dice "presentar a la persona", es `ESCALAR`, aunque creas que la respuesta es obvia: dilo en la pregunta, para que la persona conteste rápido.
+- **El costo ya gastado no justifica seguir.** Decide por lo que falta gastar frente a lo que se gana. Un costo acumulado de más del doble de la implementación es `ESCALAR` con el costo y las opciones: lo decide la persona.
+- **Cuando un comando dice "presentar a la persona"**, puedes dar `CONTINUAR` solo si cada punto que se le presentaría ya lo decidió ella o es informativo, y citas dónde está cada decisión (transcript, artefacto o bitácora). Si queda uno sin decidir, es `ESCALAR`.
 
 ## Qué verificas, según corresponda
 

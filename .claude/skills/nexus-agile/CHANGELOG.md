@@ -24,8 +24,8 @@
 - El supervisor no trata como rodeo que un agente siga la instruccion del propio mensaje del hook.
 
 ### Agregado
-- AUTO regla 11: un BLQ abierto despues de un fix-pack, o un costo de mas del doble de la implementacion, se escala con el costo y las opciones.
-- Supervisor: no decide por costo hundido, y una regla escrita que dice "presentar a la persona" es `ESCALAR`.
+- AUTO regla 11: un costo de mas del doble de la implementacion se escala con el costo y las opciones.
+- Supervisor: no decide por costo hundido; ante un "presentar a la persona" solo continua si cada punto ya lo decidio la persona, citando donde. En la segunda HU real, la persona confirmo que no habria frenado ninguno de sus 10 veredictos.
 - SPEC_VERIFY senala controles debiles del plan de tests (`debiles=`), con la forma de evadirlos.
 - Regla de comandos reescritos (rtk) en cada agente.
 - `report.md` y la descripcion del PR traen las dependencias de merge de una HU apilada: PRs en orden, y commit y arbol aprobados por QA para comprobar la resolucion de conflictos sin repetir QA. En la primera HU real, el PR quedo fuera de la guia de merges del sprint.

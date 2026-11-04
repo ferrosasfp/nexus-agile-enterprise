@@ -1,6 +1,6 @@
 # Supervisor de AUTO (experimental)
 
-> Estado: experimental. Existe el agente `nexus-supervisor` y `/nexus-auto --supervisor` lo usa. Por defecto, AUTO sigue con el checklist hasta que gane la evaluacion de abajo.
+> Estado: experimental, con una corrida real en AUTO (15 de 15 paradas reales coinciden con la persona). Existe el agente `nexus-supervisor` y `/nexus-auto --supervisor` lo usa. Por defecto, AUTO sigue con el checklist hasta que gane la evaluacion de abajo.
 
 ## Problema
 
@@ -56,6 +56,20 @@ Una persona decide todo lo que:
 6 casos sinteticos, 3 corridas: el supervisor acerto 18 de 18 despues de un ajuste. Antes de ese ajuste pedia evidencia irrelevante en un cambio trivial, en 3 de 3 corridas: sin proporcion, un supervisor frena todo.
 
 El brazo del checklist empato en los casos con problema. Eso **no** dice que el checklist alcance: corrio en un contexto limpio y con las reglas nuevas de escalado, mientras el AUTO real decide dentro de una sesion larga y con apuro por terminar. Para medir esa diferencia hacen falta casos reconstruidos desde corridas reales.
+
+## Primera corrida real en AUTO (3 de noviembre de 2026)
+
+Una HU de 1 punto en QUALITY, con el supervisor en cada punto de parada y la persona decidiendo sola cada escalado, sin respuestas preparadas por otra sesion.
+
+| Medida | Resultado |
+|--------|-----------|
+| Consultas | 10: 8 `CONTINUAR`, 2 `ESCALAR`, 0 `PEDIR_EVIDENCIA` |
+| Escalados correctos | 2 de 2: el recorte del alcance y las decisiones visibles del SDD, que el checklist habia dado por buenos |
+| Aprobaciones indebidas | 0. Dos casos dudosos (seguir con un segundo fix-pack, y cerrar con observaciones pese a la regla de presentarlas): la persona confirmo que no los habria frenado |
+| Intervenciones de la persona | 3, una de ellas causada por un defecto de la delegacion, ya corregido |
+| Costo del supervisor | 1,2 M tokens procesados, 2,6 % del total de la HU |
+
+Sumado a la sombra, el supervisor coincide con la persona en 15 de 15 paradas reales. Es una sola HU en AUTO: alcanza para usarlo, no para hacerlo el default. El criterio de adopcion sigue siendo el de arriba, con mas corridas.
 
 ## Limites conocidos
 

@@ -232,7 +232,7 @@ El orquestador **PARA** y usa `AskUserQuestion` cuando:
 | 8 | SDD con items irresolubles sin conocimiento de dominio humano | Listar items pendientes, pedir decisión |
 | 9 | Conflicto de Scope IN entre HUs sin orden claro | Presentar overlap y opciones de ordenamiento |
 | 10 | Batch completo (todas las HUs en DONE) | Presentar completion report (§8.2) para cierre |
-| 11 | Un BLQ sigue abierto después de un fix-pack, o el costo acumulado de la HU pasa del doble de lo que cuesta su implementación | Antes del siguiente fix-pack: costo acumulado en tokens (`nexus_metrics.py`), lo que falta y las opciones (seguir, aceptar el riesgo como deuda, cambiar el enfoque). Lo ya gastado no es motivo para seguir: se decide por lo que falta. En la segunda corrida real, un test de imports se llevó dos fix-packs y más tokens que la implementación sin que nadie lo decidiera |
+| 11 | El costo acumulado de la HU pasa del doble de lo que cuesta su implementación | Antes del siguiente fix-pack: costo acumulado en tokens (`nexus_metrics.py`), lo que falta y las opciones (seguir, aceptar el riesgo como deuda, cambiar el enfoque). Lo ya gastado no es motivo para seguir: se decide por lo que falta. En la segunda corrida real, un test de imports se llevó dos fix-packs y más tokens que la implementación sin que nadie lo decidiera |
 
 **Regla general:** ante incertidumbre del orquestador sobre si self-aprobar o escalar → **escalar siempre**.
 Es más barato preguntar al humano que aprobar algo incorrecto.
@@ -303,7 +303,7 @@ Fase 3 — AR + CR paralelo
     Prompt: usar el de /nexus-fast-plus-ar "Fase 4 — fix-pack"
     Sub-agente: nexus-dev
     Modelo: opus
-    Loop: re-AR (y re-CR si el CR rechazó) hasta APROBADO. Un segundo fix-pack por el mismo BLQ se escala (§6 regla #11); máximo 3 (§6 regla #2)
+    Loop: re-AR (y re-CR si el CR rechazó) hasta APROBADO. Máximo 3 (§6 regla #2); se escala antes si el costo pasa el tope (§6 regla #11)
 
 Fase 4 — F4 QA compact
   Prompt: usar el de /nexus-fast-plus-ar "Fase 5 — F4 compact"
