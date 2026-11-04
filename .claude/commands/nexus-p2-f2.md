@@ -83,6 +83,7 @@ Task tool:
    - Con `falsas=0`: seguí al paso 5.
    - Con falsas: relanzá al arquitecto con la lista literal de las FALSAS para que corrija solo eso, y verificá de nuevo, acotado a las líneas que cambiaron. El hook no deja pasar a F3 con falsas abiertas ni con una verificación de otra versión del SDD.
    - Las NO VERIFICABLES no frenan: van en el resumen para la persona.
+   - Con `debiles=` mayor que 0: el arquitecto refuerza esos controles en el plan de tests (una vuelta, con la forma de evadirlos que dio el verificador) y la verificación se repite solo sobre esas líneas. Es más barato que encontrarlo en AR.
    - Si `project-context.md` declara `spec_verify: false`, este paso se salta.
 
 5. Presentá el SDD al humano con el resumen ejecutivo y el resultado de la verificación (afirmaciones revisadas, falsas encontradas y corregidas, no verificables), y esperá `SPEC_APPROVED`.

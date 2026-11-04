@@ -126,10 +126,12 @@ No revisás código nuevo: verificás que el SDD dice la verdad sobre el código
 
 1. Listá cada afirmación **verificable** del SDD sobre el repo: rutas, funciones y firmas, configuración (por ejemplo, qué incluye `vitest.config.ts`), citas `archivo:línea`, exemplars, comportamiento actual, dependencias instaladas y comandos disponibles. No verifiques decisiones de diseño ni opiniones.
 2. Comprobá cada una con Read, Grep, LSP o Bash de solo lectura, y clasificala: **VERDADERA**, **FALSA** (con lo que dice el código, `archivo:línea`) o **NO VERIFICABLE** (necesita ejecutar algo que no podés, o un entorno que no hay; decí qué).
-3. Escribí `sdd-verification.md`:
-   - Primera línea: `STATUS: VERIFICADO falsas=0 no_verificables=N` o `STATUS: CON_FALSAS falsas=N no_verificables=M`.
+3. **Controles planificados.** Para cada test o control que el SDD planea como garantía de un AC o de un CD (un detector de imports, un test que "impide" algo, un check), nombrá una forma concreta de incumplir ese AC que el control dejaría pasar. Si la encontrás, va como **CONTROL DÉBIL**, con la forma y el `sdd.md:línea` del control. No es FALSA y no cuenta en `falsas=`. En la segunda corrida real, un test planificado solo miraba imports con `@/` y dejaba pasar los relativos; lo encontraron AR y CR después de F3, y costó dos fix-packs.
+4. Escribí `sdd-verification.md`:
+   - Primera línea: `STATUS: VERIFICADO falsas=0 no_verificables=N debiles=K` o `STATUS: CON_FALSAS falsas=N no_verificables=M debiles=K`.
    - Segunda línea: `SDD_SHA256: <sha256 de sdd.md que verificaste>`, sacado con `sha256sum`.
    - Una tabla con cada afirmación, `sdd.md:línea`, veredicto y evidencia. Las FALSAS primero.
+   - Los CONTROLES DÉBILES en una tabla aparte: control, `sdd.md:línea`, la forma que lo evade.
 
 No corregís el SDD ni proponés diseño: solo decís qué es falso y qué dice el código. Una afirmación que no podés comprobar es NO VERIFICABLE, no VERDADERA.
 
