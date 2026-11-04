@@ -24,7 +24,8 @@ npm i  →  No.  Just copy one folder into your project.  Done.
 | AI doesn't know your stack or your product | **Two living contexts** — `project-context.md` (stack, patterns, guardrails) + `product-context.md` (business, personas, decisions), read before every HU |
 | AI ignores restrictions | **Constraint Directives** — explicit REQUIRED / FORBIDDEN per task |
 | Implementation drifted from the plan | **Drift Detection** — plan vs implementation verified in QA |
-| Errors repeat across sessions | **Auto-Blindaje + Engram memory** — every error and fix is saved and recalled on the next HU, so the system improves with use |
+| Errors repeat across sessions | **Auto-Blindaje + Engram memory** — verified facts are stored tied to the git hash of their file and reused only while it matches; lessons are saved after a person approves them |
+| Two agents (or two people) do the same HU | **Ownership gate** — before F0 the tracker is asked who owns the HU; the hook will not start one owned by someone else |
 | Context overload → hallucinations | **Sub-Agent Protocol** — each phase starts with a clean context window |
 | AI recalls an older version of a library | **Installed-version grounding** — the SDD records the version actually installed and where each external symbol was verified. A range like `^1.2.0` does not tell you what is installed |
 | A green sub-gate hides a red gate | **The repo gate runs in F4** — QA runs the project's single gate command once. Running the parts of a gate is not running the gate |
@@ -36,6 +37,68 @@ npm i  →  No.  Just copy one folder into your project.  Done.
 | No sprint visibility | **Sprint Cadence** — Planning, Status, and Retrospective built in |
 
 
+## How an HU Flows (at a glance)
+
+Rounded boxes are agents, hexagons are checks, and the bold boxes are the gates a person types. Everything between two gates runs on its own.
+
+```mermaid
+flowchart TD
+    START([New HU]) --> OWN{{"Ownership gate<br/>tracker: who owns it?"}}
+    OWN -- "owned by someone else" --> ESC[["Stop: the person decides"]]
+    OWN -- "mine or free" --> F0F1("F0 + F1 · Analyst<br/>project-context, sizing, work-item.md")
+    F0F1 --> SIZE{"Smart Sizing"}
+
+    SIZE -- "FAST" --> FDEV
+    SIZE -- "FAST+AR" --> FDEV
+    SIZE -- "QUALITY" --> G1
+
+    subgraph FASTPATH ["FAST / FAST+AR"]
+        FDEV("F3 · Dev") --> FAR{"risky?"}
+        FAR -- "FAST+AR" --> FREV("AR + CR · Adversary")
+    end
+    FAR -- "FAST" --> F4
+    FREV --> F4
+
+    G1[/"HU_APPROVED"/] --> F2("F2 · Architect<br/>sdd.md + implementation contract")
+    F2 --> SV{{"SPEC_VERIFY · Adversary<br/>every claim checked against the code"}}
+    SV -- "false claims" --> F2
+    SV -- "clean" --> SECQ{"security_review<br/>required?"}
+    SECQ -- "yes" --> SEC{{"SECURITY · Security<br/>who can do what"}}
+    SEC -- "findings" --> F2
+    SEC -- "clean" --> G2
+    SECQ -- "no" --> G2
+    G2[/"SPEC_APPROVED"/] --> F3("F3 · Dev<br/>waves W0, W1, W2…")
+    F3 --> ARCR("AR + CR in parallel · Adversary")
+    ARCR -- "BLOCKER confirmed" --> FIX("Dev fixes") --> ARCR
+    ARCR -- "approved" --> F4("F4 · QA<br/>runs the repo gate, evidence per AC")
+    F4 -- "fails" --> FIX
+    F4 -- "approved" --> DONE("DONE · Docs<br/>report.md, _INDEX, memory")
+    DONE --> REL{"release_gate?"}
+    REL -- "yes" --> G3[/"RELEASE_APPROVED"/]
+    REL -- "no" --> END([Closed])
+    G3 --> END
+
+    classDef gate fill:#fde68a,stroke:#b45309,stroke-width:2px,color:#000,font-weight:bold
+    classDef stop fill:#fecaca,stroke:#b91c1c,color:#000
+    class G1,G2,G3 gate
+    class ESC stop
+```
+
+The hooks enforce the shape of this chart: a phase cannot start without the artifact and gate before it, F3 cannot start with open false claims or open security findings, and a gate only counts when a person types it as the whole message. In AUTO, `HU_APPROVED` and `SPEC_APPROVED` are reviewed by a checklist or the supervisor instead of asked; product decisions and `RELEASE_APPROVED` still go to the person.
+
+### Which command runs each step (QUALITY, manual)
+
+```mermaid
+flowchart LR
+    P1["/nexus-p1-f0-f1"] -->|HU_APPROVED| P2["/nexus-p2-f2<br/>SDD + SPEC_VERIFY<br/>+ SECURITY"]
+    P2 -->|SPEC_APPROVED| P4["/nexus-p4-f3"]
+    P2 -.->|"only contract_mode: classic"| P3["/nexus-p3-f2-5"] -.-> P4
+    P4 --> P5["/nexus-p5-ar<br/>AR + CR"] --> P7["/nexus-p7-f4"] --> P8["/nexus-p8-done"]
+```
+
+`/nexus-p6-cr` re-runs CR alone after AR fixes.
+
+
 ## How a Sprint Works
 
 ```
@@ -43,17 +106,18 @@ npm i  →  No.  Just copy one folder into your project.  Done.
 
   For each HU in the sprint:
   ┌─────────────────────────────────────────────────────┐
+  │  Ownership gate: the tracker says who owns the HU   │
   │  F0: Bootstrap + Smart Sizing + Skills Router       │
   │  F1: Work Item + EARS ACs + Scope + Dependencies    │
   │  ⛔ HU_APPROVED                                     │
-  │  F2: Codebase Grounding + SDD                       │
+  │  F2: Codebase Grounding + SDD + contract            │
+  │      SPEC_VERIFY (+ SECURITY on risky HUs)          │
   │  ⛔ SPEC_APPROVED                                   │
-  │  F2.5: Story File (Dev's contract)                  │
+  │  F2.5: Story File (only contract_mode: classic)     │
   │  F3: Implementation — Waves + Anti-Hallucination    │
-  │  AR: Adversarial Review — BLOCKER / MINOR / OK      │
-  │  CR: Code Review — pattern compliance               │
+  │  AR + CR in parallel — BLOCKER / MINOR / OK         │
   │  F4: QA — runs the repo gate, not just cites it     │
-  │  DONE: report + _INDEX.md + issue closed            │
+  │  DONE: report + _INDEX.md + memory + issue closed   │
   └─────────────────────────────────────────────────────┘
 
 ⛔ REVIEW_APPROVED     ← Mid-sprint Status Meeting (optional)
@@ -174,7 +238,7 @@ Eleven typed shortcuts that wrap each phase. The orchestrator types one command 
 | `/nexus-fast-plus-ar <HU>` | FAST+AR (end-to-end) | analyst → dev → adversary → qa → docs | — |
 | `/nexus-auto <HU> [HU ...]` | AUTO (analyst decides) | orchestrator (self) | — |
 
-> **`pN` prefix**: the step number marks the mandatory execution order for QUALITY mode. Always start at `p1` and go sequentially. Human gates (`HU_APPROVED`, `SPEC_APPROVED`) happen between `p1→p2` and `p2→p3`. From `p3→p8` the pipeline runs on its own. For FAST/FAST+AR, use the single-command variants. For autonomous execution, use `/nexus-auto`.
+> **`pN` prefix**: the step number marks the mandatory execution order for QUALITY mode. Always start at `p1` and go sequentially. Human gates happen after `p1` (`HU_APPROVED`) and after `p2` (`SPEC_APPROVED`). With `contract_mode: unified` (the default) `p3` is skipped and `p4` follows; from there to `p8` the pipeline runs on its own. For FAST/FAST+AR, use the single-command variants. For autonomous execution, use `/nexus-auto`.
 
 **Critical constraint built into every command**: only ONE gate per launch. You cannot pipe `HU_APPROVED → F2 → SPEC_APPROVED` in a single sub-agent invocation, because one-shot sub-agents can't pause for human input — they would silently auto-approve. Each command launches exactly one phase (or two adjacent gateless phases like F0+F1).
 
@@ -195,19 +259,20 @@ Without sub-agents, a full QUALITY pipeline accumulates context in a single sess
 With sub-agents, each phase starts fresh:
 
 ```
-Orchestrator (minimal context — coordinates only)
+Orchestrator (minimal context — coordinates only; runs the ownership gate)
      │
-     ├─► [sub-agent F0]   → delivers: project-context.md + sizing
-     ├─► [sub-agent F1]   → delivers: work-item.md
+     ├─► [sub-agent F0+F1]     → delivers: project-context.md + sizing + work-item.md
      │         ⛔ HU_APPROVED
-     ├─► [sub-agent F2]   → delivers: sdd.md
+     ├─► [sub-agent F2]        → delivers: sdd.md (with its contract)
+     ├─► [sub-agent SPEC_VERIFY] → delivers: sdd-verification.md
+     ├─► [sub-agent SECURITY]  → delivers: security-review.md (risky HUs)
      │         ⛔ SPEC_APPROVED
-     ├─► [sub-agent F2.5] → delivers: story-file.md
-     ├─► [sub-agent F3]   → delivers: code + auto-blindaje log
-     ├─► [sub-agent AR]   → delivers: adversarial review report
-     ├─► [sub-agent CR]   → delivers: code review report
-     ├─► [sub-agent F4]   → delivers: validation.md
-     └─► [sub-agent DONE] → delivers: report.md + _INDEX updated
+     ├─► [sub-agent F2.5]      → delivers: story-file.md (classic only)
+     ├─► [sub-agent F3]        → delivers: code + auto-blindaje log
+     ├─► [sub-agent AR] ┐      → delivers: ar-report.md
+     ├─► [sub-agent CR] ┘ in parallel → cr-report.md
+     ├─► [sub-agent F4]        → delivers: validation.md
+     └─► [sub-agent DONE]      → delivers: report.md + _INDEX updated + memory
 ```
 
 The orchestrator never writes code, generates SDDs, or touches files. It coordinates, receives artifacts, and manages gates.
@@ -309,18 +374,24 @@ Output: `validation.md`
 ```
 doc/sdd/
 └── NNN-title/
-    ├── work-item.md      ← F1
-    ├── sdd.md            ← F2
-    ├── story-file.md     ← F2.5
-    ├── validation.md     ← F4
-    └── report.md         ← DONE
-doc/sdd/_INDEX.md         ← history of every closed HU
+    ├── work-item.md          ← F1
+    ├── sdd.md                ← F2
+    ├── sdd-verification.md   ← SPEC_VERIFY
+    ├── security-review.md    ← SECURITY (risky HUs)
+    ├── story-file.md         ← F2.5 (classic only)
+    ├── ar-report.md          ← AR
+    ├── cr-report.md          ← CR
+    ├── validation.md         ← F4
+    ├── report.md             ← DONE
+    ├── .gates.jsonl          ← every gate: who gave it, document hash, time (written by the hook)
+    └── .versions/            ← copy of each document as it was approved
+doc/sdd/_INDEX.md             ← history of every HU
 ```
 
 
 ## The Roles
 
-Six roles have an agent file in `.claude/agents/`. UX, SM and Triage have no file of their own: the orchestrator takes them on when needed.
+Eight roles have an agent file in `.claude/agents/`. UX, SM and Triage have no file of their own: the orchestrator takes them on when needed.
 
 | Agent | Role | Active in |
 |---|---|---|
@@ -332,7 +403,9 @@ Six roles have an agent file in `.claude/agents/`. UX, SM and Triage have no fil
 | **SM** | Sprint Planning, Status Meeting, Retrospective, Sprint Closure Checklist | Sprint cadence |
 | **QA** | Drift Detection, AC evidence as command + output, repo gate, Validation Report | F4 |
 | **Triage** | Evaluates if a change qualifies for FAST. Escalates if it grows beyond scope. | FAST flow |
-| **Docs** | Compiles report, updates `_INDEX.md`, verifies all artifacts, closes issue | DONE |
+| **Docs** | Compiles report, updates `_INDEX.md`, verifies all artifacts, closes issue, saves verified facts to memory | DONE |
+| **Security** | Reviews the design before `SPEC_APPROVED`: who can do what, where each check is enforced. Only on risky HUs | SECURITY |
+| **Supervisor** | In AUTO, reviews every stop asking for evidence: continue, ask for evidence, or escalate. Read-only, experimental | AUTO |
 
 **Separation rules:**
 ```
@@ -378,7 +451,7 @@ cd your-project && /tmp/nexus-agile/setup.sh
 
 `setup.sh` copies the skill + agents + commands, installs the Engram memory engine if it's missing (Homebrew or `go install`), and writes a project `.mcp.json` that exposes `mem_save` / `mem_search` to the pipeline. Restart Claude Code and you're ready.
 
-> **Memory (Engram).** Persistent memory is what powers Auto-Blindaje — every error and fix is saved and recalled on the next HU, so the system improves with use. The engine is [Engram](https://github.com/Gentleman-Programming/engram) by Gentleman Programming (MIT, separate project — NexusAgile integrates it, doesn't vendor it). No Engram? NexusAgile falls back to a manual `MEMORY.md`. See `references/engram_protocol.md`.
+> **Memory (Engram).** Persistent memory is what powers Auto-Blindaje — every error and fix is saved and recalled on the next HU, so the system improves with use. The engine is [Engram](https://github.com/Gentleman-Programming/engram) by Gentleman Programming (MIT, separate project — NexusAgile integrates it, doesn't vendor it). No Engram? NexusAgile falls back to `doc/sdd/_LECCIONES.md`, versioned in the repo. See `references/engram_protocol.md`.
 
 ### Per-project (manual)
 
@@ -405,7 +478,7 @@ rm -rf /tmp/nexus-agile
 
 > For a global install, wire the Engram memory once at the user level — install the [Engram plugin](https://github.com/Gentleman-Programming/engram) (recommended, gives the always-on Memory Protocol) or add the `engram` server to your global `~/.claude.json` `mcpServers`. The per-project `.mcp.json` above only applies per project.
 
-Restart Claude Code. The skill, the 6 sub-agents, and the 11 slash commands load automatically. Type `/nexus-` in the prompt to see autocomplete for all commands.
+Restart Claude Code. The skill, the 8 sub-agents, and the 11 slash commands load automatically. Type `/nexus-` in the prompt to see autocomplete for all commands.
 
 **First session:**
 ```
@@ -426,15 +499,21 @@ NexusAgile, sprint planning
 setup.sh                                 # 🆕 one-command install (skill + agents + commands + Engram memory)
 setup/mcp.json                           # Engram MCP block that setup.sh copies to your project as .mcp.json (kept out of the repo root so the plugin does not start its own engram)
 README.md
+.claude-plugin/plugin.json               # plugin manifest (version, agents, skills, commands)
+hooks/nexus_hook.py                      # the enforcement hooks (see references/enforcement.md)
+tests/                                   # hook, metrics and script tests, no model needed (CI)
+evals/                                   # agent behaviour evals per phase + RESULTADOS.md
 
 .claude/
-├── agents/                              # 🆕 6 custom sub-agents (one per pipeline phase)
+├── agents/                              # 8 custom sub-agents
 │   ├── nexus-analyst.md                 #     F0, F1 — sonnet
 │   ├── nexus-architect.md               #     F2, F2.5 — opus
 │   ├── nexus-dev.md                     #     F3 — opus
-│   ├── nexus-adversary.md               #     AR, CR — opus
+│   ├── nexus-adversary.md               #     SPEC_VERIFY, AR, CR — opus
 │   ├── nexus-qa.md                      #     F4 — sonnet
-│   └── nexus-docs.md                    #     DONE — sonnet
+│   ├── nexus-docs.md                    #     DONE — sonnet
+│   ├── nexus-security.md                #     SECURITY, risky HUs — opus
+│   └── nexus-supervisor.md              #     AUTO, experimental — opus
 │
 ├── commands/                            # 11 slash commands
 │   ├── nexus-p1-f0-f1.md                #     /nexus-p1-f0-f1 — bootstrap + work-item
@@ -452,9 +531,23 @@ README.md
 └── skills/nexus-agile/
     ├── SKILL.md                         # Full pipeline, modes, global rules
     ├── CHANGELOG.md                     # What changed
-    ├── scripts/check_consistency.sh     # Verifies counts, models, tools and paths match
+    ├── scripts/
+    │   ├── check_consistency.sh         # Verifies counts, models, tools and paths match
+    │   ├── check_contract.py            # Before F3: contract vs ACs and repo, deterministic
+    │   ├── check_spec_ids.py            # After merging deltas: no requirement lost
+    │   ├── nexus_metrics.py             # Per-HU metrics from transcripts and .gates.jsonl
+    │   └── nexus_memory.py              # Verified facts tied to the git blob SHA
     └── references/
-        ├── agents_roster.md             # 9 roles: 6 agent files + UX, SM, Triage
+        ├── enforcement.md               # What the hooks enforce, and what they do not
+        ├── tracker.md                   # Ownership gate: who owns each HU
+        ├── security.md                  # Pipeline security
+        ├── supervisor.md                # AUTO supervisor (experimental)
+        ├── auto_blindaje.md             # Auto-Blindaje: errors documented as they happen
+        ├── evaluation.md                # How the methodology is evaluated
+        ├── experiments.md               # Open experiments
+        ├── living_spec.md               # Living spec (opt-in)
+        ├── reference_detail.md          # Lookup detail
+        ├── agents_roster.md             # roles: 8 agent files + UX, SM, Triage
         ├── subagent_protocol.md         # Orchestration + AUTO clinical review + Bash Auto-Blindaje
         ├── skills_router.md             # Selective skill loading — clean context per HU
         ├── sdd_template.md              # SDD templates: FULL / BUGFIX / MINI
