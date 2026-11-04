@@ -186,6 +186,41 @@ class Fases(HookCase):
         self.verify()
         self.assertAllowed(self.spawn("F3", "nexus-dev"))
 
+    def security(self, status="APROBADO altos=0 medios=0 notas=1", sha=None):
+        import hashlib
+        digest = sha or hashlib.sha256((self.hu / "sdd.md").read_bytes()).hexdigest()
+        self.write("security-review.md", f"STATUS: {status}\nSDD_SHA256: {digest}\n")
+
+    def test_f3_exige_revision_de_seguridad_si_el_work_item_la_pide(self):
+        self.write("work-item.md", "security_review: required\n")
+        self.type_gate("HU_APPROVED")
+        self.write("sdd.md", "## Contrato de implementacion\n")
+        self.type_gate("SPEC_APPROVED")
+        self.verify()
+        self.assertBlocked(self.spawn("F3", "nexus-dev"), "security-review.md")
+        self.security("CON_HALLAZGOS altos=1 medios=0 notas=0")
+        self.assertBlocked(self.spawn("F3", "nexus-dev"), "hallazgos de seguridad abiertos")
+        self.security(sha="0" * 64)
+        self.assertBlocked(self.spawn("F3", "nexus-dev"), "otra version")
+        self.security()
+        self.assertAllowed(self.spawn("F3", "nexus-dev"))
+
+    def test_sin_riesgo_no_hay_revision_de_seguridad(self):
+        self.write("work-item.md", "security_review: no\n")
+        self.type_gate("HU_APPROVED")
+        self.write("sdd.md", "## Contrato de implementacion\n")
+        self.type_gate("SPEC_APPROVED")
+        self.verify()
+        self.assertAllowed(self.spawn("F3", "nexus-dev"))
+
+    def test_security_escribe_solo_su_reporte(self):
+        self.assertAllowed(self.run_hook("gate", agent_type="nexus-agile:nexus-security", tool_name="Write",
+                                         tool_input={"file_path": str(self.hu / "security-review.md")}))
+        self.assertBlocked(self.run_hook("gate", agent_type="nexus-agile:nexus-security", tool_name="Write",
+                                         tool_input={"file_path": str(self.hu / "sdd.md")}))
+        self.assertBlocked(self.run_hook("gate", agent_type="nexus-agile:nexus-security", tool_name="Bash", cwd="/home/x/repo",
+                                         tool_input={"command": "echo x > /home/x/repo/a.ts"}))
+
     def test_spec_verify_se_puede_apagar(self):
         (self.repo / "project-context.md").write_text("| spec_verify | false |\n")
         self.write("work-item.md")

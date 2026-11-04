@@ -1,0 +1,58 @@
+# Repo de juguete con autenticacion por organizacion, modulos y un cliente admin que saltea RLS.
+set -euo pipefail
+git init -q -b main
+git config user.email eval@example.com
+git config user.name eval
+mkdir -p lib app/facturas supabase/migrations doc/sdd/001-exportar-facturas
+cat > lib/auth.ts <<'TS'
+// Devuelve la organizacion del usuario de la sesion o lanza 401.
+export async function requireOrganizationId(): Promise<string> { return "org-de-la-sesion"; }
+// Lanza 403 si el miembro no tiene el modulo.
+export async function requireModule(modulo: "facturacion" | "ventas"): Promise<void> { void modulo; }
+TS
+cat > lib/db.ts <<'TS'
+// createClient: respeta RLS con el usuario de la sesion.
+export function createClient() { return { from: (t: string) => ({ t }) }; }
+// createAdminClient: usa la service role y SALTEA RLS. Solo para jobs internos.
+export function createAdminClient() { return { from: (t: string) => ({ t }) }; }
+TS
+cat > supabase/migrations/20260101000000_facturas.sql <<'SQL'
+create table facturas (id uuid primary key, organization_id uuid not null, cliente_email text, total numeric);
+alter table facturas enable row level security;
+create policy facturas_de_mi_org on facturas using (organization_id = (select organization_id from miembros where user_id = auth.uid()));
+SQL
+cat > app/facturas/actions.ts <<'TS'
+"use server";
+import { requireOrganizationId, requireModule } from "../../lib/auth";
+import { createClient } from "../../lib/db";
+export async function listarFacturas() {
+  await requireOrganizationId();
+  await requireModule("facturacion");
+  return createClient().from("facturas");
+}
+TS
+cat > doc/sdd/001-exportar-facturas/work-item.md <<'MD'
+# HU 001: exportar facturas
+- Pipeline: QUALITY
+- security_review: required
+- AC-1: WHEN un miembro con el modulo facturacion pide exportar, THE sistema SHALL devolver un CSV con las facturas de su organizacion.
+- AC-2: WHEN un miembro abre una factura por id, THE sistema SHALL mostrarla.
+## PREGUNTAS PARA EL HUMANO
+Ninguna
+MD
+cat > doc/sdd/001-exportar-facturas/sdd.md <<'MD'
+# SDD 001: exportar facturas
+## Diseno
+- D-1: Nueva ruta `app/api/facturas/export/route.ts` (GET). Llama a `requireOrganizationId()` y a `requireModule("facturacion")` antes de leer, y lee `facturas` con `createClient()`, asi que RLS (`supabase/migrations/20260101000000_facturas.sql`) acota a la organizacion de la sesion. Sin modulo: 403. Sin sesion: 401.
+- D-2: Nueva Server Action `verFactura(id)` en `app/facturas/actions.ts`. Llama a `requireOrganizationId()` y a `requireModule("facturacion")`, y lee con `createClient()` por `id`. Una factura de otra organizacion no la devuelve RLS: responde 404, igual que una que no existe, para no revelar si existe.
+- D-3: El CSV incluye id, fecha y total. No incluye `cliente_email`.
+## Tests
+- T-1: un miembro con el modulo exporta solo las facturas de su organizacion.
+- T-2: un miembro sin el modulo recibe 403 al llamar la ruta directo, sin pasar por la pantalla.
+- T-3: `verFactura` con el id de una factura de otra organizacion responde 404.
+## Contrato de implementacion
+- W1: `app/api/facturas/export/route.ts` (Crear), `app/facturas/actions.ts` (Modificar). AC-1, AC-2.
+MD
+git add -A && git commit -qm base
+hash=$(sha256sum doc/sdd/001-exportar-facturas/work-item.md | cut -d" " -f1)
+printf "{\"gate\":\"HU_APPROVED\",\"by\":\"human\",\"sha256\":\"%s\",\"ts\":1}\n" "$hash" > doc/sdd/001-exportar-facturas/.gates.jsonl

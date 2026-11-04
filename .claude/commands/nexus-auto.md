@@ -340,6 +340,10 @@ Fase 2 — F2 SDD
   Sub-agente: nexus-adversary, FASE: SPEC_VERIFY, contexto nuevo.
   Con falsas: el arquitecto corrige solo esas y se verifica de nuevo. El gate no pasa con falsas abiertas.
 
+  SECURITY (solo si el work-item dice security_review: required)
+  Sub-agente: nexus-security, FASE: SECURITY, contexto nuevo, sobre el SDD verificado.
+  Con hallazgos: el arquitecto corrige y se revisa de nuevo, acotado. Aceptar un hallazgo como riesgo siempre se escala a la persona.
+
   GATE — SPEC_APPROVED (clinical review §4.2)
   El orquestador lee sdd.md y ejecuta clinical review.
   PASS → continuar. FAIL → escalar al humano.

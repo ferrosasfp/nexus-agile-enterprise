@@ -24,6 +24,8 @@
 - El supervisor no trata como rodeo que un agente siga la instruccion del propio mensaje del hook.
 
 ### Agregado
+- Agente `nexus-security` y fase `SECURITY`: revisa la seguridad del diseno antes de `SPEC_APPROVED`, solo si el analista marca `security_review: required`. Matriz de autorizacion, hallazgos con camino de ataque, y el hook no deja pasar a F3 con hallazgos abiertos. Eval: 4 casos, 12/12. En un SDD con dos huecos por ausencia (webhook sin firma, exportacion sin chequeo de modulo), los dos agentes los ven, pero SPEC_VERIFY los deja como controles debiles y no frena el gate en 2 de 3 corridas; `nexus-security` los marca ALTO y frena en 3 de 3.
+- `security_cmd` en `project-context.md`: controles de seguridad sin modelo que QA corre en F4.
 - AUTO regla 11: un costo de mas del doble de la implementacion se escala con el costo y las opciones.
 - Supervisor: no decide por costo hundido; ante un "presentar a la persona" solo continua si cada punto ya lo decidio la persona, citando donde. En la segunda HU real, la persona confirmo que no habria frenado ninguno de sus 10 veredictos.
 - SPEC_VERIFY senala controles debiles del plan de tests (`debiles=`), con la forma de evadirlos.

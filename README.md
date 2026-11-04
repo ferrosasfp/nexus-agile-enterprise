@@ -139,7 +139,7 @@ Four structural additions that eliminate context overload AND prevent the orches
 
 ### Custom Sub-Agents (`.claude/agents/`)
 
-Seven specialized Claude Code agents — one per pipeline role — with the role, allowed tools, and forbidden-actions block baked into the agent file itself. The orchestrator literally **cannot** invoke them without inheriting the constraints.
+Eight specialized Claude Code agents — one per pipeline role — with the role, allowed tools, and forbidden-actions block baked into the agent file itself. The orchestrator literally **cannot** invoke them without inheriting the constraints.
 
 | Agent | Phases | Model | Tools | Output |
 |---|---|---|---|---|
@@ -149,6 +149,7 @@ Seven specialized Claude Code agents — one per pipeline role — with the role
 | `nexus-adversary` | SPEC_VERIFY, AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `sdd-verification.md`, `ar-report.md`, `cr-report.md`, `blq-verification.md` |
 | `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
 | `nexus-docs` | DONE | sonnet | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
+| `nexus-security` | SECURITY (HUs with `security_review: required`) | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `security-review.md` |
 | `nexus-supervisor` | AUTO, experimental | opus (effort high) | Read, Glob, Grep, Bash | verdict in its reply |
 
 `nexus-adversary` and `nexus-qa` have no Edit tool. They have Write for their own report and Bash to run things, so they could technically change code: the role rule forbids it, and Drift Detection catches it.
@@ -265,7 +266,9 @@ No `[NEEDS CLARIFICATION]` items allowed at the gate.
 
 **SPEC_VERIFY.** Before the gate, the adversary, in a fresh context, checks every verifiable claim of the SDD against the code (paths, signatures, configuration, cited lines) and marks each TRUE, FALSE or NOT VERIFIABLE. False claims go back to the architect. In the first real run, the architect's own Readiness Check passed with 4 false claims that an independent check found. Turn it off with `spec_verify: false`.
 
-Output: `sdd.md`, `sdd-verification.md`
+**SECURITY (risky HUs only).** When the analyst marks `security_review: required` (auth, roles, permissions, RLS, personal data, secrets, payments, external inputs), `nexus-security` reviews the *design* before the gate: an authorization matrix of who can do what, where each check is enforced, and what happens if someone calls an action directly. Every finding needs a concrete attack path. Code is still reviewed later by AR; this catches design holes while fixing them costs a line of the SDD instead of a fix-pack.
+
+Output: `sdd.md`, `sdd-verification.md`, `security-review.md` (risky HUs)
 
 Gate: `SPEC_APPROVED`
 

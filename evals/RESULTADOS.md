@@ -1,5 +1,16 @@
 # Resultados de evaluacion
 
+## Agente de seguridad (3 de noviembre de 2026)
+
+| Caso | Resultado |
+|------|-----------|
+| security-hueco-de-diseno (admin client que saltea RLS, exportacion sin modulo) | 3/3 |
+| security-hueco-sutil (webhook sin firma, exportacion sin modulo; toda afirmacion del SDD es cierta) | 3/3, `altos=2` en las 3 |
+| security-diseno-limpio (control) | 3/3, sin hallazgos inventados |
+| comparacion: SPEC_VERIFY sobre el SDD sutil | Ve los dos huecos en 3/3 como controles debiles; `falsas=0` (no frena) en 2/3 |
+
+El primer caso era demasiado facil (el comentario del codigo decia que el cliente saltea RLS, y SPEC_VERIFY lo atrapa como afirmacion). Las primeras versiones del caso sutil tenian afirmaciones falsas ajenas a seguridad (una columna y una pantalla que no existian) que SPEC_VERIFY encontro; se corrigieron antes de comparar.
+
 ## Foto del 3 de noviembre de 2026, version 2.0.0-rc.3
 
 Commit `0196661`, despues de las correcciones de la segunda HU real (AUTO con supervisor). Claude Code 2.1.316, orquestador en sonnet. **29 casos, 3 corridas por caso: 87 de 87 corridas perfectas.** Costo US$16,62 a precio de lista, 31 minutos con 3 corridas en paralelo.

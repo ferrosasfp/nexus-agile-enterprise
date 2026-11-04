@@ -37,7 +37,7 @@ check_count() {
 field() { sed -n "s/^$2: //p" "$A/nexus-$1.md" | head -1; }
 
 # --- Inventario y nombres que no pueden cambiar
-check_count "agentes" 7 "$(ls $A/nexus-*.md | wc -l)"
+check_count "agentes" 8 "$(ls $A/nexus-*.md | wc -l)"
 check_count "comandos" 11 "$(ls $C/nexus-*.md | wc -l)"
 for art in work-item.md sdd.md story-file.md ar-report.md cr-report.md validation.md report.md; do
   grep -rq -- "$art" $A $C || fail "artefacto sin mencionar: $art"
@@ -171,6 +171,9 @@ done
 for ag in analyst architect dev adversary qa docs supervisor; do grep -q 'No lo rodees' $A/nexus-$ag.md || fail "nexus-$ag sin regla de no rodear hooks"; done
 grep -q '^## PREGUNTAS PARA EL HUMANO' $A/nexus-analyst.md || fail "analista sin seccion de preguntas en el artefacto"
 for f in $C/nexus-*.md; do grep -q 'termina sin entregarte su reporte' "$f" || fail "$(basename "$f") sin regla de reporte perdido"; done
+grep -q 'camino de ataque' $A/nexus-security.md || fail "security sin la regla del camino de ataque"
+grep -q 'security_review' $A/nexus-analyst.md || fail "el analista no marca security_review"
+grep -q 'nexus-security' $C/nexus-p2-f2.md || fail "F2 no lanza la revision de seguridad"
 grep -q 'VEREDICTO: ESCALAR' $A/nexus-supervisor.md || fail "supervisor sin formato de veredicto"
 grep -q 'nunca resuelve solo' $C/nexus-auto.md || fail "AUTO sin clases de decision que escala"
 grep -q 'Política de commits' $C/nexus-p4-f3.md || fail "p4 sin politica de commits"

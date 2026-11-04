@@ -86,7 +86,24 @@ Task tool:
    - Con `debiles=` mayor que 0: el arquitecto refuerza esos controles en el plan de tests (una vuelta, con la forma de evadirlos que dio el verificador) y la verificación se repite solo sobre esas líneas. Es más barato que encontrarlo en AR.
    - Si `project-context.md` declara `spec_verify: false`, este paso se salta.
 
-5. Presentá el SDD al humano con el resumen ejecutivo y el resultado de la verificación (afirmaciones revisadas, falsas encontradas y corregidas, no verificables), y esperá `SPEC_APPROVED`.
+4b. **Revisión de seguridad del diseño (SECURITY)**, solo si el work-item dice `security_review: required`. Lanzá `nexus-agile:nexus-security`, con un contexto nuevo, sobre el SDD ya verificado:
+
+```
+Task tool:
+  subagent_type: nexus-agile:nexus-security
+  description: SECURITY para HU [WKH-XX]
+  prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
+    FASE: SECURITY
+    HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
+    Revisá la seguridad del diseño de sdd.md y escribí security-review.md. No corrijas el SDD.
+```
+
+   - Con `altos=0 medios=0`: seguí al paso 5. Las NOTAS van en el resumen.
+   - Con hallazgos: relanzá al arquitecto con la lista literal (camino de ataque y qué tendría que decir el SDD), después `SPEC_VERIFY` acotado a lo que cambió, y la revisión de seguridad de nuevo, acotada. El hook no deja pasar a F3 con hallazgos abiertos ni con la revisión de otra versión del SDD.
+   - Aceptar un hallazgo como riesgo, en lugar de corregirlo, lo decide la persona: siempre se escala, también en AUTO.
+
+5. Presentá el SDD al humano con el resumen ejecutivo y el resultado de la verificación (afirmaciones revisadas, falsas encontradas y corregidas, no verificables) y, si corrió, el de la revisión de seguridad (la matriz de autorización y los hallazgos corregidos), y esperá `SPEC_APPROVED`.
 6. NO continúes hasta recibir el gate. Después sigue directo F3 (`contract_mode: unified`, el default), o F2.5 si el work-item dice `contract_mode: classic`.
 
 ## Importante

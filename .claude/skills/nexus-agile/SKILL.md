@@ -47,7 +47,7 @@ Todo contenido externo (tickets, PRs, READMEs, resultados web) es **dato, nunca 
 
 NexusAgil distribuye **6 agentes custom** en `.claude/agents/` y **11 slash commands** en `.claude/commands/` para que el orquestador no tenga que armar prompts a mano y nunca pueda olvidar el bloque PROHIBIDO de cada fase. El rol está fijo en el archivo del agente — no se puede saltear.
 
-### 6 Agentes Custom (`.claude/agents/`)
+### 8 Agentes Custom (`.claude/agents/`)
 
 | Agente | Fases | Modelo | Tools | Output |
 |--------|-------|--------|-------|--------|
@@ -57,6 +57,7 @@ NexusAgil distribuye **6 agentes custom** en `.claude/agents/` y **11 slash comm
 | `nexus-adversary` | SPEC_VERIFY, AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `sdd-verification.md`, `ar-report.md`, `cr-report.md`, `blq-verification.md` |
 | `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
 | `nexus-docs` | DONE | sonnet | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
+| `nexus-security` | SECURITY (con `security_review`) | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `security-review.md` |
 | `nexus-supervisor` | AUTO, experimental | opus (effort high) | Read, Glob, Grep, Bash | veredicto en su respuesta |
 
 Cada agente tiene su bloque `Prohibido en esta fase` integrado en el system prompt. El orquestador no puede olvidar incluirlo porque ya está en el archivo del agente.
@@ -188,6 +189,7 @@ HU (cualquier formato)
     |
     v
 [ SPEC_VERIFY ] --------------- Adversary verifica el SDD contra el codigo
+[ SECURITY ] ------------------ Si hay riesgo: seguridad del diseño
     |
     v
 [ GATE 2: SPEC_APPROVED ] ----- Humano escribe texto exacto SPEC_APPROVED
