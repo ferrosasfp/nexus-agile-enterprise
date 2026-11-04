@@ -103,6 +103,11 @@
 | **spec_verify** | true / false (default true). En QUALITY, un agente aparte verifica el SDD contra el codigo antes de `SPEC_APPROVED` |
 | **mutation_cmd** | [opcional: mutacion limitada al diff, para HUs de alto riesgo] |
 | **network_policy** | [opcional: dominios que los agentes pueden usar. Ver `references/security.md`] |
+| **tracker** | `jira` / `linear` / `github` / `archivo` / `propio`. Autoridad sobre quien tiene cada HU (`references/tracker.md`) |
+| **tracker_project** | clave o URL del proyecto en el tracker |
+| **tracker_user** | como aparece en el tracker la persona que usa NexusAgil |
+| **tracker_write** | `true` / `false` (default `false`). Con `true`, NexusAgil comenta en el ticket al tomarlo y al cerrarlo |
+| **memory_project** | nombre del proyecto en Engram; uno por cliente, nunca compartido entre clientes |
 | **security_cmd** | [opcional: controles de seguridad sin modelo, como busqueda de secretos, auditoria de dependencias o reglas estaticas (ej: `gitleaks detect --no-git && pnpm audit --prod && semgrep --config auto --error`). QA lo corre una vez en F4, junto al gate] |
 | **forbidden_commands** | [opcional: expresion regular entre comillas invertidas, que el hook bloquea para todos, incluida la sesion principal; ej: `supabase db push\|prisma migrate deploy\|vercel .*--prod`] |
 

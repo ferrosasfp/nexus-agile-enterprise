@@ -37,7 +37,7 @@ class HookCase(unittest.TestCase):
                               capture_output=True, text=True, env=self.env)
 
     def spawn(self, phase, agent="nexus-architect"):
-        prompt = f"RUTAS: CODE_ROOT={self.repo} · SKILL_DIR=[usa la que exista]\nFASE: {phase}\nHU_DIR: {self.hu}\nhaz"
+        prompt = f"RUTAS: CODE_ROOT={self.repo} · SKILL_DIR=[usa la que exista]\nFASE: {phase}\nHU_DIR: {self.hu}\nPROPIEDAD: propia (archivo, de prueba)\nhaz"
         return self.run_hook("gate", tool_name="Agent", tool_input={"subagent_type": agent, "prompt": prompt})
 
     def type_gate(self, gate):
@@ -76,7 +76,7 @@ class Fases(HookCase):
         (root / ".claude/skills/nexus-agile").mkdir(parents=True)
         self.env["CLAUDE_PLUGIN_ROOT"] = str(root)
         launch = lambda skill: self.run_hook("gate", tool_name="Agent", tool_input={"subagent_type": "nexus-agile:nexus-analyst",
-                                             "prompt": f"RUTAS: CODE_ROOT={self.repo}{skill}\nFASE: F1\nHU_DIR: {self.hu}"})
+                                             "prompt": f"RUTAS: CODE_ROOT={self.repo}{skill}\nFASE: F1\nHU_DIR: {self.hu}\nPROPIEDAD: propia (archivo)"})
         for skill in (f" · SKILL_DIR={root}/.claude/skills/nexus-agile", " · SKILL_DIR=${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile"):
             with self.subTest(skill=skill):
                 self.assertAllowed(launch(skill))
@@ -85,6 +85,22 @@ class Fases(HookCase):
                               ("", "falta SKILL_DIR"), (f" · SKILL_DIR={root}/../otra/nexus-agile", "fuera del plugin")):
             with self.subTest(skill=skill):
                 self.assertBlocked(launch(skill), reason)
+
+    def test_gate_de_propiedad(self):
+        # Segunda HU real: se implemento entera una HU asignada a otro integrante.
+        launch = lambda line: self.run_hook("gate", tool_name="Agent", tool_input={"subagent_type": "nexus-analyst",
+                                            "prompt": f"RUTAS: CODE_ROOT={self.repo}\nFASE: F0F1\nHU_DIR: {self.hu}\n{line}"})
+        self.assertBlocked(launch(""), "PROPIEDAD")
+        self.assertBlocked(launch("PROPIEDAD: [resultado]"), "PROPIEDAD")
+        self.assertBlocked(launch("PROPIEDAD: ajena (jira X-1, asignada a otra persona)"), "Escala")
+        self.assertBlocked(launch("PROPIEDAD: no se"), "no es propia")
+        for line in ("PROPIEDAD: propia (jira X-1, asignada a mi)", "PROPIEDAD: libre (github #4, sin asignar)",
+                     "PROPIEDAD: autorizada por la persona (la tomo aunque es de otro)"):
+            with self.subTest(line=line):
+                self.assertAllowed(launch(line))
+        # Con el work-item ya escrito (relanzar al analista con respuestas), no se vuelve a pedir
+        self.write("work-item.md")
+        self.assertAllowed(launch(""))
 
     def test_copia_sin_plugin_no_exige_prefijo(self):
         self.assertAllowed(self.spawn("F1", "nexus-analyst"))

@@ -18,6 +18,7 @@ Lanza el sub-agente `nexus-analyst` para ejecutar F0 (Context Bootstrap) + F1 (W
 
 1. Verificá que `project-context.md` exista en NEXUS_ROOT. Si no existe, el sub-agente lo genera primero.
 2. Leé `$NEXUS_ROOT/doc/sdd/_INDEX.md` para conocer el siguiente NNN y creá `$NEXUS_ROOT/doc/sdd/NNN-titulo/`: los hooks exigen ese `HU_DIR` en el prompt.
+2b. **Gate de propiedad** (`$SKILL_DIR/references/tracker.md`): consultá en el tracker del proyecto quién tiene la HU y en qué estado está, y `mem_search "trabajo/[HU]"` si hay memoria. Si es de otra persona o sesión (`ajena`), **pará y escalá**: tomarla lo decide la persona. Si no, pasá el resultado en la línea `PROPIEDAD:` del prompt y guardá el reclamo `trabajo/[HU]`. El hook no deja lanzar el primer analista sin esa línea.
 3. Lanzá el sub-agente con el Task tool:
 
 ```
@@ -28,6 +29,7 @@ Task tool:
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: F0F1
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
+    PROPIEDAD: [propia | libre | autorizada] ([tracker] [clave], [responsable], [estado])
     Eres el agente nexus-analyst de NexusAgil ejecutando F0 + F1 para la HU [WKH-XX].
 
     INPUT:

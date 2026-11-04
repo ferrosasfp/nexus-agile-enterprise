@@ -76,6 +76,7 @@ Task tool:
     RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
     FASE: F1
     HU_DIR: [ruta absoluta de $NEXUS_ROOT/doc/sdd/NNN-titulo]
+    PROPIEDAD: [propia | libre | autorizada] ([tracker] [clave], [responsable], [estado]); ver $SKILL_DIR/references/tracker.md. Si es ajena, no lances: escalá
     Eres nexus-analyst en MODO FAST para la HU [WKH-XX].
 
     DIFERENCIAS vs modo normal:

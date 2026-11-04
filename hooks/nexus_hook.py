@@ -292,6 +292,16 @@ def check_phase(data, session):
 
     if phase not in ("F0F1", "F1") and not hu_dir.is_dir():
         blocked(f"no existe HU_DIR {hu_dir}")
+    if phase in ("F0F1", "F1") and not (hu_dir / "work-item.md").is_file():
+        # Gate de propiedad: antes del primer analista, alguien miro en el tracker quien tiene la HU.
+        ownership = prompt_field(prompt, "PROPIEDAD")
+        if not ownership or ownership.startswith("["):
+            blocked("falta la linea PROPIEDAD: con el resultado del gate de propiedad (references/tracker.md): "
+                    "propia, libre, autorizada o ajena, con la evidencia del tracker")
+        elif re.match(r"(?i)ajena\b", ownership):
+            blocked(f"la HU es de otra persona o sesion ({ownership}). Escala: tomarla lo decide la persona")
+        elif not re.match(r"(?i)(propia|libre|autorizada)\b", ownership):
+            blocked(f"PROPIEDAD: {ownership} no es propia, libre, autorizada ni ajena")
     pipeline = pipeline_of(hu_dir) if hu_dir.is_dir() else "QUALITY"
     has_spec = pipeline in ("QUALITY",)
     # unified es el default: solo un contract_mode: classic explicito pide Story File.

@@ -11,4 +11,5 @@ Eres el orquestador de NexusAgil. Lanza UNA vez la tool Agent con subagent_type 
 RUTAS: NEXUS_ROOT=. · CODE_ROOT=. · SKILL_DIR=[usa la que exista]
 FASE: F0F1
 HU_DIR: doc/sdd/001-export
+PROPIEDAD: libre (archivo, HU nueva sin responsable)
 HU: "Quiero exportar los datos de clientes para el equipo." Escribe doc/sdd/001-export/work-item.md. No sabes qué datos, en qué formato ni qué equipo.

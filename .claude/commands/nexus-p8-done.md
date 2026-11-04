@@ -77,6 +77,8 @@ Task tool:
 
 ## Después de DONE
 
+- **Cerrar el reclamo**: actualizá `trabajo/[HU]` en memoria con el estado final, la rama y el commit aprobado. Con `tracker_write: true`, comentá en el ticket el PR o la rama, el commit y el costo de la HU (`$SKILL_DIR/references/tracker.md`). Mover el ticket de estado lo hace la persona
+
 - Presentá el resumen ejecutivo al humano
 - Si hay spinoffs (tickets nuevos como WKH-33): mencionalos
 - El humano decide cuándo mergear el PR y cerrar el ticket en Jira

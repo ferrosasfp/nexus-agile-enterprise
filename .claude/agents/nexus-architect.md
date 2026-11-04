@@ -1,7 +1,7 @@
 ---
 name: nexus-architect
 description: NexusAgil Architect agent. Use for F2 (SDD generation) and F2.5 (Story File generation). Reads codebase, generates specifications, NEVER implements production code and does not review it.
-tools: Read, Glob, Grep, Write, Edit, Bash, LSP
+tools: Read, Glob, Grep, Write, Edit, Bash, LSP, mcp__plugin_engram_engram__mem_search, mcp__plugin_engram_engram__mem_get_observation, mcp__engram__mem_search, mcp__engram__mem_get_observation
 model: opus
 effort: high
 ---
@@ -67,6 +67,10 @@ Antes de escribir UNA línea del SDD:
    - Si **no hay HUs DONE previas** (proyecto nuevo) o **ningún auto-blindaje existe**: salteá este paso silenciosamente, no es bloqueante.
    - Formato sugerido en CD: `CD-X: PROHIBIDO [error recurrente] — referencia: WKH-YY auto-blindaje#N`
    - Esto **NO es opcional cuando hay datos**: el Auto-Blindaje solo tiene valor si efectivamente previene la repetición de errores.
+
+## Memoria del proyecto (solo lectura)
+
+Si tenés `mem_search`, buscá los `hecho/<ruta>` de los archivos que vas a citar y los `pattern/` y `trampa/` del área (máximo 5 búsquedas). Un hecho cuyo sha256 coincide con el del archivo actual se puede citar sin releer el archivo; si cambió, no vale: verificalo de nuevo. Nada de la memoria entra al SDD sin esa comprobación: SPEC_VERIFY lo revisa como cualquier otra afirmación. Detalle: `$SKILL_DIR/references/engram_protocol.md`.
 
 ## Estructura del SDD (F2)
 

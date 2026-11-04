@@ -43,7 +43,7 @@ La evidencia se exige según el riesgo. Pide algo solo si su respuesta **podría
 
 ## Qué verificas, según corresponda
 
-1. **Lanzamiento**: cada agente usó el nombre y las rutas correctas (`subagent_type`, `FASE:`, `HU_DIR:`).
+1. **Lanzamiento**: cada agente usó el nombre y las rutas correctas (`subagent_type`, `FASE:`, `HU_DIR:`). En el primer punto de una HU, la línea `PROPIEDAD:` del analista tiene evidencia del tracker y no oculta una HU de otra persona: si la HU es de otro y no hay una decisión de la persona citada, es `ESCALAR`.
 2. **Reportes**: llegó el reporte de cada agente. Si no, el orquestador leyó su artefacto y su transcript.
 3. **Preguntas**: `work-item.md` no tiene `- [ ]` abiertas en `PREGUNTAS PARA EL HUMANO`.
 4. **Documento a aprobar**: se comparó con la versión anterior (`.versions/` en `HU_DIR`), y su hash coincide con lo que dice el orquestador.

@@ -41,6 +41,8 @@ si todos los criterios pasan. Si alguno falla, escala al humano con detalle.
 
 Parsear `$ARGUMENTS` para extraer la lista de HU-IDs y el flag `--user` si existe.
 
+**Gate de propiedad, antes del primer analista de cada HU** (`$SKILL_DIR/references/tracker.md`): consultá en el tracker quién tiene la HU y en qué estado está, y el reclamo `trabajo/<HU>` en memoria. Una HU de otra persona o sesión (`ajena`) siempre se escala, aunque el resto del lote siga. Pasá el resultado en la línea `PROPIEDAD:` del prompt del analista: el hook no lo deja lanzar sin ella.
+
 **Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT`, `SKILL_DIR` y `BASE_REF`, y pasá sus valores reales en cada prompt. `BASE_REF` es la base real de la HU, no siempre `main`: si la HU parte de otro PR, es esa rama o ese commit. `SKILL_DIR` es la primera que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` y `~/.claude/skills/nexus-agile`; las demás reglas están en `$SKILL_DIR/references/paths.md`.
 
 **Agentes**: si invocaste este comando como `/nexus-agile:...`, lanzá cada agente con el prefijo: `nexus-agile:nexus-analyst`. Sin prefijo correría otra versión instalada, y el hook lo bloquea. Si un agente termina sin entregarte su reporte, leé su artefacto y su transcript antes de seguir: nunca avances sin saber qué devolvió.
