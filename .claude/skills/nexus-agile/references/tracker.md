@@ -8,7 +8,7 @@
 | Campo | Valor |
 |-------|-------|
 | **tracker** | `jira` / `linear` / `github` / `archivo` / `propio` |
-| **tracker_project** | clave o URL del proyecto (ej: `SCRUM`, `owner/repo`) |
+| **tracker_project** | clave o URL del proyecto (ej: `PROJ`, `owner/repo`) |
 | **tracker_user** | como aparece la persona que usa NexusAgil en el tracker (nombre o id) |
 | **tracker_write** | `true` / `false` (default `false`). Con `true`, NexusAgil comenta en el ticket al tomarlo y al cerrarlo |
 
@@ -43,7 +43,7 @@ Sin el conector que el tracker necesita, la operacion no se adivina: el orquesta
    - **libre**: no tiene responsable y nadie la reclamo en memoria en los ultimos 3 dias.
    - **ajena**: la tiene otra persona, o la reclamo otra sesion hace menos de 3 dias, o esta cerrada o en revision.
 3. Con **ajena**, para y escala con lo que encontro. Si la persona decide tomarla igual, el resultado pasa a **autorizada**, con su decision citada. Tambien en AUTO: es una prioridad de negocio, no la decide el orquestador ni el supervisor.
-4. Lanza al analista con la linea `PROPIEDAD:` en el prompt, con el resultado y la evidencia: `PROPIEDAD: propia (jira SCRUM-541, asignada a Fernando Rosas, Tareas por hacer)`. El hook no deja lanzar el primer F0/F1 de una HU sin esa linea, ni con `ajena`.
+4. Lanza al analista con la linea `PROPIEDAD:` en el prompt, con el resultado y la evidencia: `PROPIEDAD: propia (jira PROJ-12, asignada a Ana Pérez, Por hacer)`. El hook no deja lanzar el primer F0/F1 de una HU sin esa linea, ni con `ajena`.
 5. Guarda el reclamo en memoria (`trabajo/<HU>`: sesion, rama, worktree, fase, fecha) y, con `tracker_write: true`, comenta en el ticket.
 
 El registro en memoria es un candado con vencimiento, no una segunda autoridad: si contradice al tracker, manda el tracker. Un reclamo sin cambios en mas de 3 dias se trata como abandonado: se pregunta, no se pisa.
