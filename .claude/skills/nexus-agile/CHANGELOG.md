@@ -1,6 +1,6 @@
 # Changelog — NexusAgil
 
-## 2.0.0-rc.2 — Correcciones de la primera corrida real (sin publicar)
+## 2.0.0-rc.3 — Correcciones de las dos primeras corridas reales (sin publicar)
 
 ### Corregido
 - Segunda HU real (AUTO con supervisor): 11 falsos bloqueos del hook a lecturas (`merge-base`, patrones de grep entre comillas, variables encadenadas, `..` dentro de un texto). Las variantes que escriben siguen bloqueadas.

@@ -1,7 +1,7 @@
 {
   "name": "nexus-agile",
   "displayName": "NexusAgil",
-  "version": "2.0.0-rc.2",
+  "version": "2.0.0-rc.3",
   "description": "Metodologia de desarrollo con agentes: pipeline por fases, gates humanos, revision adversaria y evidencia reproducible",
   "author": { "name": "Fernando Rosas", "url": "https://github.com/ferrosasfp" },
   "repository": "https://github.com/ferrosasfp/nexus-agile-enterprise",
