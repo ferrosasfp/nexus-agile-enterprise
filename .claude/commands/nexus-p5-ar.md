@@ -162,8 +162,8 @@ Los BLQ ya confirmados no se vuelven a verificar en las siguientes iteraciones.
 |----|----|------------------------|
 | APROBADO / con MENORs | APROBADO / con MENORs | Lanzar `/nexus-p7-f4` (MENORs como deuda) |
 | RECHAZADO (BLQ-AR) | * | Verificar los BLQ y re-lanzar `/nexus-p4-f3` con los de `blq-verification.md` que sigan en pie (**AR + CR combinados**). Después de los fixes, evaluar si hace falta re-correr `/nexus-p6-cr` (ver tradeoff abajo). |
-| * | RECHAZADO (BLQ-CR) | Verificar los BLQ y re-lanzar `/nexus-p4-f3` con los que sigan en pie |
-| RECHAZADO | RECHAZADO | Verificar los BLQ combinados y re-lanzar `/nexus-p4-f3` con los que sigan en pie |
+| * | RECHAZADO (BLQ-CR) | Verificar los BLQ y re-lanzar `/nexus-p4-f3` con los que sigan en pie. Después, **re-CR acotado obligatorio** al diff del fix-pack: el hook no deja lanzar F4 mientras el último `cr-report` tenga BLQ abiertos |
+| RECHAZADO | RECHAZADO | Verificar los BLQ combinados y re-lanzar `/nexus-p4-f3` con los que sigan en pie. Después, re-AR y **re-CR acotados**, los dos: cada reporte cierra sus propios BLQ |
 
 ## Tradeoff vs ejecución secuencial (leelo una vez)
 
@@ -178,7 +178,7 @@ Los BLQ ya confirmados no se vuelven a verificar en las siguientes iteraciones.
 - AR encuentra BLOQUEANTEs estructurales que obligan a refactor grande → el código final difiere significativamente del que vio CR.
 - **Acción**: después del re-F3, re-correr `/nexus-p6-cr` (legacy/standalone) ANTES de avanzar a `/nexus-p7-f4`.
 
-El orquestador decide caso a caso. Por defecto, si los fixes de AR son <20 líneas o solo agregan validaciones, no hace falta re-CR.
+El orquestador decide caso a caso, **solo cuando el CR aprobó**. Por defecto, si los fixes de AR son <20 líneas o solo agregan validaciones, no hace falta re-CR. Si el CR rechazó, el re-CR acotado no es opcional: un hallazgo se cierra en el reporte que lo abrió. En la segunda corrida real, saltearlo frenó F4 en el hook y obligó a un re-CR igual.
 
 ## Bonus — paralelización humana mientras AR+CR corren
 
