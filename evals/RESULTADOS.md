@@ -1,5 +1,11 @@
 # Resultados de evaluacion
 
+## Foto del 3 de noviembre de 2026, version 2.0.0-rc.3
+
+Commit `0196661`, despues de las correcciones de la segunda HU real (AUTO con supervisor). Claude Code 2.1.316, orquestador en sonnet. **29 casos, 3 corridas por caso: 87 de 87 corridas perfectas.** Costo US$16,62 a precio de lista, 31 minutos con 3 corridas en paralelo.
+
+Los cambios de esta version (hook sin los 11 falsos bloqueos de lectura, re-CR obligatorio, controles debiles en SPEC_VERIFY, regla de costo en AUTO, agente de docs en sonnet) no rompieron ningun caso. El ajuste posterior de las dos reglas del supervisor (`f17e7a0`) solo cambia texto del agente y de AUTO; lo cubren las 107 pruebas sin modelo y el check de consistencia, no un eval nuevo.
+
 ## Foto del 2 de noviembre de 2026, version 2.0.0-rc.2
 
 Commit `81c15f4`. Claude Code 2.1.316, orquestador en sonnet. **29 casos, 3 corridas por caso: 87 de 87 corridas perfectas.** Costo US$15,96 a precio de lista, 25 minutos con 3 corridas en paralelo.
