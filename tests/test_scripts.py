@@ -70,6 +70,29 @@ class CheckContract(unittest.TestCase):
         self.assertIn("Contrato de implementacion", out.stdout)
 
 
+class CheckContractMonorepo(unittest.TestCase):
+    """Falsos de la segunda HU real: titulo numerado del contrato en el SDD y rutas relativas a apps/web/."""
+
+    def test_sdd_numerado_y_rutas_relativas_a_un_subdirectorio(self):
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp)
+        (tmp / "apps/web/components").mkdir(parents=True)
+        (tmp / "apps/web/components/a.tsx").write_text("x")
+        hu = tmp / "hu"
+        hu.mkdir()
+        (hu / "work-item.md").write_text("- AC-1: uno\n- AC-2: (eliminado; la persona, en F1). Sale del alcance.\n")
+        (hu / "sdd.md").write_text("# SDD\n## 13. Contrato de implementacion\nRutas relativas a `apps/web/`.\n- W1 cubre AC-1\n"
+                                   "### Files to Modify/Create\n| Archivo | Accion |\n|---|---|\n| `components/a.tsx` | Modificar |\n"
+                                   "### Tests\n- AC-1: t\n")
+        out = run("check_contract.py", hu, "--code-root", tmp)
+        self.assertEqual(out.returncode, 0, out.stdout)
+        self.assertIn("1 rutas revisadas", out.stdout)
+        (hu / "sdd.md").write_text((hu / "sdd.md").read_text().replace("components/a.tsx", "components/zzz.tsx"))
+        out = run("check_contract.py", hu, "--code-root", tmp)
+        self.assertEqual(out.returncode, 1)
+        self.assertIn("zzz.tsx, que no existe", out.stdout)
+
+
 class CheckSpecIds(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
