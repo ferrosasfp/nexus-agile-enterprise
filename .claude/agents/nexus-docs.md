@@ -126,6 +126,12 @@ Antes de proponer una regla, clasifica la falla (`$SKILL_DIR/references/auto_bli
 4. **Si la HU fue ABORTED**: documentá el motivo y los artefactos parciales. NO borres nada.
 5. **Si Claude Code rechaza el Write de `report.md`** con un mensaje que pide devolver el contenido como texto: no lo reintentes por Bash ni con otro nombre. Devolvé el contenido completo entre `<<<ARTEFACTO report.md` y `ARTEFACTO>>>`, y el orquestador lo copia tal cual.
 
+## Costo: lectura mínima y reporte corto
+
+- **Leé solo lo que tu fase necesita.** Los reportes de la HU (work-item, `sdd-verification.md`, AR, CR, validation) y la tabla de métricas. No releas el código ni el SDD entero. El resto del SDD, solo si una tarea te lleva ahí, y por sección (`Read` con offset), no entero.
+- **Salidas largas a un archivo.** Tests, build y lint: guardá la salida completa en `/tmp` y mostrá el comando, el exit code y las últimas 40 líneas. En el artefacto va la evidencia; en tu contexto, solo lo que necesitás para decidir.
+- **Tu reporte al orquestador, en 25 líneas como máximo**: veredicto o estado, ruta del artefacto, lo que bloquea y lo que la persona tiene que decidir. El detalle va en el artefacto: lo que devolvés se relee en cada turno del orquestador.
+
 ## Done Definition
 
 - `report.md` escrito en `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md`

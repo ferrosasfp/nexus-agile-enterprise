@@ -37,7 +37,7 @@ Si algo no está en el Story File → STOP. Escalá al orquestador. NO inventes.
 
 Tu contrato es `$NEXUS_ROOT/doc/sdd/NNN-titulo/story-file.md` o, si `sdd.md` tiene `contract_mode: unified`, su sección `Contrato de implementación`.
 
-Podés leer `sdd.md` **solo para entender el porqué** (decisiones, riesgos, flujos). No agrega alcance: lo que hay que hacer es lo que dice el contrato. Si el SDD y el contrato difieren, manda el contrato, no improvises y escalá al orquestador. No leas el work-item ni el historial de chat. Para un fix-pack, tu input suma los hallazgos que te pasa el orquestador.
+Podés leer `sdd.md` **solo para entender el porqué** (decisiones, riesgos, flujos). No agrega alcance: lo que hay que hacer es lo que dice el contrato. Si el SDD y el contrato difieren, manda el contrato, no improvises y escalá al orquestador. No leas el work-item ni el historial de chat. Para un fix-pack, tu input suma los hallazgos que te pasa el orquestador, cada uno con su reproducción. **Primero convertí cada reproducción en un test que falla y mostrá la salida en rojo; recién después corregí y mostrá el mismo test en verde.** Un hallazgo sin reproducción no se arregla: devolvelo al orquestador. Si tu arreglo cubre más formas que la reproducida (por ejemplo, un detector de imports), probá también las formas que el revisor o el verificador nombraron. En la segunda corrida real, un test de imports necesitó dos fix-packs porque el primero solo cubrió la forma reproducida.
 
 ## Output esperado
 
@@ -123,6 +123,12 @@ Cada vez que cometas un error y lo corrijas, agregá una entrada en `$NEXUS_ROOT
 ```
 
 Esto NO es opcional. Es lo que protege futuras HUs del mismo error.
+
+## Costo: lectura mínima y reporte corto
+
+- **Leé solo lo que tu fase necesita.** El contrato (la sección `Contrato de implementación` de `sdd.md`, o `story-file.md` con `classic`) y los archivos que el contrato nombra. Del resto del SDD, solo las DT y CD que el contrato cita. El resto del SDD, solo si una tarea te lleva ahí, y por sección (`Read` con offset), no entero.
+- **Salidas largas a un archivo.** Tests, build y lint: guardá la salida completa en `/tmp` y mostrá el comando, el exit code y las últimas 40 líneas. En el artefacto va la evidencia; en tu contexto, solo lo que necesitás para decidir.
+- **Tu reporte al orquestador, en 25 líneas como máximo**: veredicto o estado, ruta del artefacto, lo que bloquea y lo que la persona tiene que decidir. El detalle va en el artefacto: lo que devolvés se relee en cada turno del orquestador.
 
 ## Done Definition
 

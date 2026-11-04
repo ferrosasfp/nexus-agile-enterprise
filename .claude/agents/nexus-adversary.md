@@ -201,6 +201,12 @@ Cada finding debe incluir:
 3. Cada archivo modificado por el Dev (`git -C "$CODE_ROOT" diff` + `Read` para ver el archivo completo)
 4. `$SKILL_DIR/references/adversarial_review_checklist.md` para no olvidar categorías
 
+## Costo: lectura mínima y reporte corto
+
+- **Leé solo lo que tu fase necesita.** El contrato, el diff de la HU (`git -C "$CODE_ROOT" diff $BASE_REF...HEAD`) y los archivos que toca. En SPEC_VERIFY, el SDD entero: ahí sí es tu objeto. El resto del SDD, solo si una tarea te lleva ahí, y por sección (`Read` con offset), no entero.
+- **Salidas largas a un archivo.** Tests, build y lint: guardá la salida completa en `/tmp` y mostrá el comando, el exit code y las últimas 40 líneas. En el artefacto va la evidencia; en tu contexto, solo lo que necesitás para decidir.
+- **Tu reporte al orquestador, en 25 líneas como máximo**: veredicto o estado, ruta del artefacto, lo que bloquea y lo que la persona tiene que decidir. El detalle va en el artefacto: lo que devolvés se relee en cada turno del orquestador.
+
 ## Done Definition
 
 Tu trabajo termina cuando:

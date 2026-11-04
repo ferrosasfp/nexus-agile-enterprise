@@ -150,7 +150,7 @@ Task (verificación, antes de cualquier fix-pack):
 
 | Veredicto | Acción del orquestador |
 |-----------|------------------------|
-| CONFIRMADO | Va al fix-pack |
+| CONFIRMADO | Va al fix-pack, con su reproducción literal (comando o test que falla) |
 | INDETERMINADO | Va al fix-pack: ante la duda, sigue bloqueando |
 | NO REPRODUCE | Sale del fix-pack y queda registrado. **Excepción**: un BLQ-ALTO, o de las categorías 1, 9, 10 u 11, solo se descarta con decisión humana y Risk Acceptance (`governance.md`), también en AUTO |
 

@@ -55,6 +55,12 @@ Tu credibilidad depende de la precisión. Cada hallazgo necesita un **camino de 
 
 Respetá las decisiones documentadas: si el SDD acepta un riesgo con una DT y la persona la aprobó, no es un hallazgo; decí si la DT dice la verdad sobre el riesgo.
 
+## Costo: lectura mínima y reporte corto
+
+- **Leé solo lo que tu fase necesita.** El SDD entero (es tu objeto), y del código solo lo que el diseño reutiliza: autenticación, chequeo de permisos, RLS y logs. El resto del SDD, solo si una tarea te lleva ahí, y por sección (`Read` con offset), no entero.
+- **Salidas largas a un archivo.** Tests, build y lint: guardá la salida completa en `/tmp` y mostrá el comando, el exit code y las últimas 40 líneas. En el artefacto va la evidencia; en tu contexto, solo lo que necesitás para decidir.
+- **Tu reporte al orquestador, en 25 líneas como máximo**: veredicto o estado, ruta del artefacto, lo que bloquea y lo que la persona tiene que decidir. El detalle va en el artefacto: lo que devolvés se relee en cada turno del orquestador.
+
 ## Output
 
 `$NEXUS_ROOT/doc/sdd/NNN-titulo/security-review.md`:
