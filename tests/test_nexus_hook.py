@@ -739,5 +739,46 @@ class Versiones(HookCase):
         self.assertEqual(len(list((self.hu / ".versions").glob("work-item-*.md"))), 2)
 
 
+class ProyectoNuevo(HookCase):
+    """Fricciones de la primera HU de un proyecto nuevo."""
+
+    def bash_as(self, agent, command):
+        return self.run_hook("gate", agent_type=agent, tool_name="Bash", cwd="/home/x/repo", tool_input={"command": command})
+
+    def test_sonda_de_python_de_solo_lectura(self):
+        for agent in ("nexus-architect", "nexus-security", "nexus-adversary"):
+            with self.subTest(agent=agent):
+                self.assertAllowed(self.bash_as(agent, 'python3 -P -c "import sys; print(sys.path)" >/dev/null 2>&1; echo $?'))
+        self.assertBlocked(self.bash_as("nexus-architect", 'python3 -c "open(\'/home/x/repo/a\',\'w\').write(\'x\')"'))
+
+    def test_gates_de_prueba_en_tmp(self):
+        self.assertAllowed(self.bash_as("nexus-qa", "printf '{}' > /tmp/fx/doc/sdd/001/.gates.jsonl"))
+        self.assertAllowed(self.run_hook("gate", agent_type="nexus-agile:nexus-adversary", tool_name="Write",
+                                         tool_input={"file_path": "/tmp/fx/doc/sdd/001/.gates.jsonl"}))
+        self.assertBlocked(self.run_hook("gate", agent_type="nexus-agile:nexus-adversary", tool_name="Write",
+                                         tool_input={"file_path": str(self.hu / ".gates.jsonl")}), "gates")
+
+    def test_dev_no_escribe_artefactos_por_bash_ni_con_commit(self):
+        self.assertAllowed(self.spawn("F1", "nexus-analyst"))
+        cmd = f"cat > {self.hu}/auto-blindaje.md <<'EOF'\nx\nEOF\ngit add -A && git commit -qm w2"
+        self.assertBlocked(self.run_hook("gate", agent_type="nexus-agile:nexus-dev", tool_name="Bash", tool_input={"command": cmd}), "Write o Edit")
+        rel = "cd " + str(self.repo) + " && echo x >> doc/sdd/001-demo/auto-blindaje.md"
+        self.assertBlocked(self.run_hook("gate", agent_type="nexus-agile:nexus-dev", tool_name="Bash", tool_input={"command": rel}), "Write o Edit")
+        self.assertAllowed(self.run_hook("gate", agent_type="nexus-agile:nexus-dev", tool_name="Bash",
+                                         tool_input={"command": "npm test > /tmp/s/gate.log 2>&1"}))
+
+    def test_gate_dentro_de_un_mensaje_avisa(self):
+        self.write("work-item.md")
+        out = self.run_hook("prompt", prompt="agregalo al Scope OUT y HU_APPROVED")
+        self.assertIn("NO se registro", out.stdout)
+        self.assertFalse((self.hu / ".gates.jsonl").exists())
+
+    def test_caracteres_invisibles_en_artefactos(self):
+        self.spawn("F1", "nexus-analyst")
+        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n## MEMORIA CONSULTADA\nNinguna\nAC-1: el total \u202esin descuento\n")
+        out = self.run_hook("stop", agent_type="nexus-agile:nexus-analyst")
+        self.assertIn("U+202E", out.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
