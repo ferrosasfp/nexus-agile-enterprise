@@ -1,6 +1,14 @@
 # Changelog — NexusAgil
 
-## 2.0.0-rc.5 — Primera HU de un proyecto nuevo (sin publicar)
+## Sin publicar
+
+### Cambiado
+- FAST y FAST+AR: el procedimiento para cuando Claude Code rechaza el Write de `report.md`, y `APROBADO con observaciones` en QA, que antes no tenian camino. El push, el PR y el seguimiento del CI quedan explicitos como tarea del orquestador.
+- El Dev verifica en el registro toda version que fija; sin consulta, escribe NO VERIFICADO. En la HU del CI fijo `@v6` de memoria con `@v7` vigente.
+- `project-context.md`: `.nexus-state.json` va al `.gitignore`; la auditoria (`.gates.jsonl`, `.versions/`, `.violations/`) si se versiona.
+- El supervisor revisa el pedido de push o PR (punto 7): lo que dispara, que las versiones fijadas existan, la base del PR y que lo que se sube sea lo aprobado. La persona recibe una sola pregunta de si o no. En la HU del CI de Nexus Control, esa revision la estaba haciendo la persona con otra sesion.
+
+## 2.0.0-rc.5 — Primera HU de un proyecto nuevo
 
 Correcciones de la primera corrida en un proyecto vacio (Nexus Control, GH-1, manual).
 

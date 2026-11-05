@@ -163,6 +163,8 @@ Con `--supervisor`, en cada punto de parada lanza `nexus-agile:nexus-supervisor`
 | `PEDIR_EVIDENCIA` | Reúne lo que pide y vuelve a consultarlo. Máximo 2 vueltas; después, escala |
 | `ESCALAR` | Pregunta a la persona con lo que el supervisor dejó listo |
 
+Antes de cualquier push o PR, el punto de parada es del supervisor (punto 7 de su lista): él revisa qué dispara, las versiones y la base del PR, y la persona recibe una sola pregunta de sí o no. El push lo autoriza siempre la persona; la revisión no tiene que hacerla ella, ni otra sesión.
+
 Diseño y criterio de adopción: `$SKILL_DIR/references/supervisor.md`. Hasta que la evaluación lo justifique, el modo por defecto sigue siendo el checklist.
 
 ### §4.4 Formato de atribución (obligatorio)
