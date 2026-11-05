@@ -6,6 +6,7 @@ Correcciones de la primera corrida en un proyecto vacio (Nexus Control, GH-1, ma
 
 ### Corregido
 - Hook: una sonda de solo lectura (`python3 -c ... >/dev/null`) ya no cuenta como escritura; un `.gates.jsonl` de prueba en `/tmp` se puede crear; una redireccion a un archivo de la HU se frena antes de correr (restaurar despues no alcanzaba con un `git commit` en el mismo comando); un gate dentro de un mensaje avisa que no se registro; SubagentStop frena caracteres de formato invisibles (U+202E, U+FEFF) en los artefactos.
+- Un `.gates.jsonl` de prueba con `cd` a `/tmp` y ruta relativa ya no se bloquea (la rc.5 inicial lo seguia bloqueando: lo encontro el QA corto de la HU real). Repetir una fase sobre una HU cerrada no la reabre: queda como `rerun` en `.nexus-state.json`.
 - `check_contract.py` entiende listas y rangos de ACs ("AC-1, 2, 3"); `nexus_metrics.py` cuenta una vez un agente que cruza un cambio de sesion; `nexus_memory.py` da claves distintas a dos hechos del mismo archivo.
 
 ### Cambiado

@@ -739,6 +739,20 @@ class Versiones(HookCase):
         self.assertEqual(len(list((self.hu / ".versions").glob("work-item-*.md"))), 2)
 
 
+class EstadoDeLaHU(HookCase):
+    def test_repetir_una_fase_no_reabre_una_hu_cerrada(self):
+        # QA corto sobre una HU en DONE: el estado pasaba de DONE a F4.
+        self.write("work-item.md")
+        self.write("ar-report.md", "STATUS: APROBADO open_blq=0\n")
+        self.write("cr-report.md", "STATUS: APROBADO open_blq=0\n")
+        (self.hu / ".nexus-state.json").write_text(json.dumps({"phase": "DONE", "status": "done"}))
+        self.write("work-item.md", "- Pipeline: FAST\n")
+        self.assertAllowed(self.spawn("F4", "nexus-qa"))
+        state = json.loads((self.hu / ".nexus-state.json").read_text())
+        self.assertEqual((state["phase"], state["status"]), ("DONE", "done"))
+        self.assertEqual(state["rerun"]["phase"], "F4")
+
+
 class ProyectoNuevo(HookCase):
     """Fricciones de la primera HU de un proyecto nuevo."""
 

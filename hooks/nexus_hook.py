@@ -126,6 +126,12 @@ def write_state(hu_dir, **fields):
     """Estado por HU, para retomar despues de una compactacion o de otra sesion."""
     path = hu_dir / ".nexus-state.json"
     state = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    if state.get("phase") == "DONE" and state.get("status") == "done" and fields.get("phase") not in (None, "DONE"):
+        # Repetir una fase sobre una HU cerrada (un QA corto, una verificacion) no la reabre: queda como repeticion.
+        state["rerun"] = {"phase": fields.get("phase"), "agent": fields.get("agent"), "status": fields.get("status"),
+                          "ts": int(time.time())}
+        path.write_text(json.dumps(state, indent=1), encoding="utf-8")
+        return
     state.update(fields, updated=int(time.time()))
     path.write_text(json.dumps(state, indent=1), encoding="utf-8")
 
