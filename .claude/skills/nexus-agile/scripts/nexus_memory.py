@@ -12,6 +12,7 @@ y es el mismo que git guarda. Un hecho que depende de varios archivos lleva un p
 Solo lee: no escribe en la memoria ni en el repo.
 """
 import argparse
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -32,7 +33,9 @@ def cmd_hecho(args):
         if digest is None:
             sys.exit(f"no existe {path} en {args.repo}: un hecho no se guarda sobre un archivo que no esta")
         pairs.append((path, digest))
-    key = "hecho/" + pairs[0][0] if len(pairs) == 1 else "hecho/" + pairs[0][0] + "+" + str(len(pairs) - 1)
+    # Un archivo puede tener varios hechos: la clave lleva un nombre corto del hecho, para que uno no pise al otro.
+    slug = args.key or "-".join(re.findall(r"[a-z0-9]+", args.claim.lower())[:5])
+    key = "hecho/" + pairs[0][0] + ("" if len(pairs) == 1 else "+" + str(len(pairs) - 1)) + "#" + slug
     lines = [f"topic_key: {key}", "content:", f"  Claim: {args.claim}"]
     lines += [f"  File: {path} @ {digest}" for path, digest in pairs]
     lines += [f"  Evidence: {args.evidence}", f"  Source: {args.source}",
@@ -64,6 +67,7 @@ def main():
     hecho.add_argument("--claim", required=True)
     hecho.add_argument("--evidence", required=True)
     hecho.add_argument("--source", required=True)
+    hecho.add_argument("--key", help="nombre corto del hecho dentro del archivo; por defecto, las primeras palabras de --claim")
     vigente = sub.add_parser("vigente")
     vigente.add_argument("--repo", required=True)
     vigente.add_argument("--pair", action="append", required=True)

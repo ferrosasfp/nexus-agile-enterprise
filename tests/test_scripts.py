@@ -47,6 +47,13 @@ class CheckContract(unittest.TestCase):
         self.assertEqual(out.returncode, 0, out.stdout)
         self.assertIn("1 rutas revisadas", out.stdout)
 
+    def test_listas_y_rangos_de_acs(self):
+        # Primera HU de un proyecto nuevo: "AC-1, 2, 3" contaba solo AC-1 y daba 7 falsos "no aparece".
+        (self.hu / "work-item.md").write_text("AC-1: a\nAC-2: b\nAC-3: c\nAC-4: d\nAC-5: e\n")
+        out = self.story(self.BUENO.replace("- W1 cubre AC-1 y AC-2", "- W1 cubre AC-1, 2, 3 y AC-4..5")
+                         .replace("- AC-1 y AC-2: test/a.test.ts", "- ACs 1 a 5: test/a.test.ts"))
+        self.assertEqual(out.returncode, 0, out.stdout)
+
     def test_ac_sin_test(self):
         out = self.story(self.BUENO.replace("AC-1 y AC-2: test", "AC-1: test"))
         self.assertEqual(out.returncode, 1)
@@ -127,7 +134,7 @@ class NexusMemory(unittest.TestCase):
         out = run("nexus_memory.py", "hecho", "--repo", self.tmp, "--file", "vitest.config.ts", "--file", "b.ts",
                   "--claim", "vitest incluye tests/**", "--evidence", "vitest.config.ts:1", "--source", "HU-1, 2026-11-04")
         self.assertEqual(out.returncode, 0, out.stderr)
-        self.assertIn("topic_key: hecho/vitest.config.ts+1", out.stdout)
+        self.assertIn("topic_key: hecho/vitest.config.ts+1#vitest-incluye-tests", out.stdout)
         verify = out.stdout.split("Verify: nexus_memory.py vigente --repo <CODE_ROOT> ")[1].split()
         pairs = [verify[i + 1] for i in range(0, len(verify), 2)]
         check = lambda: run("nexus_memory.py", "vigente", "--repo", self.tmp, *sum((["--pair", p] for p in pairs), []))
@@ -136,6 +143,13 @@ class NexusMemory(unittest.TestCase):
         changed = check()
         self.assertEqual(changed.returncode, 1)
         self.assertIn("b.ts", changed.stdout)
+
+    def test_dos_hechos_del_mismo_archivo_no_se_pisan(self):
+        keys = set()
+        for claim in ("el include cubre tests", "el entorno es node"):
+            out = run("nexus_memory.py", "hecho", "--repo", self.tmp, "--file", "vitest.config.ts", "--claim", claim, "--evidence", "x", "--source", "x")
+            keys.add(out.stdout.splitlines()[0])
+        self.assertEqual(len(keys), 2)
 
     def test_no_guarda_hechos_de_archivos_que_no_existen(self):
         out = run("nexus_memory.py", "hecho", "--repo", self.tmp, "--file", "no-existe.ts", "--claim", "x", "--evidence", "x", "--source", "x")
