@@ -362,6 +362,13 @@ Una fila por paquete de terceros cuyo API se va a usar. **La version se LEE del 
 
 ---
 
+## Limites conocidos
+
+> Solo si quedaron hallazgos o controles debiles despues de las dos rondas de verificacion (`/nexus-p2-f2`, paso 4c). La persona los acepta en el gate.
+
+| Limite | Por que no se cubre en esta HU | Que lo cubriria |
+|--------|-------------------------------|-----------------|
+
 ## Contrato de implementacion (`contract_mode: unified`, el default)
 
 > Va al final del SDD. Reemplaza al Story File y lleva su mismo detalle. Solo se omite con `contract_mode: classic`.

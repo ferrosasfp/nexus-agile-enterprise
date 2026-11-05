@@ -1,6 +1,22 @@
 # Changelog — NexusAgil
 
-## 2.0.0-rc.4 — Cerebro, seguridad del diseno y costo (sin publicar)
+## 2.0.0-rc.5 — Primera HU de un proyecto nuevo (sin publicar)
+
+Correcciones de la primera corrida en un proyecto vacio (Nexus Control, GH-1, manual).
+
+### Corregido
+- Hook: una sonda de solo lectura (`python3 -c ... >/dev/null`) ya no cuenta como escritura; un `.gates.jsonl` de prueba en `/tmp` se puede crear; una redireccion a un archivo de la HU se frena antes de correr (restaurar despues no alcanzaba con un `git commit` en el mismo comando); un gate dentro de un mensaje avisa que no se registro; SubagentStop frena caracteres de formato invisibles (U+202E, U+FEFF) en los artefactos.
+- `check_contract.py` entiende listas y rangos de ACs ("AC-1, 2, 3"); `nexus_metrics.py` cuenta una vez un agente que cruza un cambio de sesion; `nexus_memory.py` da claves distintas a dos hechos del mismo archivo.
+
+### Cambiado
+- **Tope de dos rondas** de correccion entre SPEC_VERIFY y SECURITY; lo que quede va a `Limites conocidos` del SDD y lo acepta la persona. Sin tope, F2 corrio 6 veces y se llevo el 59 % del costo de la HU.
+- Seguridad y controles debiles se miden contra un atacante de afuera del codigo de la HU, no contra quien lo escribe.
+- SPEC_VERIFY y SECURITY pueden correr en paralelo sobre la misma version del SDD.
+- **Enmienda corta del contrato** por un fix de AR: solo el diff se verifica y se revisa, en una vuelta.
+- En un proyecto sin codigo, el arquitecto comprueba el comportamiento del entorno con sondas de solo lectura.
+- Docs: los temporales en `/tmp` los borra el orquestador al cerrar; las decisiones de la persona van a memoria como `decision/`.
+
+## 2.0.0-rc.4 — Cerebro, seguridad del diseno y costo
 
 ### Agregado
 - **Memoria del proyecto (el cerebro)**: hechos atados al blob SHA de git (`scripts/nexus_memory.py`), lecciones que aprueba la persona, reclamos de trabajo con vencimiento. El analista y el arquitecto leen (5 busquedas como maximo), Docs escribe. Antes ningun agente tenia las herramientas de Engram: el protocolo no se podia usar. Diseno: `docs/plan-cerebro.md`; protocolo: `references/engram_protocol.md`.

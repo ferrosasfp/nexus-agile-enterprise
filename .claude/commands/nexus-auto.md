@@ -479,6 +479,8 @@ Al terminar TODAS las HUs del batch (o al escalar en la regla #10), presentá el
 
 - **Pasá rutas, no contenido.** En el prompt de un sub-agente van las rutas de los artefactos y lo que cambió desde la última vuelta, no el texto del SDD ni de los reportes: todo lo que pegás queda en tu contexto y se relee en cada turno.
 - **Leé los reportes por su primera línea** (`STATUS:`) y el resumen; abrí el artefacto entero solo cuando una decisión depende de él.
+- **Una llamada que un hook puede modificar va sola en su mensaje.** Junto con otra, el clasificador de auto mode puede quedarse sin veredicto (visto 3 veces en la primera HU de un proyecto nuevo).
+- **Después de un cambio de sesión**, un agente anterior no se puede retomar con `SendMessage` ("No transcript found"): relanzalo con las rutas de los artefactos y lo que cambió, no con el contexto pegado.
 - **Medí antes de recortar**: `nexus_metrics.py` al cerrar cada HU, con tokens procesados y tiempo activo por fase.
 
 ## §9 Reglas críticas

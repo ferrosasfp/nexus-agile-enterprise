@@ -165,6 +165,16 @@ Los BLQ ya confirmados no se vuelven a verificar en las siguientes iteraciones.
 | * | RECHAZADO (BLQ-CR) | Verificar los BLQ y re-lanzar `/nexus-p4-f3` con los que sigan en pie. Después, **re-CR acotado obligatorio** al diff del fix-pack: el hook no deja lanzar F4 mientras el último `cr-report` tenga BLQ abiertos |
 | RECHAZADO | RECHAZADO | Verificar los BLQ combinados y re-lanzar `/nexus-p4-f3` con los que sigan en pie. Después, re-AR y **re-CR acotados**, los dos: cada reporte cierra sus propios BLQ |
 
+## Enmienda del contrato por un fix de AR
+
+Si un BLQ confirmado exige cambiar el contrato del SDD (no solo el código), no se repite F2 completo:
+
+1. El arquitecto cambia **solo** las líneas del contrato que el BLQ necesita, y devuelve el diff.
+2. SPEC_VERIFY, y SECURITY si la HU lo pide, revisan **solo ese diff**, en paralelo y en una sola vuelta.
+3. La persona vuelve a escribir `SPEC_APPROVED` viendo el diff. El hook lo exige porque cambió el hash.
+
+En la primera HU de un proyecto nuevo, una enmienda de una línea (no expandir `~usuario`) costó 6 lanzamientos y unos 10 M tokens, por repetir todo el ciclo de F2.
+
 ## Tradeoff vs ejecución secuencial (leelo una vez)
 
 - **Antes** (p5 → p6 secuencial): CR revisaba el código **post-fixes de AR**.

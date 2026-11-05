@@ -173,6 +173,9 @@ grep -q '^## PREGUNTAS PARA EL HUMANO' $A/nexus-analyst.md || fail "analista sin
 for f in $C/nexus-*.md; do grep -q 'termina sin entregarte su reporte' "$f" || fail "$(basename "$f") sin regla de reporte perdido"; done
 for f in nexus-p1-f0-f1 nexus-fast-pipeline nexus-fast-plus-ar nexus-auto; do grep -q 'PROPIEDAD' "$C/$f.md" || fail "$f no pasa el gate de propiedad"; done
 [ -f $R/tracker.md ] || fail "falta references/tracker.md"
+grep -q 'Tope de rondas' $C/nexus-p2-f2.md || fail "F2 sin tope de rondas de verificacion"
+grep -q 'A quién defendés' $A/nexus-security.md || fail "security sin el alcance del atacante"
+grep -q 'Enmienda del contrato' $C/nexus-p5-ar.md || fail "p5-ar sin la via corta de enmienda"
 grep -q 'camino de ataque' $A/nexus-security.md || fail "security sin la regla del camino de ataque"
 grep -q 'security_review' $A/nexus-analyst.md || fail "el analista no marca security_review"
 grep -q 'nexus-security' $C/nexus-p2-f2.md || fail "F2 no lanza la revision de seguridad"
