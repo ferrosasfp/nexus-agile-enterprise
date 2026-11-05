@@ -263,6 +263,11 @@ Task tool:
 
 Idéntico a `/nexus-fast-pipeline` Fase 4: mini-report + `_INDEX.md` update.
 
+### Después de DONE (orquestador)
+
+- **Si Claude Code rechaza el Write de `report.md`** ("Subagents should return findings as text"): el agente devuelve el contenido entre `<<<ARTEFACTO report.md` y `ARTEFACTO>>>`, y vos lo escribís **tal cual** con Write, anotando el mensaje del rechazo y el sha256. No es rodear nada: es el procedimiento de `/nexus-p8-done`, y pasa con cualquier modelo.
+- **Push, PR y seguimiento del CI** son tuyos, no de un agente. Antes del push, el supervisor (en AUTO) o la persona revisa qué dispara; el push lo autoriza la persona.
+
 ## Reglas críticas del FAST+AR
 
 1. **AR + CR son obligatorios** — ese es el `+AR` en el nombre del modo. Si saltás AR, usá FAST puro.

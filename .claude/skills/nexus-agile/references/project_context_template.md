@@ -107,6 +107,7 @@
 | **tracker_project** | clave o URL del proyecto en el tracker |
 | **tracker_user** | como aparece en el tracker la persona que usa NexusAgil |
 | **tracker_write** | `true` / `false` (default `false`). Con `true`, NexusAgil comenta en el ticket al tomarlo y al cerrarlo |
+| **gitignore** | Agregar `doc/sdd/**/.nexus-state.json` al `.gitignore` del repo: es estado de ejecucion que el hook reescribe en cada agente. `.gates.jsonl`, `.versions/` y `.violations/` si se versionan: son la auditoria |
 | **memory_project** | nombre del proyecto en Engram; uno por cliente, nunca compartido entre clientes |
 | **security_cmd** | [opcional: controles de seguridad sin modelo, como busqueda de secretos, auditoria de dependencias o reglas estaticas (ej: `gitleaks detect --no-git && pnpm audit --prod && semgrep --config auto --error`). QA lo corre una vez en F4, junto al gate] |
 | **forbidden_commands** | [opcional: expresion regular entre comillas invertidas, que el hook bloquea para todos, incluida la sesion principal; ej: `supabase db push\|prisma migrate deploy\|vercel .*--prod`] |

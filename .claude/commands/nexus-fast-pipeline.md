@@ -175,7 +175,8 @@ Task tool:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/validation.md COMPACTO con:
       - Gate del repo: PASS/FAIL con comando y salida
       - ACs: PASS/FAIL/NO VERIFICABLE con comando y salida breve
-      - Veredicto final: APROBADO / RECHAZADO
+      - Veredicto final: APROBADO / APROBADO con observaciones / RECHAZADO
+      - Con observaciones: cada una dice si es deuda aceptable o si bloquea. El orquestador las presenta a la persona (en AUTO, al supervisor) antes de DONE; si cierra, van como deuda en report.md
 
     NOTA IMPORTANTE: en FAST mode NO hubo AR ni CR — vos sos la única red de seguridad antes de DONE. Si los quality gates fallan, RECHAZAR sin contemplaciones.
 ```
@@ -225,6 +226,11 @@ Task tool:
     2. $NEXUS_ROOT/doc/sdd/_INDEX.md actualizado con la fila de la HU en status DONE
     3. Reporte al orquestador: 3 líneas resumen
 ```
+
+### Después de DONE (orquestador)
+
+- **Si Claude Code rechaza el Write de `report.md`** ("Subagents should return findings as text"): el agente devuelve el contenido entre `<<<ARTEFACTO report.md` y `ARTEFACTO>>>`, y vos lo escribís **tal cual** con Write, anotando el mensaje del rechazo y el sha256. No es rodear nada: es el procedimiento de `/nexus-p8-done`, y pasa con cualquier modelo.
+- **Push, PR y seguimiento del CI** son tuyos, no de un agente. Antes del push, el supervisor (en AUTO) o la persona revisa qué dispara; el push lo autoriza la persona.
 
 ## Reglas críticas del FAST pipeline
 

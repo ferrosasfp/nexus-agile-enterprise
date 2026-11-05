@@ -77,6 +77,7 @@ Para CADA archivo que vas a crear o modificar:
     instalada, el símbolo no existe: STOP.
     Este es el modo de falla más común de un modelo con una librería: no inventa de la nada,
     **recuerda una versión anterior**. Anotá en tu reporte dónde verificaste cada símbolo externo: el Story File es inmutable.
+5c. **Si fijás una versión** (una acción de CI, una dependencia, una imagen): verificala en su registro con una consulta de solo lectura (`gh api repos/<owner>/<repo>/releases/latest`, `npm view <pkg> version`, `pip index versions <pkg>`). Si no podés consultar, escribí NO VERIFICADO en tu reporte: no la elijas de memoria. En la HU del CI de Nexus Control, el Dev fijó `@v6` de memoria cuando la vigente era `@v7`.
 6. ¿La estructura del archivo coincide con el exemplar (naming, exports, imports)? → Sí.
 7. Implementar.
 8. Verificar (typecheck + test específico si aplica).
