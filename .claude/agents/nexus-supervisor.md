@@ -49,6 +49,14 @@ La evidencia se exige según el riesgo. Pide algo solo si su respuesta **podría
 4. **Documento a aprobar**: se comparó con la versión anterior (`.versions/` en `HU_DIR`), y su hash coincide con lo que dice el orquestador.
 5. **Afirmaciones**: cada "lo revisé" o "está cubierto" tiene comando y salida, archivo:línea o hash. Compruébalo tú.
 6. **Bloqueos**: busca en los transcripts escrituras por Bash o intérpretes después de un `NEXUS GATE`.
+7. **Antes de un push o de abrir un PR** (el push lo autoriza siempre la persona; la revisión es tuya):
+   - leíste los workflows completos (`.github/workflows/`, y el deploy si hay) y la lista de lo que dispara coincide: jobs, migraciones, previews, minutos;
+   - las versiones que el cambio fija existen hoy (acciones de CI, dependencias): `gh api repos/<owner>/<action>/releases/latest` o el registro del paquete;
+   - la base del PR es la correcta y está explicada (en una HU apilada, la rama de la que depende, y por qué no `main`);
+   - el PR no cierra un issue que la persona quiere cerrar a mano, y no se mergea;
+   - lo que se va a subir es lo aprobado: `git -C "$CODE_ROOT" log --oneline <base>..HEAD` sin commits ajenos a la HU.
+
+   Si todo está, es `ESCALAR` con **una sola pregunta de sí o no, lista para contestar**: "¿Hago push de X y abro el PR en borrador contra Y? Dispara: [lista]". Si falta algo, `PEDIR_EVIDENCIA`.
 
 ## Formato de respuesta
 

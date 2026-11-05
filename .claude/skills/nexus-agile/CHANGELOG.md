@@ -1,6 +1,11 @@
 # Changelog — NexusAgil
 
-## 2.0.0-rc.5 — Primera HU de un proyecto nuevo (sin publicar)
+## Sin publicar
+
+### Cambiado
+- El supervisor revisa el pedido de push o PR (punto 7): lo que dispara, que las versiones fijadas existan, la base del PR y que lo que se sube sea lo aprobado. La persona recibe una sola pregunta de si o no. En la HU del CI de Nexus Control, esa revision la estaba haciendo la persona con otra sesion.
+
+## 2.0.0-rc.5 — Primera HU de un proyecto nuevo
 
 Correcciones de la primera corrida en un proyecto vacio (Nexus Control, GH-1, manual).
 
