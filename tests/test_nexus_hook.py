@@ -753,6 +753,14 @@ class ProyectoNuevo(HookCase):
 
     def test_gates_de_prueba_en_tmp(self):
         self.assertAllowed(self.bash_as("nexus-qa", "printf '{}' > /tmp/fx/doc/sdd/001/.gates.jsonl"))
+        # El comando literal que bloqueo la rc.5 en el QA corto: cd a /tmp y ruta relativa, en varias lineas.
+        literal = ("cd /tmp/nc-qa2; mkdir -p proj-ac2/doc/sdd/001-alfa proj-ac6/doc/sdd/001-beta\n"
+                   "printf '{\"gate\":\"HU_APPROVED\",\"by\":\"ana\"}\\n' > proj-ac2/doc/sdd/001-alfa/.gates.jsonl; echo EXIT=$?")
+        self.assertAllowed(self.bash_as("nexus-qa", literal))
+        self.assertBlocked(self.bash_as("nexus-qa", "cd /tmp/x; printf '{}' > ../../home/x/repo/doc/sdd/001/.gates.jsonl"), "gates")
+        self.assertBlocked(self.bash_as("nexus-qa", "printf '{}' > doc/sdd/001/.gates.jsonl"), "gates")
+        self.assertAllowed(self.bash_as("nexus-qa", "cd /tmp/nc-qa2 && cp base.jsonl proj-ac6/doc/sdd/001-beta/.gates.jsonl"))
+        self.assertBlocked(self.bash_as("nexus-qa", "cd /tmp/nc-qa2 && cp base.jsonl /home/x/repo/doc/sdd/001/.gates.jsonl"), "gates")
         self.assertAllowed(self.run_hook("gate", agent_type="nexus-agile:nexus-adversary", tool_name="Write",
                                          tool_input={"file_path": "/tmp/fx/doc/sdd/001/.gates.jsonl"}))
         self.assertBlocked(self.run_hook("gate", agent_type="nexus-agile:nexus-adversary", tool_name="Write",

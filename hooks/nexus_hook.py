@@ -471,8 +471,14 @@ def check_forbidden(command, data):
 def check_bash(agent, command, data):
     # Solo si el comando escribe en .gates.jsonl. Nombrarlo dentro de comillas o de un heredoc (una nota en la bitacora) no cuenta.
     visible = masked(command)
-    if any(t.endswith(".gates.jsonl") and not disposable(t, data) for t in redirect_targets(command)) or \
-            (".gates.jsonl" in visible and FILE_MUTATION.search(visible)) or \
+    expanded = expand_vars(command)
+    base = leading_cd(expanded)
+    # La ruta se resuelve contra el cd inicial: en la primera prueba real, `cd /tmp/x; printf ... > proj/.gates.jsonl`
+    # se bloqueaba porque la ruta relativa no parecia estar en /tmp.
+    if any(t.endswith(".gates.jsonl") and not disposable(absolute(t, base), data) for t in redirect_targets(expanded)) or \
+            (".gates.jsonl" in visible and FILE_MUTATION.search(visible)
+             and not (base and disposable(base + "/", data) and ".." not in visible
+                      and all(disposable(w, data) for w in visible.split() if w.startswith("/")))) or \
             (INLINE_WRITE.search(command) and ".gates.jsonl" in command):
         deny("los gates solo los registra el hook")
     check_forbidden(command, data)
