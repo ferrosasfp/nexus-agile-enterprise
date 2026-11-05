@@ -34,7 +34,14 @@ cat > supabase/migrations/20260101000000_facturas.sql <<'SQL'
 create table facturas (id uuid primary key, organization_id uuid not null, cliente_email text, total numeric, fecha date not null);
 alter table facturas enable row level security;
 -- La organizacion sale del mismo JWT que usa la sesion (claim organization_id), asi que RLS y la sesion no pueden discrepar.
-create policy facturas_de_mi_org on facturas using (organization_id = (auth.jwt() ->> 'organization_id')::uuid);
+create policy facturas_de_mi_org on facturas using (
+  organization_id = (auth.jwt() ->> 'organization_id')::uuid
+  and (auth.jwt() -> 'modulos') ? 'facturacion'
+);
+-- cliente_email no se expone por la Data API: se revoca la tabla entera y se otorgan solo las columnas legibles
+-- (un revoke por columna no tiene efecto si queda el SELECT a nivel tabla que Supabase otorga por defecto).
+revoke select on facturas from authenticated, anon;
+grant select (id, organization_id, total, fecha) on facturas to authenticated;
 SQL
 cat > app/facturas/actions.ts <<'TS'
 "use server";
@@ -58,7 +65,7 @@ MD
 cat > doc/sdd/001-exportar-facturas/sdd.md <<'MD'
 # SDD 001: exportar facturas
 ## Diseno
-- D-1: Nueva ruta `app/api/facturas/export/route.ts` (GET). Llama a `requireOrganizationId()` y a `requireModule("facturacion")` antes de leer, y lee `facturas` con `createClient()`. RLS (`supabase/migrations/20260101000000_facturas.sql`) acota a la organizacion del JWT, la misma que usa la sesion. Sin modulo: 403. Sin sesion: 401. Responde con `Cache-Control: private, no-store`.
+- D-1: Nueva ruta `app/api/facturas/export/route.ts` (GET). Llama a `requireOrganizationId()` y a `requireModule("facturacion")` antes de leer, y lee `facturas` con `createClient()`. RLS (`supabase/migrations/20260101000000_facturas.sql`) acota a la organizacion del JWT, la misma que usa la sesion, y tambien exige el modulo `facturacion` en el JWT: un miembro sin el modulo no lee `facturas` ni llamando directo a la Data API. `cliente_email` no es legible por los roles `authenticated` ni `anon`. Sin modulo: 403. Sin sesion: 401. Responde con `Cache-Control: private, no-store`.
 - D-2: Nueva Server Action `verFactura(id)` en `app/facturas/actions.ts`. Valida que `id` sea un uuid (si no, 404), llama a `requireOrganizationId()` y a `requireModule("facturacion")`, y lee con `createClient()` por `id`. Una factura de otra organizacion no la devuelve RLS: responde 404, igual que una que no existe, para no revelar si existe. Devuelve id, fecha y total.
 - D-3: El CSV incluye id, fecha y total. No incluye `cliente_email`.
 ## Tests
@@ -67,6 +74,7 @@ cat > doc/sdd/001-exportar-facturas/sdd.md <<'MD'
 - T-3: `verFactura` con el id de una factura de otra organizacion responde 404.
 - T-4: `verFactura` llamada por un miembro sin el modulo responde 403.
 - T-5: sin sesion, la ruta y `verFactura` responden 401.
+- T-6: el CSV y `verFactura` no incluyen `cliente_email`, y una consulta directa a la Data API con el rol `authenticated` que pide `cliente_email` falla por permisos.
 ## Contrato de implementacion
 - W1: `app/api/facturas/export/route.ts` (Crear), `app/facturas/actions.ts` (Modificar). AC-1, AC-2.
 MD

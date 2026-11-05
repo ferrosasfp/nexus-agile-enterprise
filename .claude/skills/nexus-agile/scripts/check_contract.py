@@ -10,6 +10,23 @@ import sys
 from pathlib import Path
 
 AC_RE = re.compile(r"\bAC[-\s]?(\d+)\b")
+AC_LIST_RE = re.compile(r"\bACs?[-\s]?(\d+)((?:\s*(?:,|y|e|and|\.\.|-|a|al)\s*\d+\b)+)", re.I)
+
+
+def ac_numbers(text):
+    """AC-1, AC-2 y tambien listas y rangos: "AC-1, 2, 3", "ACs 1 y 4", "AC-2..5", "AC-1 a 3"."""
+    numbers = set(AC_RE.findall(text))
+    for first, rest in AC_LIST_RE.findall(text):
+        previous = int(first)
+        for sep, value in re.findall(r"\s*(,|y|e|and|\.\.|-|a|al)\s*(\d+)", rest, re.I):
+            value = int(value)
+            if sep in ("..", "-", "a", "al") and value > previous:
+                numbers.update(str(v) for v in range(previous, value + 1))
+            else:
+                numbers.add(str(value))
+            previous = value
+        numbers.add(first)
+    return numbers
 PATH_RE = re.compile(r"`([\w./@-]+\.[A-Za-z0-9]+)`")
 
 
@@ -68,9 +85,9 @@ def main():
     # Un AC que el work-item da de baja ("- AC-5: (eliminado ...)") no tiene que estar en el contrato.
     removed = set(re.findall(r"(?im)^\s*[-*]?\s*\**AC[-\s]?(\d+)\**\s*:\s*\(?\s*(?:eliminad|removed|descartad|~~)", item_text))
     acs = sorted(set(AC_RE.findall(item_text)) - removed, key=int)
-    covered = set(AC_RE.findall(contract))
+    covered = ac_numbers(contract)
     tests_text = section(contract, "Test")
-    tests = set(AC_RE.findall(tests_text or ""))
+    tests = ac_numbers(tests_text or "")
     for number in acs:
         if number not in covered:
             failures.append(f"AC-{number} no aparece en el contrato")

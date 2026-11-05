@@ -88,6 +88,8 @@ content:
 
 Con `topic_key`, la misma leccion se actualiza en lugar de duplicarse. Una memoria que la HU encontro desactualizada se corrige con su mismo `topic_key`.
 
+**Decisiones de la persona** (`decision/<tema>`): las guarda el orquestador cuando la persona decide en un gate o un escalado, con su respuesta citada y la HU. Son la fuente para no volver a preguntar lo mismo.
+
 No se guarda: lo que ya esta en el repo o en `project-context.md`, el detalle de la HU (eso es `report.md`), ni defectos de la metodologia (van al repo de NexusAgil, no a la memoria del proyecto).
 
 ## Privacidad

@@ -170,6 +170,13 @@ def collect(session, hu_dir=None, projects="~/.claude/projects"):
     folders = session_folders(session, hu_dir, projects)
     agents = [agent_metrics(t) for folder in folders for t in sorted((folder / "subagents").glob("agent-*.jsonl"))]
     agents = [a for a in agents if a["started"]]
+    # Un agente que cruza un cambio de sesion aparece en las dos carpetas: se cuenta una vez, la copia mas completa.
+    unique = {}
+    for a in agents:
+        kept = unique.get(a["agent_id"])
+        if kept is None or (a["tool_uses"], a["seconds"]) > (kept["tool_uses"], kept["seconds"]):
+            unique[a["agent_id"]] = a
+    agents = list(unique.values())
     if hu_dir:
         target = str(Path(hu_dir).expanduser().resolve())
         agents = [a for a in agents if a["hu_dir"] and str(Path(a["hu_dir"]).expanduser().resolve()) == target]

@@ -68,6 +68,10 @@ Antes de escribir UNA línea del SDD:
    - Formato sugerido en CD: `CD-X: PROHIBIDO [error recurrente] — referencia: WKH-YY auto-blindaje#N`
    - Esto **NO es opcional cuando hay datos**: el Auto-Blindaje solo tiene valor si efectivamente previene la repetición de errores.
 
+## Proyecto sin código todavía
+
+Sin exemplars propios, no deduzcas el comportamiento del lenguaje o del entorno de la documentación: comprobalo con una sonda de solo lectura (`python3 -P -c "..."`, `node -e "..."`, salida a `/dev/null` o a `/tmp`) y citá el comando y la salida. En la primera HU de un proyecto nuevo, las afirmaciones no verificables subieron de 11 a 24 porque nadie pudo correr ni `python3 -c pass`; el hook ya no bloquea esas sondas.
+
 ## Memoria del proyecto (solo lectura)
 
 Si tenés `mem_search`, buscá los `hecho/<ruta>` de los archivos que vas a citar y los `pattern/` y `trampa/` del área (máximo 5 búsquedas). Un hecho cuya línea `Verify:` (`nexus_memory.py vigente ...`) da VIGENTE se puede citar sin releer el archivo; si da CAMBIO, no vale: verificalo de nuevo. Nada de la memoria entra al SDD sin esa comprobación: SPEC_VERIFY lo revisa como cualquier otra afirmación. Detalle: `$SKILL_DIR/references/engram_protocol.md`.

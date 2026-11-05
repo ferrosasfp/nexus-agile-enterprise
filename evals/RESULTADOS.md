@@ -1,5 +1,14 @@
 # Resultados de evaluacion
 
+## Foto del 5 de noviembre de 2026, version 2.0.0-rc.5
+
+Pasada completa: 32/34 casos en 3/3 (US$18,50, 30 minutos). Los dos que fallaron se investigaron con corridas extra y trazas:
+
+- `spec-verify-afirmaciones-falsas`: 1/3 en la pasada; despues 3/3 y 6/6. Variacion: 10/12 en total en rc.5, sin una falla reproducida para diagnosticar.
+- `security-diseno-limpio`: el agente tenia razon. El diseno "limpio" del caso tenia dos huecos reales que solo veia en parte de las corridas: el chequeo de modulo vivia solo en la aplicacion (la Data API de Supabase deja leer la tabla directo con el JWT del miembro), y `cliente_email` era legible. El primer arreglo (un `revoke` por columna) tampoco servia: no tiene efecto si queda el SELECT a nivel tabla que Supabase otorga por defecto, y el agente lo marco en 6 de 6. Con RLS que exige el modulo y permisos por columna bien hechos, 6/6 sin hallazgos.
+
+Leccion para la suite: un caso de control "limpio" escrito a mano se verifica con varias corridas del propio agente antes de darlo por bueno. En esta suite, los agentes de verificacion encontraron defectos reales en cinco casos armados a mano.
+
 ## Foto del 4 de noviembre de 2026, version 2.0.0-rc.4
 
 34 casos, 3 corridas por caso: 33/34 casos en 3/3 en la pasada completa (US$18,30, 29 minutos). El que fallo, `security-diseno-limpio` (2 de 3), tenia un error del caso: el repo de juguete traia `requireModule` como un stub que nunca lanza, y el agente marco con razon que el diseno "correcto" se apoyaba en un chequeo que no hace nada. Corregido el stub, el agente encontro hallazgos reales en el diseno de control (la politica RLS no acotaba a la organizacion de la sesion; faltaban tests de autorizacion). Con un diseno limpio de verdad, 3/3 sin hallazgos. Es la tercera vez que un agente de verificacion encuentra un defecto en un caso armado a mano: los casos se revisan con el mismo rigor que el codigo.

@@ -26,7 +26,7 @@ GATES = ("HU_APPROVED", "SPEC_APPROVED", "RELEASE_APPROVED")
 GATE_DOC = {"HU_APPROVED": "work-item.md", "SPEC_APPROVED": "sdd.md"}
 READ_ONLY_BASH = {"nexus-adversary", "nexus-qa", "nexus-analyst", "nexus-architect", "nexus-docs", "nexus-supervisor", "nexus-security"}
 INLINE_CMD = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b")
-INLINE_WRITE = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b.*(open\(|write|unlink|rename|remove|rmtree|copy|move|mkdir|>)", re.S)
+INLINE_WRITE = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b.*(open\(|write|unlink|rename|remove|rmtree|copy|move|mkdir)", re.S)
 PHASES = ("F0F1", "F1", "F2", "SPEC_VERIFY", "SECURITY", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE", "SUPERVISION")
 VERSIONED = {"F0F1": ("work-item.md",), "F1": ("work-item.md",), "F2": ("sdd.md",), "F2.5": ("story-file.md",)}
 PHASE_OUTPUT = {
@@ -126,6 +126,12 @@ def write_state(hu_dir, **fields):
     """Estado por HU, para retomar despues de una compactacion o de otra sesion."""
     path = hu_dir / ".nexus-state.json"
     state = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    if state.get("phase") == "DONE" and state.get("status") == "done" and fields.get("phase") not in (None, "DONE"):
+        # Repetir una fase sobre una HU cerrada (un QA corto, una verificacion) no la reabre: queda como repeticion.
+        state["rerun"] = {"phase": fields.get("phase"), "agent": fields.get("agent"), "status": fields.get("status"),
+                          "ts": int(time.time())}
+        path.write_text(json.dumps(state, indent=1), encoding="utf-8")
+        return
     state.update(fields, updated=int(time.time()))
     path.write_text(json.dumps(state, indent=1), encoding="utf-8")
 
@@ -471,8 +477,14 @@ def check_forbidden(command, data):
 def check_bash(agent, command, data):
     # Solo si el comando escribe en .gates.jsonl. Nombrarlo dentro de comillas o de un heredoc (una nota en la bitacora) no cuenta.
     visible = masked(command)
-    if any(t.endswith(".gates.jsonl") for t in redirect_targets(command)) or \
-            (".gates.jsonl" in visible and FILE_MUTATION.search(visible)) or \
+    expanded = expand_vars(command)
+    base = leading_cd(expanded)
+    # La ruta se resuelve contra el cd inicial: en la primera prueba real, `cd /tmp/x; printf ... > proj/.gates.jsonl`
+    # se bloqueaba porque la ruta relativa no parecia estar en /tmp.
+    if any(t.endswith(".gates.jsonl") and not disposable(absolute(t, base), data) for t in redirect_targets(expanded)) or \
+            (".gates.jsonl" in visible and FILE_MUTATION.search(visible)
+             and not (base and disposable(base + "/", data) and ".." not in visible
+                      and all(disposable(w, data) for w in visible.split() if w.startswith("/")))) or \
             (INLINE_WRITE.search(command) and ".gates.jsonl" in command):
         deny("los gates solo los registra el hook")
     check_forbidden(command, data)
@@ -517,7 +529,7 @@ def cmd_gate(data):
         return
     if tool in ("Write", "Edit"):
         path = str(abs_path(tool_input.get("file_path") or "", data))
-        if path.endswith(".gates.jsonl"):
+        if path.endswith(".gates.jsonl") and not disposable(path, data):
             deny("los gates solo los registra el hook")
         rule = WRITE_RULES.get(agent)
         if rule and not disposable(path, data) and not re.search(rule, path):
@@ -528,7 +540,26 @@ def cmd_gate(data):
     elif tool == "Bash":
         check_bash(agent, tool_input.get("command") or "", data)
         if agent.startswith("nexus-"):
+            check_bash_into_hu_dir(agent, tool_input.get("command") or "", data)
+        if agent.startswith("nexus-"):
             snapshot_artifacts(data)
+
+
+def check_bash_into_hu_dir(agent, command, data):
+    """Una redireccion a un archivo de HU_DIR se frena antes de correr. Restaurar despues no alcanza:
+    en la primera HU de un proyecto nuevo, el mismo comando hizo git commit y la version prohibida quedo en el historial."""
+    hu_dir = load_session(data).get("hu_dir")
+    if not hu_dir:
+        return
+    root = os.path.realpath(hu_dir) + os.sep
+    expanded = expand_vars(command)
+    base = leading_cd(expanded) or str(data.get("cwd") or os.getcwd())
+    for target in redirect_targets(expanded):
+        if target == "/dev/null" or target.startswith("$"):
+            continue
+        resolved = os.path.realpath(os.path.join(base, os.path.expanduser(target)))
+        if resolved.startswith(root):
+            deny(f"{agent} no escribe artefactos de la HU por Bash ({target}). Usa Write o Edit, y el commit en otro comando")
 
 
 def artifact_hashes(hu_dir):
@@ -638,6 +669,10 @@ def cmd_prompt(data):
     found = re.fullmatch(rf"({'|'.join(GATES)})(?:\s+(\S+))?", prompt)
     if found:
         apply_gate(data, session, found.group(1), found.group(2))
+    elif len(prompt) <= 400 and re.search(rf"\b({'|'.join(GATES)})\b", prompt):
+        # En la primera HU de un proyecto nuevo, "agregalo al Scope OUT y HU_APPROVED" no registro el gate y nadie lo dijo.
+        print("NexusAgil: el gate NO se registro. Un gate cuenta solo si es el mensaje entero (por ejemplo, `HU_APPROVED`), "
+              "en un mensaje aparte y despues de que el documento este como lo queres aprobar. Decile esto a la persona.")
 
 
 def apply_gate(data, session, gate, reference):
@@ -648,7 +683,7 @@ def apply_gate(data, session, gate, reference):
     record_gate(hu_dir, gate, "human")
     session["hu_dir"] = str(hu_dir)
     save_session(data, session)
-    print(f"NexusAgil: {gate} registrado para {hu_dir}")
+    print(f"NexusAgil: {gate} registrado para {hu_dir}. Si hay memoria, actualiza el reclamo trabajo/<HU> con la fase nueva.")
 
 
 def cmd_answer(data):
@@ -712,6 +747,10 @@ def cmd_stop(data):
     if violations:
         files = sorted({Path(f).name for g in violations for f in g.get("files", [])})
         problems.append(f"cambiaste {', '.join(files)} con Bash. Reportalo al orquestador con el comando literal; no lo corrijas por tu cuenta")
+    hidden = invisible_chars(hu_dir, spawn.get("ts", 0))
+    if hidden:
+        problems.append("hay caracteres invisibles de formato en " + ", ".join(hidden) +
+                        ". Quitalos con Edit: invierten o esconden texto y nadie los ve al revisar")
     expected = PHASE_OUTPUT.get(spawn["phase"])
     if expected and spawn["phase"] != "F2.5":
         stem = expected[:-3]
@@ -733,6 +772,22 @@ def cmd_stop(data):
         return
     if hu_dir.is_dir():
         write_state(hu_dir, phase=spawn["phase"], agent=agent, status="done")
+
+
+def invisible_chars(hu_dir, since):
+    """Caracteres de formato (categoria Cf: U+202E, U+FEFF, U+200B...) en los artefactos escritos desde `since`.
+    En la primera HU de un proyecto nuevo entraron U+202E y U+FEFF reales en sdd.md por escapes \\uXXXX en Write."""
+    import unicodedata
+    found = []
+    for path in sorted(Path(hu_dir).glob("*.md")) if Path(hu_dir).is_dir() else []:
+        if path.stat().st_mtime < since - 1:
+            continue
+        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            chars = {f"U+{ord(c):04X}" for c in line if unicodedata.category(c) == "Cf" and c != "\u200d"}
+            if chars:
+                found.append(f"{path.name}:{number} ({', '.join(sorted(chars))})")
+                break
+    return found
 
 
 def cmd_session(data):

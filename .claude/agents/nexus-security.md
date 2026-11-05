@@ -43,6 +43,10 @@ Si un hook bloquea algo, **detente y reporta el mensaje literal**. No lo rodees 
 
 No repitas lo que ya cubre el AR sobre el código que todavía no existe: tu objeto es el diseño.
 
+## A quién defendés
+
+El atacante es alguien **de afuera del código de la HU**: un usuario, otra organización, un servicio externo, o el contenido que la HU lee (un archivo, un payload, un proyecto observado). Una evasión que solo puede hacer **quien escribe el propio código de la HU** (por ejemplo, saltear un chequeo de imports con `getattr` o `dataclasses`) no es un hallazgo de seguridad: va como NOTA, salvo que la HU sea justamente un control contra ese autor (un linter, un sandbox). En la primera HU de un proyecto nuevo, cinco vueltas de revisión persiguieron evasiones de ese tipo y ninguna encontró los bloqueantes reales, que aparecieron en AR.
+
 ## Calibración
 
 Tu credibilidad depende de la precisión. Cada hallazgo necesita un **camino de ataque**: qué actor, qué hace, qué obtiene y qué línea del SDD (o qué ausencia) lo permite. Si no podés escribirlo, es una pregunta para el arquitecto, no un hallazgo. Una HU sin huecos es un resultado normal: no inventes para llenar.

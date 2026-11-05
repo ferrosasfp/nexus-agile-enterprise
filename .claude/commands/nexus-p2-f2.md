@@ -86,7 +86,7 @@ Task tool:
    - Con `debiles=` mayor que 0: el arquitecto refuerza esos controles en el plan de tests (una vuelta, con la forma de evadirlos que dio el verificador) y la verificación se repite solo sobre esas líneas. Es más barato que encontrarlo en AR.
    - Si `project-context.md` declara `spec_verify: false`, este paso se salta.
 
-4b. **Revisión de seguridad del diseño (SECURITY)**, solo si el work-item dice `security_review: required`. Lanzá `nexus-agile:nexus-security`, con un contexto nuevo, sobre el SDD ya verificado:
+4b. **Revisión de seguridad del diseño (SECURITY)**, solo si el work-item dice `security_review: required`. Lanzá `nexus-agile:nexus-security`, con un contexto nuevo. Puede correr **en paralelo con SPEC_VERIFY** sobre la misma versión del SDD: los dos solo leen, y cada reporte lleva el sha que revisó.
 
 ```
 Task tool:
@@ -102,6 +102,8 @@ Task tool:
    - Con `altos=0 medios=0`: seguí al paso 5. Las NOTAS van en el resumen.
    - Con hallazgos: relanzá al arquitecto con la lista literal (camino de ataque y qué tendría que decir el SDD), después `SPEC_VERIFY` acotado a lo que cambió, y la revisión de seguridad de nuevo, acotada. El hook no deja pasar a F3 con hallazgos abiertos ni con la revisión de otra versión del SDD.
    - Aceptar un hallazgo como riesgo, en lugar de corregirlo, lo decide la persona: siempre se escala, también en AUTO.
+
+4c. **Tope de rondas.** Como máximo **dos rondas** de corrección por HU entre SPEC_VERIFY y SECURITY. Si después de la segunda quedan hallazgos o controles débiles, no hay tercera automática: el arquitecto los escribe en la sección `Límites conocidos` del SDD (qué no cubre el diseño, por qué y qué lo cubriría) y se los presentás a la persona en el gate. Ella decide si los acepta o pide una ronda más. Sin tope, en la primera HU de un proyecto nuevo F2 corrió 6 veces y la verificación 7, persiguiendo evasiones cada vez más rebuscadas, y se llevó el 59 % del costo de la HU.
 
 5. Presentá el SDD al humano con el resumen ejecutivo y el resultado de la verificación (afirmaciones revisadas, falsas encontradas y corregidas, no verificables) y, si corrió, el de la revisión de seguridad (la matriz de autorización y los hallazgos corregidos), y esperá `SPEC_APPROVED`.
 6. NO continúes hasta recibir el gate. Después sigue directo F3 (`contract_mode: unified`, el default), o F2.5 si el work-item dice `contract_mode: classic`.
