@@ -9,22 +9,22 @@ import re
 import sys
 from pathlib import Path
 
-AC_RE = re.compile(r"\bAC[-\s]?(\d+)\b")
-AC_LIST_RE = re.compile(r"\bACs?[-\s]?(\d+)((?:\s*(?:,|y|e|and|\.\.|-|a|al)\s*\d+\b)+)", re.I)
+AC_RE = re.compile(r"\bAC[-\s]?(\d+[a-z]?)\b")
+AC_LIST_RE = re.compile(r"\bACs?[-\s]?(\d+[a-z]?)((?:\s*(?:,|y|e|and|\.\.|-|a|al)\s*\d+[a-z]?\b)+)", re.I)
 
 
 def ac_numbers(text):
     """AC-1, AC-2 y tambien listas y rangos: "AC-1, 2, 3", "ACs 1 y 4", "AC-2..5", "AC-1 a 3"."""
     numbers = set(AC_RE.findall(text))
     for first, rest in AC_LIST_RE.findall(text):
-        previous = int(first)
-        for sep, value in re.findall(r"\s*(,|y|e|and|\.\.|-|a|al)\s*(\d+)", rest, re.I):
-            value = int(value)
-            if sep in ("..", "-", "a", "al") and value > previous:
-                numbers.update(str(v) for v in range(previous, value + 1))
+        previous = int(re.match(r"\d+", first).group())
+        for sep, value in re.findall(r"\s*(,|y|e|and|\.\.|-|a|al)\s*(\d+[a-z]?)\b", rest, re.I):
+            numeric = int(re.match(r"\d+", value).group())
+            if sep in ("..", "-", "a", "al") and value.isdigit() and numeric > previous:
+                numbers.update(str(v) for v in range(previous, numeric + 1))
             else:
-                numbers.add(str(value))
-            previous = value
+                numbers.add(value)
+            previous = numeric
         numbers.add(first)
     return numbers
 PATH_RE = re.compile(r"`([\w./@-]+\.[A-Za-z0-9]+)`")
@@ -84,7 +84,7 @@ def main():
     item_text = item.read_text(encoding="utf-8")
     # Un AC que el work-item da de baja ("- AC-5: (eliminado ...)") no tiene que estar en el contrato.
     removed = set(re.findall(r"(?im)^\s*[-*]?\s*\**AC[-\s]?(\d+)\**\s*:\s*\(?\s*(?:eliminad|removed|descartad|~~)", item_text))
-    acs = sorted(set(AC_RE.findall(item_text)) - removed, key=int)
+    acs = sorted(set(AC_RE.findall(item_text)) - removed, key=lambda a: (int(re.match(r"\d+", a).group()), a))
     covered = ac_numbers(contract)
     tests_text = section(contract, "Test")
     tests = ac_numbers(tests_text or "")

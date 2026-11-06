@@ -739,6 +739,73 @@ class Versiones(HookCase):
         self.assertEqual(len(list((self.hu / ".versions").glob("work-item-*.md"))), 2)
 
 
+class Concurrencia(HookCase):
+    def test_hooks_en_paralelo_no_corrompen_el_estado(self):
+        # HU-2 de Nexus Control: con AR y CR en paralelo, el hook leyo el estado vacio y freno un mensaje.
+        import concurrent.futures
+        self.write("work-item.md")
+        self.run_hook("prompt", prompt="/nexus-agile:nexus-auto X-1")
+        def golpe(i):
+            if i % 2:
+                return self.run_hook("prompt", prompt=f"como va {i}")
+            return self.run_hook("gate", agent_type="nexus-agile:nexus-adversary", tool_name="Bash", tool_use_id=f"t{i}",
+                                 tool_input={"command": "git -C /x log --oneline -1"})
+        with concurrent.futures.ThreadPoolExecutor(8) as pool:
+            results = list(pool.map(golpe, range(40)))
+        self.assertEqual([r.returncode for r in results if r.returncode not in (0,)], [])
+        state = json.loads(next((self.tmp / "data").glob("s1.json")).read_text())
+        self.assertTrue(state["delegated"])
+
+    def test_fotos_viejas_se_borran(self):
+        data = self.tmp / "data"
+        data.mkdir(exist_ok=True)
+        old = data / "bash-viejo.json"
+        old.write_text("{}")
+        os.utime(old, (1, 1))
+        self.assertAllowed(self.spawn("F1", "nexus-analyst"))
+        self.run_hook("gate", agent_type="nexus-agile:nexus-analyst", tool_name="Bash", tool_use_id="n1", tool_input={"command": "ls"})
+        self.assertFalse(old.exists())
+
+
+class TerceraHU(HookCase):
+    """Comandos literales (rutas genericas) que el hook bloqueo por error en la HU-2 de Nexus Control."""
+
+    def bash_as(self, agent, command):
+        return self.run_hook("gate", agent_type=agent, tool_name="Bash", cwd="/home/x/repo", tool_input={"command": command})
+
+    def test_cd_despues_de_asignar_variables(self):
+        cmd = ("S=/tmp/sp; rm -rf $S/p; P=$S/p; mkdir -p $P/doc/sdd/005-hu $P/doc/sdd/007-otra; D=$P/doc/sdd/005-hu\n"
+               "cd $D; printf 'x' > work-item.md; printf 'x' > sdd.md\nprintf 'STATUS: APROBADO\\n' > cr-report.md")
+        self.assertAllowed(self.bash_as("nexus-qa", cmd))
+        self.assertBlocked(self.bash_as("nexus-qa", "S=/home/x/repo; cd $S; printf 'x' > work-item.md"))
+        # Un cd en un subshell no cuenta para el resto del comando
+        self.assertAllowed(self.bash_as("nexus-qa", "D=/tmp/sp/hu; cd $D; printf x > .gates.jsonl; (cd /tmp/sp && find . -type f | sort) > /tmp/sp/after.txt"))
+        self.assertBlocked(self.bash_as("nexus-qa", "(cd /tmp/sp && ls); printf x > .gates.jsonl"), "gates")
+        # Varios cd seguidos: vale el ultimo antes de cada ruta
+        self.assertAllowed(self.bash_as("nexus-qa", "cd /tmp/sp/hu; printf x > .gates.jsonl; cd /; find /tmp/sp -type f"))
+        self.assertBlocked(self.bash_as("nexus-qa", "cd /tmp/sp; cd /home/x/repo/doc/sdd/005; printf x > .gates.jsonl"), "gates")
+        self.assertBlocked(self.bash_as("nexus-qa", "cd /tmp/sp; cd ..; printf x > .gates.jsonl"), "gates")
+
+    def test_gates_de_prueba_con_rm_o_sed_en_tmp(self):
+        cmd = ("S=/tmp/sp; rm -rf $S/p; P=$S/p; D=$P/doc/sdd/005-hu; mkdir -p $D $D/.violations\n"
+               "python3 - $D/.gates.jsonl <<'EOF'\nimport json,sys\nopen(sys.argv[1],'w').write('{}')\nEOF")
+        self.assertAllowed(self.bash_as("nexus-qa", cmd))
+        cmd2 = ("S=/tmp/sp/re-ar; /usr/bin/sed -i 's/a/b/' $S/src/reader.py\nP=$S/proj; mkdir -p $P/doc/sdd/005-x\n"
+                "printf '%s\\n' '{}' > $P/doc/sdd/005-x/.gates.jsonl")
+        self.assertAllowed(self.bash_as("nexus-adversary", cmd2))
+        self.assertBlocked(self.bash_as("nexus-qa", "S=/home/x/repo; rm -f x; printf '{}' > $S/doc/sdd/005/.gates.jsonl"), "gates")
+        self.assertBlocked(self.bash_as("nexus-qa", "cp /tmp/a /home/x/repo/doc/sdd/005/.gates.jsonl"), "gates")
+
+    def test_git_stash_list_es_lectura(self):
+        self.assertAllowed(self.bash_as("nexus-adversary", "cd /home/x/repo && git stash list | head -2; git diff main --stat -- tests"))
+        self.assertBlocked(self.bash_as("nexus-adversary", "git -C /home/x/repo stash"), "git")
+        self.assertBlocked(self.bash_as("nexus-adversary", "git -C /home/x/repo stash pop"), "git")
+
+    def test_artefacto_por_bash_pide_write(self):
+        out = self.bash_as("nexus-qa", "cd /home/x/repo; cat > doc/sdd/005-tablero/validation-2.md <<'EOF'\nSTATUS: APROBADO\nEOF")
+        self.assertBlocked(out, "Write o Edit")
+
+
 class EstadoDeLaHU(HookCase):
     def test_repetir_una_fase_no_reabre_una_hu_cerrada(self):
         # QA corto sobre una HU en DONE: el estado pasaba de DONE a F4.

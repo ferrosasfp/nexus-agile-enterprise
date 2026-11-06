@@ -54,6 +54,13 @@ class CheckContract(unittest.TestCase):
                          .replace("- AC-1 y AC-2: test/a.test.ts", "- ACs 1 a 5: test/a.test.ts"))
         self.assertEqual(out.returncode, 0, out.stdout)
 
+    def test_ac_con_sufijo(self):
+        # HU-2 de Nexus Control: AC-8b no se reconocia.
+        (self.hu / "work-item.md").write_text("AC-1: a\nAC-2: b\nAC-8b: c\n")
+        out = self.story(self.BUENO.replace("- W1 cubre AC-1 y AC-2", "- W1 cubre AC-1, AC-2 y AC-8b").replace("- AC-1 y AC-2: test/a.test.ts", "- AC-1, AC-2 y AC-8b: test/a.test.ts"))
+        self.assertEqual(out.returncode, 0, out.stdout)
+        self.assertIn("3 ACs", out.stdout)
+
     def test_ac_sin_test(self):
         out = self.story(self.BUENO.replace("AC-1 y AC-2: test", "AC-1: test"))
         self.assertEqual(out.returncode, 1)
