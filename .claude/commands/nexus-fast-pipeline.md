@@ -176,7 +176,7 @@ Task tool:
       - Gate del repo: PASS/FAIL con comando y salida
       - ACs: PASS/FAIL/NO VERIFICABLE con comando y salida breve
       - Veredicto final: APROBADO / APROBADO con observaciones / RECHAZADO
-      - Con observaciones: cada una dice si es deuda aceptable o si bloquea. El orquestador las presenta a la persona (en AUTO, al supervisor) antes de DONE; si cierra, van como deuda en report.md
+      - Con observaciones: cada una dice si es deuda aceptable o si bloquea. El orquestador las presenta a la persona (en AUTO, al supervisor) antes de DONE; si cierra, van como deuda en cierre.md
 
     NOTA IMPORTANTE: en FAST mode NO hubo AR ni CR — vos sos la única red de seguridad antes de DONE. Si los quality gates fallan, RECHAZAR sin contemplaciones.
 ```
@@ -194,7 +194,7 @@ Task tool:
     Eres nexus-docs en MODO FAST para la HU [WKH-XX].
 
     DIFERENCIAS vs modo normal:
-    - SKIP report.md exhaustivo. Generá solo un mini-report de 5-10 líneas.
+    - SKIP cierre.md exhaustivo. Generá solo un mini-report de 5-10 líneas.
     - FOCUS: actualizar _INDEX.md con status DONE.
     - Si hubo Auto-Blindaje, conservá el archivo original sin consolidar (en FAST no se hace consolidación).
 
@@ -202,7 +202,7 @@ Task tool:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/{work-item.md, validation.md, auto-blindaje.md}
 
     OUTPUT:
-    1. $NEXUS_ROOT/doc/sdd/NNN-titulo/report.md (compacto, formato:
+    1. $NEXUS_ROOT/doc/sdd/NNN-titulo/cierre.md (compacto, formato:
        ```
        # Report — HU WKH-XX [Título] (FAST mode)
 
@@ -229,7 +229,7 @@ Task tool:
 
 ### Después de DONE (orquestador)
 
-- **Si Claude Code rechaza el Write de `report.md`** ("Subagents should return findings as text"): el agente devuelve el contenido entre `<<<ARTEFACTO report.md` y `ARTEFACTO>>>`, y vos lo escribís **tal cual** con Write, anotando el mensaje del rechazo y el sha256. No es rodear nada: es el procedimiento de `/nexus-p8-done`, y pasa con cualquier modelo.
+- **Si Claude Code rechaza el Write de `cierre.md`** ("Subagents should return findings as text"): el agente devuelve el contenido entre `<<<ARTEFACTO cierre.md` y `ARTEFACTO>>>`, y vos lo escribís **tal cual** con Write, anotando el mensaje del rechazo y el sha256. No es rodear nada: es el procedimiento de `/nexus-p8-done`, y pasa con cualquier modelo.
 - **Push, PR y seguimiento del CI** son tuyos, no de un agente. Antes del push, el supervisor (en AUTO) o la persona revisa qué dispara; el push lo autoriza la persona.
 
 ## Reglas críticas del FAST pipeline

@@ -107,6 +107,10 @@ Sigue `$SKILL_DIR/references/story_file_template.md`. Es un contrato autoconteni
 
 El contrato manda: si algo no está ahí, el Dev no lo va a hacer. El Dev puede leer el SDD para entender el porqué, pero no para sumar trabajo.
 
+**Todo AC aparece en el contrato, también los que no son de código** (que los tests cubran a los demás, que se documente algo, que un archivo no pase de un tamaño): una línea con la tarea que lo cumple o la comprobación que lo mide, aunque sea "lo cubre el conjunto, ver plan de tests". `check_contract.py` solo mira el contrato y marca el que falta. En dos HUs seguidas, un AC así estaba en el plan de tests pero no en el contrato, y en la primera obligó a parar y consultar al supervisor.
+
+**Al corregir una afirmación falsa, no agregues afirmaciones nuevas.** Arreglá la frase con lo que dice el código (`archivo:línea`) o quitala. Una cifra o una referencia nueva que nadie pidió es otra cosa que el verificador tiene que comprobar, y en la tercera HU de un proyecto nuevo cada corrección trajo falsas nuevas.
+
 ## Con `contract_mode: unified`
 
 Es el default. No hay F2.5. Agregá al SDD la sección `Contrato de implementación` de `$SKILL_DIR/references/sdd_template.md`, con el mismo nivel de detalle que un Story File. Si la HU resulta ser L, proponé `classic` al orquestador.

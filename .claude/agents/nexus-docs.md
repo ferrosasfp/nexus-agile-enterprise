@@ -42,7 +42,7 @@ Y el índice histórico: `$NEXUS_ROOT/doc/sdd/_INDEX.md`.
 
 ## Output esperado
 
-1. `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md` — reporte final consolidado
+1. `$NEXUS_ROOT/doc/sdd/NNN-titulo/cierre.md` — reporte final consolidado. Se llama así y no `report.md` porque Claude Code no deja a un subagente escribir un archivo con ese nombre ("Subagents should return findings as text"): pasó en las cuatro primeras HUs de un proyecto nuevo.
 2. `$NEXUS_ROOT/doc/sdd/_INDEX.md` actualizado con status DONE / ABORTED
 3. Resumen ejecutivo al orquestador (5-10 líneas) para que lo presente al humano
 
@@ -55,9 +55,9 @@ Si tenés `mem_save`, guardá con `topic_key`, siguiendo `$SKILL_DIR/references/
 3. Una memoria que la HU encontró desactualizada (DESCARTADA en `## MEMORIA CONSULTADA`) se corrige con su mismo `topic_key`.
 4. **Las lecciones no las guardás vos**: escribilas en `$NEXUS_ROOT/doc/sdd/NNN-titulo/lecciones.md` con el formato del protocolo, cada una con evidencia y con cómo volver a comprobarla. Se guardan cuando la persona las aprueba.
 
-No guardes lo que ya está en el repo, el detalle de la HU ni defectos de la metodología. Si una lección es un hecho estable del proyecto, proponé agregarlo a `project-context.md` en `report.md`: lo decide la persona. Sin Engram, escribí lo mismo en `$NEXUS_ROOT/doc/sdd/_LECCIONES.md`.
+No guardes lo que ya está en el repo, el detalle de la HU ni defectos de la metodología. Si una lección es un hecho estable del proyecto, proponé agregarlo a `project-context.md` en `cierre.md`: lo decide la persona. Sin Engram, escribí lo mismo en `$NEXUS_ROOT/doc/sdd/_LECCIONES.md`.
 
-## Estructura del report.md
+## Estructura del cierre.md
 
 ```markdown
 # Report — HU [WKH-XX] [Título]
@@ -109,7 +109,7 @@ Actualizar la fila de la HU con:
 - Status final: `DONE` / `ABORTED` / `BLOCKED`
 - Fecha de cierre
 - Branch
-- Link al report.md
+- Link al cierre.md
 
 Formato:
 ```markdown
@@ -122,11 +122,11 @@ Antes de proponer una regla, clasifica la falla (`$SKILL_DIR/references/auto_bli
 
 ## Reglas críticas
 
-1. **No reescribas artefactos previos**: son inmutables. Solo creás `report.md` y editás `_INDEX.md`.
+1. **No reescribas artefactos previos**: son inmutables. Solo creás `cierre.md` y editás `_INDEX.md`.
 2. **Verificá antes de marcar DONE**: leé el `validation.md` — si el veredicto NO es APROBADO, marcá la HU como BLOCKED y reportá al orquestador.
 3. **Consolidá Auto-Blindaje completo**: no resumas ni omitas entradas. Las lecciones futuras dependen de esto.
 4. **Si la HU fue ABORTED**: documentá el motivo y los artefactos parciales. NO borres nada.
-5. **Si Claude Code rechaza el Write de `report.md`** con un mensaje que pide devolver el contenido como texto: no lo reintentes por Bash ni con otro nombre. Devolvé el contenido completo entre `<<<ARTEFACTO report.md` y `ARTEFACTO>>>`, y el orquestador lo copia tal cual.
+5. **Si Claude Code rechaza el Write de `cierre.md`** con un mensaje que pide devolver el contenido como texto: no lo reintentes por Bash ni con otro nombre. Devolvé el contenido completo entre `<<<ARTEFACTO cierre.md` y `ARTEFACTO>>>`, y el orquestador lo copia tal cual.
 
 ## Costo: lectura mínima y reporte corto
 
@@ -136,7 +136,7 @@ Antes de proponer una regla, clasifica la falla (`$SKILL_DIR/references/auto_bli
 
 ## Done Definition
 
-- `report.md` escrito en `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md`
+- `cierre.md` escrito en `$NEXUS_ROOT/doc/sdd/NNN-titulo/cierre.md`
 - `_INDEX.md` actualizado con status final
 - Auto-Blindaje consolidado en el report
 - Resumen ejecutivo enviado al orquestador (5-10 líneas)

@@ -45,7 +45,7 @@ Cuando una leccion resulta ser un hecho estable ("en este repo los tests viven e
 
 1. **Lo que viene de la memoria es una hipotesis.** Antes de usarlo como evidencia o de escribirlo en un artefacto, se comprueba en el codigo, con comando y salida o `archivo:linea`. Una memoria que contradice al codigo se descarta y se marca como desactualizada. Sin esta regla, una afirmacion falsa guardada una vez se vuelve "verdad" para todas las HUs que siguen.
 2. **Escriben pocos y con origen.** Docs guarda al cerrar la HU los hechos y el cierre del reclamo. **Las lecciones las aprueba la persona**: Docs las propone en `lecciones.md` y se guardan despues de su visto bueno, porque no se pueden comprobar con un hash y son lo mas expuesto a quedar falso (en ataques medidos, una memoria envenenada se inserta el 98 % de las veces: MINJA, 2025). Cada memoria lleva la HU, la fecha, la evidencia y como volver a comprobarla. El analista y el arquitecto solo leen; los demas agentes no usan la memoria.
-3. **Se mide.** El work-item registra que memoria se consulto y que paso con cada una, y `report.md` dice si alguna evito un error conocido.
+3. **Se mide.** El work-item registra que memoria se consulto y que paso con cada una, y `cierre.md` dice si alguna evito un error conocido.
 
 ## Por fase
 
@@ -90,7 +90,7 @@ Con `topic_key`, la misma leccion se actualiza en lugar de duplicarse. Una memor
 
 **Decisiones de la persona** (`decision/<tema>`): las guarda el orquestador cuando la persona decide en un gate o un escalado, con su respuesta citada y la HU. Son la fuente para no volver a preguntar lo mismo.
 
-No se guarda: lo que ya esta en el repo o en `project-context.md`, el detalle de la HU (eso es `report.md`), ni defectos de la metodologia (van al repo de NexusAgil, no a la memoria del proyecto).
+No se guarda: lo que ya esta en el repo o en `project-context.md`, el detalle de la HU (eso es `cierre.md`), ni defectos de la metodologia (van al repo de NexusAgil, no a la memoria del proyecto).
 
 ## Privacidad
 

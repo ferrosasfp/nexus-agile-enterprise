@@ -56,7 +56,7 @@ NexusAgil distribuye **6 agentes custom** en `.claude/agents/` y **11 slash comm
 | `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash, LSP | código + `auto-blindaje.md` |
 | `nexus-adversary` | SPEC_VERIFY, AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `sdd-verification.md`, `ar-report.md`, `cr-report.md`, `blq-verification.md` |
 | `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
-| `nexus-docs` | DONE | sonnet | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
+| `nexus-docs` | DONE | sonnet | Read, Write, Edit, Bash | `cierre.md`, `_INDEX.md` |
 | `nexus-security` | SECURITY (con `security_review`) | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `security-review.md` |
 | `nexus-supervisor` | AUTO, experimental | opus (effort high) | Read, Glob, Grep, Bash | veredicto en su respuesta |
 
@@ -270,7 +270,7 @@ $NEXUS_ROOT/doc/sdd/
     +-- story-file.md                  # F2.5, solo con classic
     +-- plan.md                        # F2: Plan de waves (dentro del SDD o separado)
     +-- validation.md                  # F4: Reporte de validacion
-    +-- report.md                      # DONE: Reporte final
+    +-- cierre.md                      # DONE: Reporte final
 ```
 
 ### Reglas de persistencia

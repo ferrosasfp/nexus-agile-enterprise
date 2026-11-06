@@ -39,7 +39,7 @@ field() { sed -n "s/^$2: //p" "$A/nexus-$1.md" | head -1; }
 # --- Inventario y nombres que no pueden cambiar
 check_count "agentes" 8 "$(ls $A/nexus-*.md | wc -l)"
 check_count "comandos" 11 "$(ls $C/nexus-*.md | wc -l)"
-for art in work-item.md sdd.md story-file.md ar-report.md cr-report.md validation.md report.md; do
+for art in work-item.md sdd.md story-file.md ar-report.md cr-report.md validation.md cierre.md; do
   grep -rq -- "$art" $A $C || fail "artefacto sin mencionar: $art"
 done
 pass "artefactos revisados"
@@ -101,7 +101,7 @@ pass "cada prompt recibe sus rutas"
 check_absent "Dev puede leer el SDD" 'NO leas el SDD' $A $C
 grep -q 'Contrato de implementacion' $R/sdd_template.md || fail "sdd_template sin Contrato de implementacion"
 for f in $A/nexus-*.md; do grep -q "Si el entorno reescribe comandos" "$f" || fail "$(basename $f) sin la regla de comandos reescritos"; done
-grep -q 'Dependencias de merge' $A/nexus-docs.md || fail "report.md no tiene Dependencias de merge"
+grep -q 'Dependencias de merge' $A/nexus-docs.md || fail "cierre.md no tiene Dependencias de merge"
 grep -q 'Nunca quites riesgos' $A/nexus-architect.md || fail "el arquitecto puede recortar riesgos para entrar en el tope"
 grep -q 'La suite completa no es tuya' $A/nexus-adversary.md || fail "el adversario no dice que la suite completa no le toca"
 grep -q 'Sin este campo, la HU es `unified`' $A/nexus-analyst.md || fail "el analista no tiene unified como default"

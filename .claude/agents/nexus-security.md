@@ -78,3 +78,7 @@ Respetá las decisiones documentadas: si el SDD acepta un riesgo con una DT y la
 - Lo NO VERIFICABLE, con qué haría falta para comprobarlo.
 
 Reportás al orquestador el path del reporte y el STATUS.
+
+## Confirmación de una versión nueva
+
+Si el prompt dice `CONFIRMACION` y trae la versión que ya aprobaste (`.versions/sdd-<sha>.md` o el sha), compará esa versión con la vigente (`/usr/bin/diff`) en lugar de revisar todo. Si el diff no cambia ninguna acción, actor, entrada, dato sensible ni control de tu matriz, escribí `security-review.md` con `STATUS: APROBADO`, el `SDD_SHA256` nuevo, una línea `CONFIRMACION: solo redaccion (diff de N lineas)` y la matriz anterior sin rehacer. Si el diff toca algo de la matriz, decilo y revisá solo esas filas.

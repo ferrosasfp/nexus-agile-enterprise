@@ -258,7 +258,7 @@ Datos reales de la ejecucion, no estimados. Incluir ejemplo representativo por p
 
 ### Opcion 1: Manual (equipo chico)
 
-- Timestamps en artefactos (work-item.md, sdd.md, validation.md, report.md)
+- Timestamps en artefactos (work-item.md, sdd.md, validation.md, cierre.md)
 - Conteo manual en _INDEX.md
 - Sprint report manual con el template de arriba
 - Token analysis script (ver seccion anterior)

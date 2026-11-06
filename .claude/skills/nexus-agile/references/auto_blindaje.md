@@ -14,7 +14,7 @@
 
 | Alcance | Donde |
 |---------|-------|
-| Solo esta HU | `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md` seccion Auto-Blindaje |
+| Solo esta HU | `$NEXUS_ROOT/doc/sdd/NNN-titulo/cierre.md` seccion Auto-Blindaje |
 | Multiples features | Archivo de reglas del proyecto |
 | Todo el proyecto | `project-context.md` o equivalente |
 

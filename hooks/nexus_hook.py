@@ -32,14 +32,14 @@ VERSIONED = {"F0F1": ("work-item.md",), "F1": ("work-item.md",), "F2": ("sdd.md"
 PHASE_OUTPUT = {
     "F0F1": "work-item.md", "F1": "work-item.md", "F2": "sdd.md", "F2.5": "story-file.md",
     "AR": "ar-report.md", "CR": "cr-report.md", "VERIFY": "blq-verification.md", "SPEC_VERIFY": "sdd-verification.md", "SECURITY": "security-review.md",
-    "F4": "validation.md", "DONE": "report.md",
+    "F4": "validation.md", "DONE": "cierre.md",
 }
 WRITE_RULES = {
     "nexus-supervisor": r"(?!)",
     "nexus-security": r"/security-review(-\d+)?\.md$",
     "nexus-adversary": r"/(ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?|sdd-verification(-\d+)?)\.md$",
     "nexus-qa": r"/validation(-\d+)?\.md$",
-    "nexus-docs": r"/(report\.md|_INDEX\.md|lecciones\.md|_LECCIONES\.md)$",
+    "nexus-docs": r"/(cierre\.md|_INDEX\.md|lecciones\.md|_LECCIONES\.md)$",
     "nexus-architect": r"/doc/sdd/[^/]+/[^/]+\.md$",
     "nexus-analyst": r"(/doc/sdd/[^/]+/[^/]+\.md|/doc/sdd/_INDEX\.md|/doc/prd/.+|/(project|product)-context\.md)$",
 }
@@ -145,7 +145,7 @@ def write_state(hu_dir, **fields):
 
 
 def latest(hu_dir, stem):
-    """report.md o report-2.md: el de numero mas alto es el vigente."""
+    """cierre.md o cierre-2.md: el de numero mas alto es el vigente."""
     best, best_n = None, -1
     for path in hu_dir.glob(f"{stem}*.md"):
         found = re.fullmatch(rf"{re.escape(stem)}(?:-(\d+))?\.md", path.name)
@@ -413,7 +413,10 @@ def expand_vars(command):
     """Expande $X y ${X} cuando el mismo comando asigna X a una ruta, tambien encadenada (W=$S/copia).
     Lo que viene de otra llamada, se reasigna con otro valor o no queda en una ruta literal, no se adivina."""
     values, seen = {}, {}
-    for name, _, raw in ASSIGN_ANY.findall(command):
+    # Una asignacion dentro del cuerpo de un heredoc es texto del archivo que se escribe, no del shell:
+    # en la HU-3 de Nexus Control, un S="$S/..." en el script de QA anulo el S del comando y el hook bloqueo $S/mk.py.
+    shell_only = HEREDOC.sub(lambda m: m.group(0)[: m.group(0).index("\n")] + "\n", command)
+    for name, _, raw in ASSIGN_ANY.findall(shell_only):
         value = re.sub(r"\$\{(\w+)\}|\$(\w+)", lambda m: values.get(m.group(1) or m.group(2), m.group(0)), raw)
         resolved = os.path.normpath(value) if value.startswith("/") and "$" not in value else None
         seen.setdefault(name, set()).add(resolved)
@@ -453,6 +456,30 @@ def single_cd(command):
     if len(found) != 1 or len(re.findall(r"\b(cd|pushd)\b", top)) != 1:
         return None, None
     return found[0].end(), os.path.normpath(found[0].group(2))
+
+
+def mutations_disposable(command, visible, data):
+    """True si cada archivo que tocan rm, mv, cp, tee, sed -i y compania resuelve a una ruta desechable.
+    En la HU-3 de Nexus Control, QA corrio `cd <repo>; rm -rf $S` con S en /tmp, y el cd al repo lo hizo parecer una escritura."""
+    targets = []
+    for match in FILE_MUTATION.finditer(visible):
+        end = re.search(r"[;&|\n]", visible[match.end():])
+        stop = match.end() + end.start() if end else len(visible)
+        tool = match.group(0).split()[0] if match.group(0).split() else ""
+        words = [(m.group(0), m.start() + match.end()) for m in re.finditer(r"\S+", command[match.end():stop])]
+        if tool in ("sed", "perl"):
+            words = [w for w in words if not w[0].startswith("-")][1:]  # el primero es el script
+        elif tool == "dd":
+            words = [(w[3:], pos + 3) for w, pos in words if w.startswith("of=")]
+        elif tool == "cp":
+            words = [w for w in words if not w[0].startswith("-")][-1:]  # cp solo escribe el destino; mv tambien borra el origen
+        if tool in ("chmod", "chown"):
+            words = [w for w in words if not w[0].startswith("-")][1:]  # el primero es el modo o el duenio
+        for word, pos in words:
+            if word.startswith("-") or word in ("<", ">"):
+                continue
+            targets.append(resolve_at(command, word.strip("'\""), pos, data))
+    return bool(targets) and all(t == "/dev/null" or disposable(t, data) or t.startswith(("$TMPDIR", "${TMPDIR")) for t in targets)
 
 
 def leading_cd(command):
@@ -562,9 +589,14 @@ def check_bash(agent, command, data):
         paths = [w.strip("'\"") for w in rest.split() if w.strip("'\"").startswith("/")]
         safe = disposable(base + "/", data) and ".." not in rest_visible and all(disposable(p, data) or p == "/dev/null" for p in paths)
     else:
+        # Laxo a proposito: alcanza con una palabra en /tmp. Endurecerlo frena, en las corridas reales, docker cp,
+        # docker rm y carpetas de mktemp; queda pendiente con su propia prueba.
         safe = any(disposable(w, data) or "TMPDIR" in w for w in command.split())
     # Un patron de grep entre comillas ('cp |tee |sed -i') no es una mutacion.
-    if FILE_MUTATION.search(visible) and not safe:
+    # Juzgar por archivo solo vale si nada mas escribe: un interprete en linea despues de un cd al repo puede tocarlo.
+    inline = (INLINE_CMD.search(visible) and INLINE_WRITE.search(command)) or \
+        re.search(r"\b(python[0-9.]*|node|ruby|perl|bash|sh)\s+(-I\s+)?-\s*<<|<<\S*\s*\|\s*(python[0-9.]*|node|ruby|perl|bash|sh)\b", visible)
+    if FILE_MUTATION.search(visible) and not safe and (inline or not mutations_disposable(command, visible, data)):
         deny(f"{agent} tiene Bash de solo lectura: {command[:80]}")
 
 
@@ -785,26 +817,39 @@ def cmd_stop(data):
         return
     session = load_session(data)
     mine = [s for s in session["spawns"] if s["agent"] == agent]
-    if not mine:
-        return
     transcript = data.get("agent_transcript_path")
-    found_phase = re.search(r"FASE:\s*([A-Z0-9.]+)", transcript_prompt(transcript))
-    phase_found = found_phase.group(1) if found_phase else None
-    spawn = next((s for s in mine if s["phase"] == phase_found), mine[0])
-    session["spawns"].remove(spawn)
+    finished = session.setdefault("finished", [])
+    if mine:
+        found_phase = re.search(r"FASE:\s*([A-Z0-9.]+)", transcript_prompt(transcript))
+        phase_found = found_phase.group(1) if found_phase else None
+        spawn = next((s for s in mine if s["phase"] == phase_found), mine[0])
+        session["spawns"].remove(spawn)
+        spawn["transcript"] = transcript
+        finished.append(spawn)
+        del finished[:-20]
+    else:
+        # Un agente retomado con SendMessage vuelve a terminar sin un lanzamiento nuevo, que el hook no ve.
+        # En la HU-3 de Nexus Control, dos correcciones del SDD hechas asi no quedaron en .versions/.
+        done = [s for s in finished if s["agent"] == agent and (not transcript or s.get("transcript") in (None, transcript))]
+        if not done:
+            return
+        spawn = done[-1]
+    previous_ts, previous_tree = spawn.get("ts", 0), spawn.get("tree")
+    # La proxima vez que este agente termine, se revisa solo lo que hizo despues de ahora.
+    spawn["ts"], spawn["tree"] = int(time.time()), tree_hash(spawn["code_root"]) if spawn.get("tree") else None
     save_session(data, session)
     hu_dir = Path(spawn["hu_dir"])
     # Cada version que entrega un agente, no solo la aprobada: en la segunda HU real se perdio la v1 del work-item.
     for name in VERSIONED.get(spawn["phase"], ()):
         save_version(hu_dir, name)
     problems = []
-    if agent in READ_ONLY_BASH and spawn.get("tree") and tree_hash(spawn["code_root"]) != spawn["tree"]:
+    if agent in READ_ONLY_BASH and previous_tree and spawn["tree"] != previous_tree:
         problems.append("el arbol de git cambio mientras corrias, y tu rol no modifica codigo. Restauralo y reporta por que")
-    violations = [g for g in read_gates(hu_dir) if g.get("gate") == "VIOLATION" and g.get("by") == agent and g.get("ts", 0) >= spawn.get("ts", 0)]
+    violations = [g for g in read_gates(hu_dir) if g.get("gate") == "VIOLATION" and g.get("by") == agent and g.get("ts", 0) >= previous_ts]
     if violations:
         files = sorted({Path(f).name for g in violations for f in g.get("files", [])})
         problems.append(f"cambiaste {', '.join(files)} con Bash. Reportalo al orquestador con el comando literal; no lo corrijas por tu cuenta")
-    hidden = invisible_chars(hu_dir, spawn.get("ts", 0))
+    hidden = invisible_chars(hu_dir, previous_ts)
     if hidden:
         problems.append("hay caracteres invisibles de formato en " + ", ".join(hidden) +
                         ". Quitalos con Edit: invierten o esconden texto y nadie los ve al revisar")

@@ -72,7 +72,7 @@ flowchart TD
     ARCR -- "BLOCKER confirmed" --> FIX("Dev fixes") --> ARCR
     ARCR -- "approved" --> F4("F4 · QA<br/>runs the repo gate, evidence per AC")
     F4 -- "fails" --> FIX
-    F4 -- "approved" --> DONE("DONE · Docs<br/>report.md, _INDEX, memory")
+    F4 -- "approved" --> DONE("DONE · Docs<br/>cierre.md, _INDEX, memory")
     DONE --> REL{"release_gate?"}
     REL -- "yes" --> G3[/"RELEASE_APPROVED"/]
     REL -- "no" --> END([Closed])
@@ -214,7 +214,7 @@ Eight specialized Claude Code agents — one per pipeline role — with the role
 | `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash, LSP | code + `auto-blindaje.md` |
 | `nexus-adversary` | SPEC_VERIFY, AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `sdd-verification.md`, `ar-report.md`, `cr-report.md`, `blq-verification.md` |
 | `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
-| `nexus-docs` | DONE | sonnet | Read, Write, Edit, Bash | `report.md`, `_INDEX.md` |
+| `nexus-docs` | DONE | sonnet | Read, Write, Edit, Bash | `cierre.md`, `_INDEX.md` |
 | `nexus-security` | SECURITY (HUs with `security_review: required`) | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `security-review.md` |
 | `nexus-supervisor` | AUTO, experimental | opus (effort high) | Read, Glob, Grep, Bash | verdict in its reply |
 
@@ -272,7 +272,7 @@ Orchestrator (minimal context — coordinates only; runs the ownership gate)
      ├─► [sub-agent AR] ┐      → delivers: ar-report.md
      ├─► [sub-agent CR] ┘ in parallel → cr-report.md
      ├─► [sub-agent F4]        → delivers: validation.md
-     └─► [sub-agent DONE]      → delivers: report.md + _INDEX updated + memory
+     └─► [sub-agent DONE]      → delivers: cierre.md + _INDEX updated + memory
 ```
 
 The orchestrator never writes code, generates SDDs, or touches files. It coordinates, receives artifacts, and manages gates.
@@ -382,7 +382,7 @@ doc/sdd/
     ├── ar-report.md          ← AR
     ├── cr-report.md          ← CR
     ├── validation.md         ← F4
-    ├── report.md             ← DONE
+    ├── cierre.md             ← DONE
     ├── .gates.jsonl          ← every gate: who gave it, document hash, time (written by the hook)
     └── .versions/            ← copy of each document as it was approved
 doc/sdd/_INDEX.md             ← history of every HU

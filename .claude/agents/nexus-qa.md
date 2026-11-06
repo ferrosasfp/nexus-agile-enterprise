@@ -220,7 +220,7 @@ Correr el gate una sola vez, y no sus partes, es lo que mantiene acotado este pa
 
 ## AR/CR follow-up
 - All BLQ from AR resolved in fix-pack commits [hash-1, hash-2]
-- MNRs: accepted as TD (see report.md)
+- MNRs: accepted as TD (see cierre.md)
 
 **Listo para DONE.**
 ```
