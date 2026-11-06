@@ -739,6 +739,34 @@ class Versiones(HookCase):
         self.assertEqual(len(list((self.hu / ".versions").glob("work-item-*.md"))), 2)
 
 
+class Concurrencia(HookCase):
+    def test_hooks_en_paralelo_no_corrompen_el_estado(self):
+        # HU-2 de Nexus Control: con AR y CR en paralelo, el hook leyo el estado vacio y freno un mensaje.
+        import concurrent.futures
+        self.write("work-item.md")
+        self.run_hook("prompt", prompt="/nexus-agile:nexus-auto X-1")
+        def golpe(i):
+            if i % 2:
+                return self.run_hook("prompt", prompt=f"como va {i}")
+            return self.run_hook("gate", agent_type="nexus-agile:nexus-adversary", tool_name="Bash", tool_use_id=f"t{i}",
+                                 tool_input={"command": "git -C /x log --oneline -1"})
+        with concurrent.futures.ThreadPoolExecutor(8) as pool:
+            results = list(pool.map(golpe, range(40)))
+        self.assertEqual([r.returncode for r in results if r.returncode not in (0,)], [])
+        state = json.loads(next((self.tmp / "data").glob("s1.json")).read_text())
+        self.assertTrue(state["delegated"])
+
+    def test_fotos_viejas_se_borran(self):
+        data = self.tmp / "data"
+        data.mkdir(exist_ok=True)
+        old = data / "bash-viejo.json"
+        old.write_text("{}")
+        os.utime(old, (1, 1))
+        self.assertAllowed(self.spawn("F1", "nexus-analyst"))
+        self.run_hook("gate", agent_type="nexus-agile:nexus-analyst", tool_name="Bash", tool_use_id="n1", tool_input={"command": "ls"})
+        self.assertFalse(old.exists())
+
+
 class EstadoDeLaHU(HookCase):
     def test_repetir_una_fase_no_reabre_una_hu_cerrada(self):
         # QA corto sobre una HU en DONE: el estado pasaba de DONE a F4.

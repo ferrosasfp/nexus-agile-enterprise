@@ -75,7 +75,15 @@ def load_session(data):
 
 
 def save_session(data, session):
-    session_file(data).write_text(json.dumps(session), encoding="utf-8")
+    atomic_write(session_file(data), json.dumps(session))
+
+
+def atomic_write(path, text):
+    """Se escribe aparte y se reemplaza de una vez: nadie lee el archivo a medio escribir.
+    En la HU-2 de Nexus Control, AR y CR en paralelo dejaron leer el estado vacio y el hook freno un mensaje de la persona."""
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def sha(path):
@@ -130,10 +138,10 @@ def write_state(hu_dir, **fields):
         # Repetir una fase sobre una HU cerrada (un QA corto, una verificacion) no la reabre: queda como repeticion.
         state["rerun"] = {"phase": fields.get("phase"), "agent": fields.get("agent"), "status": fields.get("status"),
                           "ts": int(time.time())}
-        path.write_text(json.dumps(state, indent=1), encoding="utf-8")
+        atomic_write(path, json.dumps(state, indent=1))
         return
     state.update(fields, updated=int(time.time()))
-    path.write_text(json.dumps(state, indent=1), encoding="utf-8")
+    atomic_write(path, json.dumps(state, indent=1))
 
 
 def latest(hu_dir, stem):
@@ -576,8 +584,15 @@ def snapshot_artifacts(data):
     if hu_dir and Path(hu_dir).is_dir():
         contents = {str(p): base64.b64encode(p.read_bytes()).decode() for p in Path(hu_dir).glob("*")
                     if p.is_file() and p.name not in (".nexus-state.json", ".gates.jsonl") and p.stat().st_size <= 1_000_000}
-        snapshot_file(data).write_text(json.dumps({"hu_dir": hu_dir, "ts": time.time(), "hashes": artifact_hashes(hu_dir),
-                                                   "contents": contents}), encoding="utf-8")
+        atomic_write(snapshot_file(data), json.dumps({"hu_dir": hu_dir, "ts": time.time(), "hashes": artifact_hashes(hu_dir),
+                                                     "contents": contents}))
+    # Las fotos de un Bash cancelado no las borra nadie, y guardan copias de los artefactos (con datos del cliente).
+    for old in state_dir().glob("bash-*.json"):
+        try:
+            if old.stat().st_mtime < time.time() - 6 * 3600:
+                old.unlink()
+        except OSError:
+            pass
 
 
 def cmd_after_bash(data):
@@ -809,7 +824,12 @@ def main():
     command = sys.argv[1] if len(sys.argv) > 1 else ""
     if command not in COMMANDS:
         deny(f"subcomando desconocido: {command}")
-    COMMANDS[command](json.load(sys.stdin))
+    data = json.load(sys.stdin)
+    # Una ejecucion del hook a la vez: con agentes en paralelo, dos podian leer y escribir el estado al mismo tiempo.
+    import fcntl
+    with open(state_dir() / ".lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        COMMANDS[command](data)
 
 
 if __name__ == "__main__":

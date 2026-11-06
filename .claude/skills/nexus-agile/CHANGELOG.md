@@ -2,6 +2,10 @@
 
 ## Sin publicar
 
+### Corregido
+- Hook con agentes en paralelo: un candado (una ejecucion a la vez) y escritura atomica del estado. En la HU-2 de Nexus Control, con AR y CR en paralelo, el hook leyo el estado vacio y freno un mensaje de la persona.
+- Las fotos de los artefactos que el hook toma antes de cada Bash se borran a las 6 horas: un Bash cancelado las dejaba para siempre, con copias de los artefactos (y datos del cliente) en el directorio del plugin.
+
 ### Cambiado
 - FAST y FAST+AR: el procedimiento para cuando Claude Code rechaza el Write de `report.md`, y `APROBADO con observaciones` en QA, que antes no tenian camino. El push, el PR y el seguimiento del CI quedan explicitos como tarea del orquestador.
 - El Dev verifica en el registro toda version que fija; sin consulta, escribe NO VERIFICADO. En la HU del CI fijo `@v6` de memoria con `@v7` vigente.
