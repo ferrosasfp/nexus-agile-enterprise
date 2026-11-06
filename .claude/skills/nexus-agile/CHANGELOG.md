@@ -2,6 +2,9 @@
 
 ## Sin publicar
 
+### Agregado
+- Campo `entrega` en `project-context.md` (`persona` por defecto, o `supervisor`). Con `supervisor`, en AUTO el supervisor autoriza el push, el PR y el merge de una HU en DONE: comprueba el CI sobre el ultimo commit, que ese commit sea el que aprobo QA, que no queden BLQ ni decisiones atribuidas a la persona sin cita, y que el merge no dispare nada en produccion. Lo que llega a produccion, a una base real o publica una version se escala igual. El merge lo corre el orquestador, nunca un subagente, sin `--admin`.
+
 ### Corregido (tercera HU de Nexus Control)
 - El reporte de DONE se llama `cierre.md`. Claude Code no deja a un subagente escribir `report.md` ("Subagents should return findings as text"), y en las cuatro primeras HUs el orquestador tuvo que copiarlo a mano.
 - Un agente retomado con SendMessage deja su version en `.versions/` y pasa por los mismos controles al terminar. Antes, el hook ignoraba su segundo final: dos correcciones del SDD no quedaron guardadas.

@@ -163,7 +163,12 @@ Con `--supervisor`, en cada punto de parada lanza `nexus-agile:nexus-supervisor`
 | `PEDIR_EVIDENCIA` | Reúne lo que pide y vuelve a consultarlo. Máximo 2 vueltas; después, escala |
 | `ESCALAR` | Pregunta a la persona con lo que el supervisor dejó listo |
 
-Antes de cualquier push o PR, el punto de parada es del supervisor (punto 7 de su lista): él revisa qué dispara, las versiones y la base del PR, y la persona recibe una sola pregunta de sí o no. El push lo autoriza siempre la persona; la revisión no tiene que hacerla ella, ni otra sesión.
+Antes de cualquier push o PR, el punto de parada es del supervisor (punto 7 de su lista): él revisa qué dispara, las versiones y la base del PR. La revisión no tiene que hacerla la persona, ni otra sesión. Quién autoriza lo dice `entrega` en `project-context.md`:
+
+- `persona` (default): la persona recibe una sola pregunta de sí o no para el push y el PR. El merge lo hace ella.
+- `supervisor`: con `CONTINUAR`, hacés el push y abrís el PR. Cuando el CI termina, consultás al supervisor otra vez (punto 9, merge) y, con `CONTINUAR`, corrés exactamente el comando que te dio y cerrás el issue de la HU si el PR no lo cerró. Lo que llega a producción, a una base real o publica una versión se escala igual.
+
+El merge lo corrés vos, en la sesión principal, nunca un subagente. Al terminar, el reporte a la persona dice qué se mergeó, con qué commit y qué disparó.
 
 Diseño y criterio de adopción: `$SKILL_DIR/references/supervisor.md`. Hasta que la evaluación lo justifique, el modo por defecto sigue siendo el checklist.
 
@@ -386,7 +391,7 @@ Fase 7 — F4 QA
 Fase 8 — DONE
   Prompt: usar el de /nexus-p8-done
   Sub-agente: nexus-docs
-  Modelo: sonnet (en la segunda corrida real, haiku metió 5 errores en cierre.md)
+  Modelo: sonnet (en la segunda corrida real, haiku metió 5 errores en el reporte final)
 ```
 
 **Diferencias vs manual:**

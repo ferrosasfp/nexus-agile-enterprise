@@ -83,14 +83,14 @@ Task tool:
 
 - Presentá el resumen ejecutivo al humano
 - Si hay spinoffs (tickets nuevos como WKH-33): mencionalos
-- El humano decide cuándo mergear el PR y cerrar el ticket en Jira
-- **Antes de un push o de abrir el PR**, mostrale a la persona qué va a disparar, leyendo los workflows completos (no buscando palabras): cada job de CI que corre con ese push o PR y qué hace (por ejemplo, migraciones sobre una base desechable), y si hay deploy de preview. Pedí la autorización con esa lista. En una corrida real, el push disparó un job de migraciones y un preview que nadie había anticipado
+- Con `entrega: persona` (default), el humano decide cuándo mergear el PR y cerrar el ticket. Con `entrega: supervisor`, en AUTO lo autoriza el supervisor (puntos 7 y 9 de su lista, `/nexus-auto` §4.3c)
+- **Antes de un push o de abrir el PR**, mostrale a la persona qué va a disparar, leyendo los workflows completos (no buscando palabras): cada job de CI que corre con ese push o PR y qué hace (por ejemplo, migraciones sobre una base desechable), y si hay deploy de preview. Pedí la autorización con esa lista (en AUTO con `entrega: supervisor`, la da el supervisor). En una corrida real, el push disparó un job de migraciones y un preview que nadie había anticipado
 - Si la base de la HU no existe en el remoto (HU apilada), la descripción del PR lo dice y trae el enlace de comparación contra `BASE_REF`
 - **HU apilada**: la descripción del PR y `cierre.md` nombran los PRs de los que depende, en el orden en que tienen que entrar, y el commit y el árbol (`git -C "$CODE_ROOT" rev-parse HEAD^{tree}`) que aprobó QA. Avisá a la persona que la guía de merges del sprint tiene que sumar este PR después de esas dependencias. Al mergearlas, este PR va a chocar en los archivos que comparten. Después del rebase, `git -C "$CODE_ROOT" range-diff <BASE_REF>..<commit aprobado> origin/main..HEAD` tiene que mostrar cada commit propio con `=`; un `!` se revisa antes de mergear, y un QA nuevo hace falta solo si el cambio no se explica por las dependencias. Comparar árboles no sirve si `main` trae otros merges
 
 ## Si Claude Code rechaza la escritura del artefacto
 
-Claude Code puede rechazar que un subagente escriba un archivo de reporte, con un mensaje como `Subagents should return findings as text, not write report files`. Lo rechaza Claude Code, no el hook de NexusAgil, y el propio mensaje pide devolver el contenido como texto. Visto en una corrida real con `cierre.md`.
+Claude Code puede rechazar que un subagente escriba un archivo de reporte, con un mensaje como `Subagents should return findings as text, not write report files`. Lo rechaza Claude Code, no el hook de NexusAgil, y el propio mensaje pide devolver el contenido como texto. Pasaba siempre con el nombre anterior, `report.md`, y por eso el artefacto se llama `cierre.md`. Si igual pasa, este es el procedimiento.
 
 En ese caso, y solo en ese:
 1. El agente devuelve el contenido completo entre las líneas `<<<ARTEFACTO cierre.md` y `ARTEFACTO>>>`, sin resumirlo.
@@ -101,4 +101,4 @@ No cuenta como rodeo: el rechazo pide exactamente eso. Escribir el artefacto con
 
 ## Importante
 - Vos sos el ORQUESTADOR. NO escribas el cierre.md vos mismo, salvo en el caso de arriba, copiándolo tal cual.
-- DONE es solo cierre documental. No mergea, no pushea, no hace deploy.
+- DONE es solo cierre documental. No mergea, no pushea, no hace deploy. El push y el merge vienen después, con la autorización que diga `entrega`.
