@@ -163,12 +163,12 @@ Con `--supervisor`, en cada punto de parada lanza `nexus-agile:nexus-supervisor`
 | `PEDIR_EVIDENCIA` | Reúne lo que pide y vuelve a consultarlo. Máximo 2 vueltas; después, escala |
 | `ESCALAR` | Pregunta a la persona con lo que el supervisor dejó listo |
 
-Antes de cualquier push o PR, el punto de parada es del supervisor (punto 7 de su lista): él revisa qué dispara, las versiones y la base del PR. La revisión no tiene que hacerla la persona, ni otra sesión. Quién autoriza lo dice `entrega` en `project-context.md`:
+Antes de cualquier push o PR, el punto de parada es del supervisor (punto 7 de su lista): él revisa qué dispara, las versiones y la base del PR. La revisión no tiene que hacerla la persona, ni otra sesión; **la autorización es siempre suya**, con una sola pregunta de sí o no que el supervisor deja lista.
 
-- `persona` (default): la persona recibe una sola pregunta de sí o no para el push y el PR. El merge lo hace ella.
-- `supervisor`: con `CONTINUAR`, hacés el push y abrís el PR. Cuando el CI termina, consultás al supervisor otra vez (punto 9, merge) y, con `CONTINUAR`, corrés exactamente el comando que te dio y cerrás el issue de la HU si el PR no lo cerró. Lo que llega a producción, a una base real o publica una versión se escala igual.
+1. Push y PR: con el SÍ de la persona, hacés el push y abrís el PR en borrador.
+2. Merge: cuando el CI termina, consultás al supervisor otra vez (punto 9). Revisa el CI sobre el último commit, que sea el aprobado por QA y qué dispara el merge, y te deja la pregunta y el comando exacto. Con el SÍ de la persona, corrés ese comando y cerrás el issue de la HU si el PR no lo cerró. Con un NO, o sin respuesta, no se mergea.
 
-El merge lo corrés vos, en la sesión principal, nunca un subagente. Al terminar, el reporte a la persona dice qué se mergeó, con qué commit y qué disparó.
+El push y el merge los corrés vos, en la sesión principal, nunca un subagente. Un SÍ vale para lo que se preguntó: un push nuevo o un commit distinto del que se nombró es otra pregunta. Al terminar, el reporte a la persona dice qué se mergeó, con qué commit y qué disparó.
 
 Diseño y criterio de adopción: `$SKILL_DIR/references/supervisor.md`. Hasta que la evaluación lo justifique, el modo por defecto sigue siendo el checklist.
 
