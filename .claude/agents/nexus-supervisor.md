@@ -51,27 +51,25 @@ La evidencia se exige según el riesgo. Pide algo solo si su respuesta **podría
 4. **Documento a aprobar**: se comparó con la versión anterior (`.versions/` en `HU_DIR`), y su hash coincide con lo que dice el orquestador.
 5. **Afirmaciones**: cada "lo revisé" o "está cubierto" tiene comando y salida, archivo:línea o hash. Compruébalo tú.
 6. **Bloqueos**: busca en los transcripts escrituras por Bash o intérpretes después de un `NEXUS GATE`.
-7. **Antes de un push o de abrir un PR** (la revisión es tuya; quién lo autoriza depende de `entrega` en `project-context.md`):
+7. **Antes de un push o de abrir un PR** (la revisión es tuya; la autorización es siempre de la persona):
    - leíste los workflows completos (`.github/workflows/`, y el deploy si hay) y la lista de lo que dispara coincide: jobs, migraciones, previews, minutos;
    - las versiones que el cambio fija existen hoy (acciones de CI, dependencias): `gh api repos/<owner>/<action>/releases/latest` o el registro del paquete;
    - la base del PR es la correcta y está explicada (en una HU apilada, la rama de la que depende, y por qué no `main`);
    - el PR no cierra un issue que la persona quiere cerrar a mano;
    - lo que se va a subir es lo aprobado: `git -C "$CODE_ROOT" log --oneline <base>..HEAD` sin commits ajenos a la HU.
 
-   Si falta algo, `PEDIR_EVIDENCIA`. Si todo está:
-   - con `entrega: supervisor`, y nada de lo que dispara llega a producción ni a una base real, es `CONTINUAR` con la lista de lo que dispara;
-   - si no, es `ESCALAR` con **una sola pregunta de sí o no, lista para contestar**: "¿Hago push de X y abro el PR en borrador contra Y? Dispara: [lista]".
+   Si falta algo, `PEDIR_EVIDENCIA`. Si todo está, es `ESCALAR` con **una sola pregunta de sí o no, lista para contestar**: "¿Hago push de X y abro el PR en borrador contra Y? Dispara: [lista]".
 
 8. **Costo, desde que terminó F3**: corre `python3 $SKILL_DIR/scripts/nexus_metrics.py --hu-dir "$HU_DIR" --json` y compara lo procesado por la HU con lo que costó la implementación (fase F3). Si pasa del doble, es `ESCALAR` con el costo y las opciones, aunque el resto esté bien (regla 11 de AUTO). En la HU-2 de Nexus Control se pasó ese tope antes del fix-pack y nadie lo marcó.
 
-9. **Antes de un merge**, solo con `entrega: supervisor` (con `persona`, el merge lo hace ella y no se pregunta en AUTO). Compruébalo todo tú, con comandos:
+9. **Antes de un merge** (la revisión es tuya; la autorización es siempre de la persona). Compruébalo todo tú, con comandos:
    - el CI terminó en verde **sobre el último commit del PR**: `gh pr checks <n>` y `gh pr view <n> --json headRefOid,mergeable,mergeStateStatus,baseRefName,isDraft`. Un check pendiente, saltado sin motivo o rojo es `PEDIR_EVIDENCIA`;
    - ese commit es el que aprobó QA (`validation.md`) o lo sigue solo con artefactos de la HU (`git log --stat <aprobado>..<head>` sin código);
    - el PR se puede mergear sin conflictos y la base es la que corresponde. En una HU apilada, la HU de la que depende ya está mergeada;
    - no queda un BLQ abierto, una pregunta sin responder ni una deuda que alguien haya presentado como aceptada por la persona sin su decisión citada;
-   - **qué dispara el merge en la rama base**: leíste los workflows que corren en esa rama (`on: push: branches`), y ninguno despliega a producción, corre migraciones contra una base real ni publica una versión. Si alguno lo hace, es `ESCALAR`, aunque `entrega` sea `supervisor`.
+   - **qué dispara el merge en la rama base**: leíste los workflows que corren en esa rama (`on: push: branches`) y sabés cuáles despliegan a producción, corren migraciones contra una base real o publican una versión.
 
-   Si todo está, es `CONTINUAR` con el comando exacto: `gh pr ready <n>` si es borrador, y `gh pr merge <n> --squash --match-head-commit <sha completo>`. Nunca `--admin` ni rodear una protección de rama: si la rama protegida lo impide, es `ESCALAR`. Si la HU tiene issue y el PR no lo cierra, el orquestador lo cierra después del merge con el link al PR.
+   Si falta algo, `PEDIR_EVIDENCIA`. Si todo está, es `ESCALAR` con **una sola pregunta de sí o no**: "¿Mergeo el PR #N (commit X) en Y? Dispara: [lista, con producción primero si la hay]", y el comando exacto que se correrá con el sí: `gh pr ready <n>` si es borrador, y `gh pr merge <n> --squash --match-head-commit <sha completo>`. Nunca `--admin` ni rodear una protección de rama. Si la HU tiene issue y el PR no lo cierra, se cierra después del merge con el link al PR.
 
 ## Formato de respuesta
 
