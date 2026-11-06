@@ -2,6 +2,14 @@
 
 ## Sin publicar
 
+### Corregido (tercera HU de Nexus Control)
+- El reporte de DONE se llama `cierre.md`. Claude Code no deja a un subagente escribir `report.md` ("Subagents should return findings as text"), y en las cuatro primeras HUs el orquestador tuvo que copiarlo a mano.
+- Un agente retomado con SendMessage deja su version en `.versions/` y pasa por los mismos controles al terminar. Antes, el hook ignoraba su segundo final: dos correcciones del SDD no quedaron guardadas.
+- Una asignacion dentro del cuerpo de un heredoc no cuenta como variable del shell. Un `S="$S/..."` en el script de QA anulaba el `S` del comando y el hook bloqueaba `$S/mk.py`.
+- `rm`, `mv`, `cp`, `tee`, `sed -i` y compania se juzgan por los archivos que tocan: con un `cd` al repo, borrar o copiar en `/tmp` pasa; tocar el repo no. Antes, con un `cd` al repo, no pasaba nada. Sin `cd` sigue alcanzando con una palabra en `/tmp`: endurecerlo frenaba `docker cp`, `docker rm` y carpetas de `mktemp` en las corridas reales, y queda pendiente.
+- Las correcciones de SPEC_VERIFY no agregan afirmaciones nuevas sobre el codigo, y todo AC, tambien los que no son de codigo, aparece en el contrato.
+- Confirmacion de seguridad barata para un SDD que cambio solo de redaccion: el agente compara contra la version que aprobo.
+
 ### Corregido
 - Hook con agentes en paralelo: un candado (una ejecucion a la vez) y escritura atomica del estado. En la HU-2 de Nexus Control, con AR y CR en paralelo, el hook leyo el estado vacio y freno un mensaje de la persona.
 - Rutas de Bash resueltas contra el ultimo `cd` anterior a cada ruta (no solo un `cd` inicial), con variables encadenadas en varias lineas y sin contar los `cd` dentro de un subshell. El `.gates.jsonl` de prueba se decide por a donde apunta cada mencion. Cuatro falsos bloqueos de la HU-2 de Nexus Control, rejugados con el hook nuevo: los cuatro pasan; el unico bloqueo correcto sigue y ahora dice que un artefacto se escribe con Write.

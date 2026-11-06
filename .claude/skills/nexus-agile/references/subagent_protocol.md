@@ -32,7 +32,7 @@ Orchestrator (contexto mínimo — solo coordina)
      ├─► [sub-agente AR]  → entrega: reporte adversarial
      ├─► [sub-agente CR]  → entrega: reporte code review
      ├─► [sub-agente F4]  → entrega: validation.md
-     └─► [sub-agente DONE] → entrega: report.md + _INDEX actualizado
+     └─► [sub-agente DONE] → entrega: cierre.md + _INDEX actualizado
 ```
 
 ---
@@ -115,7 +115,7 @@ Si un sub-agente reporta que hizo trabajo de una fase diferente a la asignada (e
 | AR | Adversary | story-file.md + archivos modificados | ar-report.md |
 | CR | Adversary | story-file.md + archivos modificados | cr-report.md |
 | F4 | QA | story-file.md + archivos modificados | validation.md |
-| DONE | Docs | todos los artefactos anteriores | report.md + _INDEX.md |
+| DONE | Docs | todos los artefactos anteriores | cierre.md + _INDEX.md |
 
 ---
 

@@ -16,7 +16,7 @@ Lanza el sub-agente `nexus-docs` para cerrar la HU: reporte final, actualizació
 
 ## Pre-requisitos
 
-- F4 completado con veredicto APROBADO PARA DONE, o APROBADO con observaciones si la persona decidió cerrar igual (cada observación va como deuda en `report.md`, con su fuente), y `RELEASE_APPROVED` si `project-context.md` declara `release_gate: true`
+- F4 completado con veredicto APROBADO PARA DONE, o APROBADO con observaciones si la persona decidió cerrar igual (cada observación va como deuda en `cierre.md`, con su fuente), y `RELEASE_APPROVED` si `project-context.md` declara `release_gate: true`
 - Todos los artefactos en `$NEXUS_ROOT/doc/sdd/NNN-titulo/`:
   - work-item.md, sdd.md, story-file.md (no existe con contract_mode: unified)
   - ar-report.md, cr-report.md, validation.md
@@ -49,7 +49,7 @@ Task tool:
     Y el índice histórico: $NEXUS_ROOT/doc/sdd/_INDEX.md
 
     TU TAREA:
-    1. Compilar report.md final consolidado en $NEXUS_ROOT/doc/sdd/NNN-titulo/report.md con:
+    1. Compilar cierre.md final consolidado en $NEXUS_ROOT/doc/sdd/NNN-titulo/cierre.md con:
        - Resumen ejecutivo
        - Pipeline ejecutado (gates, fechas)
        - AC results del validation.md
@@ -64,7 +64,7 @@ Task tool:
     3. Verificar que el validation.md tiene veredicto APROBADO. Si no → marcar BLOCKED.
 
     OUTPUT ESPERADO:
-    - $NEXUS_ROOT/doc/sdd/NNN-titulo/report.md
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/cierre.md
     - $NEXUS_ROOT/doc/sdd/_INDEX.md actualizado
     - Resumen ejecutivo (5-10 líneas) al orquestador
 
@@ -86,19 +86,19 @@ Task tool:
 - El humano decide cuándo mergear el PR y cerrar el ticket en Jira
 - **Antes de un push o de abrir el PR**, mostrale a la persona qué va a disparar, leyendo los workflows completos (no buscando palabras): cada job de CI que corre con ese push o PR y qué hace (por ejemplo, migraciones sobre una base desechable), y si hay deploy de preview. Pedí la autorización con esa lista. En una corrida real, el push disparó un job de migraciones y un preview que nadie había anticipado
 - Si la base de la HU no existe en el remoto (HU apilada), la descripción del PR lo dice y trae el enlace de comparación contra `BASE_REF`
-- **HU apilada**: la descripción del PR y `report.md` nombran los PRs de los que depende, en el orden en que tienen que entrar, y el commit y el árbol (`git -C "$CODE_ROOT" rev-parse HEAD^{tree}`) que aprobó QA. Avisá a la persona que la guía de merges del sprint tiene que sumar este PR después de esas dependencias. Al mergearlas, este PR va a chocar en los archivos que comparten. Después del rebase, `git -C "$CODE_ROOT" range-diff <BASE_REF>..<commit aprobado> origin/main..HEAD` tiene que mostrar cada commit propio con `=`; un `!` se revisa antes de mergear, y un QA nuevo hace falta solo si el cambio no se explica por las dependencias. Comparar árboles no sirve si `main` trae otros merges
+- **HU apilada**: la descripción del PR y `cierre.md` nombran los PRs de los que depende, en el orden en que tienen que entrar, y el commit y el árbol (`git -C "$CODE_ROOT" rev-parse HEAD^{tree}`) que aprobó QA. Avisá a la persona que la guía de merges del sprint tiene que sumar este PR después de esas dependencias. Al mergearlas, este PR va a chocar en los archivos que comparten. Después del rebase, `git -C "$CODE_ROOT" range-diff <BASE_REF>..<commit aprobado> origin/main..HEAD` tiene que mostrar cada commit propio con `=`; un `!` se revisa antes de mergear, y un QA nuevo hace falta solo si el cambio no se explica por las dependencias. Comparar árboles no sirve si `main` trae otros merges
 
 ## Si Claude Code rechaza la escritura del artefacto
 
-Claude Code puede rechazar que un subagente escriba un archivo de reporte, con un mensaje como `Subagents should return findings as text, not write report files`. Lo rechaza Claude Code, no el hook de NexusAgil, y el propio mensaje pide devolver el contenido como texto. Visto en una corrida real con `report.md`.
+Claude Code puede rechazar que un subagente escriba un archivo de reporte, con un mensaje como `Subagents should return findings as text, not write report files`. Lo rechaza Claude Code, no el hook de NexusAgil, y el propio mensaje pide devolver el contenido como texto. Visto en una corrida real con `cierre.md`.
 
 En ese caso, y solo en ese:
-1. El agente devuelve el contenido completo entre las líneas `<<<ARTEFACTO report.md` y `ARTEFACTO>>>`, sin resumirlo.
+1. El agente devuelve el contenido completo entre las líneas `<<<ARTEFACTO cierre.md` y `ARTEFACTO>>>`, sin resumirlo.
 2. El orquestador lo escribe tal cual con Write en `HU_DIR`, sin cambiar nada, y anota en la bitácora el mensaje literal y el sha256 del archivo.
 3. Si hace falta corregir algo del contenido, lo decide una persona y la corrección se muestra como diff aparte.
 
 No cuenta como rodeo: el rechazo pide exactamente eso. Escribir el artefacto con otro contenido, o por Bash, sí lo es.
 
 ## Importante
-- Vos sos el ORQUESTADOR. NO escribas el report.md vos mismo, salvo en el caso de arriba, copiándolo tal cual.
+- Vos sos el ORQUESTADOR. NO escribas el cierre.md vos mismo, salvo en el caso de arriba, copiándolo tal cual.
 - DONE es solo cierre documental. No mergea, no pushea, no hace deploy.

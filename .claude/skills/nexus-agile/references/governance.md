@@ -19,7 +19,7 @@ Cuando el PO necesita cambiar alcance despues de HU_APPROVED o SPEC_APPROVED:
 
 ### Artefacto de Cambio
 
-Para Tier Trivial y Menor, documentar en el report.md:
+Para Tier Trivial y Menor, documentar en el cierre.md:
 
 SCOPE CHANGE
 - HU: NNN

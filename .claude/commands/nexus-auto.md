@@ -386,7 +386,7 @@ Fase 7 — F4 QA
 Fase 8 — DONE
   Prompt: usar el de /nexus-p8-done
   Sub-agente: nexus-docs
-  Modelo: sonnet (en la segunda corrida real, haiku metió 5 errores en report.md)
+  Modelo: sonnet (en la segunda corrida real, haiku metió 5 errores en cierre.md)
 ```
 
 **Diferencias vs manual:**

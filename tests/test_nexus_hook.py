@@ -739,6 +739,21 @@ class Versiones(HookCase):
         self.assertEqual(len(list((self.hu / ".versions").glob("work-item-*.md"))), 2)
 
 
+    def test_agente_retomado_tambien_deja_version(self):
+        # HU-3 de Nexus Control: el arquitecto corrigio el SDD dos veces retomado con SendMessage, y esas versiones no quedaron.
+        transcript = self.tmp / "agent-arq.jsonl"
+        transcript.write_text(json.dumps({"message": {"role": "user", "content": "FASE: F2\nhaz"}}) + "\n")
+        self.assertAllowed(self.spawn("F1", "nexus-analyst"))
+        for n in (1, 2, 3):
+            self.write("work-item.md", f"v{n}\n## PREGUNTAS PARA EL HUMANO\nNinguna\n## MEMORIA CONSULTADA\nNinguna\n")
+            self.run_hook("stop", agent_type="nexus-agile:nexus-analyst", agent_transcript_path=str(transcript))
+        self.assertEqual(len(list((self.hu / ".versions").glob("work-item-*.md"))), 3)
+        # Otro agente que nunca se lanzo no hereda nada
+        self.write("work-item.md", "v4\n")
+        self.run_hook("stop", agent_type="nexus-agile:nexus-dev")
+        self.assertEqual(len(list((self.hu / ".versions").glob("work-item-*.md"))), 3)
+
+
 class Concurrencia(HookCase):
     def test_hooks_en_paralelo_no_corrompen_el_estado(self):
         # HU-2 de Nexus Control: con AR y CR en paralelo, el hook leyo el estado vacio y freno un mensaje.
@@ -795,6 +810,23 @@ class TerceraHU(HookCase):
         self.assertAllowed(self.bash_as("nexus-adversary", cmd2))
         self.assertBlocked(self.bash_as("nexus-qa", "S=/home/x/repo; rm -f x; printf '{}' > $S/doc/sdd/005/.gates.jsonl"), "gates")
         self.assertBlocked(self.bash_as("nexus-qa", "cp /tmp/a /home/x/repo/doc/sdd/005/.gates.jsonl"), "gates")
+
+    def test_asignacion_dentro_de_un_heredoc_no_cuenta(self):
+        # HU-3 de Nexus Control: S="$S/..." en el cuerpo del script de QA anulaba el S del comando.
+        cmd = ("cd /home/x/repo; S=/tmp/sp/qa; rm -rf $S; mkdir -p $S/p/sess1/subagents\n"
+               "H=/home/x/repo/doc/sdd/007-costo\ncat > $S/mk.py <<EOF\nimport json,sys\nS=\"$S/p/sess1/subagents/\"\nH=\"$H\"\nEOF\n"
+               "python3 $S/mk.py")
+        self.assertAllowed(self.bash_as("nexus-qa", cmd))
+        # Reasignar en el shell, fuera del heredoc, sigue sin resolverse
+        self.assertBlocked(self.bash_as("nexus-qa", "S=/tmp/sp; S=/home/x/repo; printf x > $S/mk.py"))
+        # Con un cd al repo, lo que se borra o copia en /tmp sigue siendo desechable; en el repo, no
+        self.assertAllowed(self.bash_as("nexus-qa", "cd /home/x/repo; S=/tmp/sp/qa; rm -rf $S; cp src/a.py $S/a.py"))
+        self.assertBlocked(self.bash_as("nexus-qa", "cd /home/x/repo; rm -f src/a.py"))
+        self.assertBlocked(self.bash_as("nexus-qa", "cd /home/x/repo; cp /tmp/a src/a.py"))
+        self.assertBlocked(self.bash_as("nexus-qa", "cd /home/x/repo; sed -i 's/a/b/' src/a.py /tmp/b"))
+        self.assertBlocked(self.bash_as("nexus-qa", "cd /home/x/repo; mv src/a.py /tmp/sp/a.py"))
+        # Una copia de respaldo a /tmp no habilita un script en linea que escribe en el repo
+        self.assertBlocked(self.bash_as("nexus-adversary", "cd /home/x/repo && cp src/a.py /tmp/sp/a.bak && python3 - <<'PY'\np='/home/x/repo/src/a.py'\nopen(p,'w').write('x')\nPY"))
 
     def test_git_stash_list_es_lectura(self):
         self.assertAllowed(self.bash_as("nexus-adversary", "cd /home/x/repo && git stash list | head -2; git diff main --stat -- tests"))

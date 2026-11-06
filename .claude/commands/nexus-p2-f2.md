@@ -82,6 +82,7 @@ Task tool:
 
    - Con `falsas=0`: seguí al paso 5.
    - Con falsas: relanzá al arquitecto con la lista literal de las FALSAS para que corrija solo eso, y verificá de nuevo, acotado a las líneas que cambiaron. El hook no deja pasar a F3 con falsas abiertas ni con una verificación de otra versión del SDD.
+   - La corrección **no agrega afirmaciones nuevas sobre el código**: se arregla la frase falsa, quitándola o reemplazándola por lo que el código dice, con `archivo:línea`. En la tercera HU de un proyecto nuevo, cada corrección sumó cifras y referencias que nadie había pedido, y la verificación encontró 2, 2 y 3 falsas nuevas en cuatro corridas. Si el verificador encuentra una falsa en una línea que la corrección agregó, se lo decís al arquitecto con esa regla.
    - Las NO VERIFICABLES no frenan: van en el resumen para la persona.
    - Con `debiles=` mayor que 0: el arquitecto refuerza esos controles en el plan de tests (una vuelta, con la forma de evadirlos que dio el verificador) y la verificación se repite solo sobre esas líneas. Es más barato que encontrarlo en AR.
    - Si `project-context.md` declara `spec_verify: false`, este paso se salta.
@@ -102,6 +103,7 @@ Task tool:
    - Con `altos=0 medios=0`: seguí al paso 5. Las NOTAS van en el resumen.
    - Con hallazgos: relanzá al arquitecto con la lista literal (camino de ataque y qué tendría que decir el SDD), después `SPEC_VERIFY` acotado a lo que cambió, y la revisión de seguridad de nuevo, acotada. El hook no deja pasar a F3 con hallazgos abiertos ni con la revisión de otra versión del SDD.
    - Aceptar un hallazgo como riesgo, en lugar de corregirlo, lo decide la persona: siempre se escala, también en AUTO.
+   - **Un cambio del SDD posterior a la revisión, aunque sea solo de redacción, necesita una confirmación de seguridad**: el hook pide que `security-review.md` lleve el sha del SDD vigente. La confirmación es barata: el agente de seguridad recibe el diff desde la versión que aprobó y, si no cambia ninguna acción, actor, entrada ni control de la matriz, escribe `STATUS: APROBADO` con el sha nuevo y una línea `CONFIRMACION: solo redaccion (diff de N lineas)`, sin rehacer la matriz. No le prometas a la persona una ronda "sin revisión de seguridad": en la tercera HU de un proyecto nuevo se prometió y después hubo que correr la confirmación igual (51 mil tokens).
 
 4c. **Tope de rondas.** Como máximo **dos rondas** de corrección por HU entre SPEC_VERIFY y SECURITY. Si después de la segunda quedan hallazgos o controles débiles, no hay tercera automática: el arquitecto los escribe en la sección `Límites conocidos` del SDD (qué no cubre el diseño, por qué y qué lo cubriría) y se los presentás a la persona en el gate. Ella decide si los acepta o pide una ronda más. Sin tope, en la primera HU de un proyecto nuevo F2 corrió 6 veces y la verificación 7, persiguiendo evasiones cada vez más rebuscadas, y se llevó el 59 % del costo de la HU.
 

@@ -649,7 +649,7 @@ PRE-RELEASE CHECKLIST — HU-NNN
 
 ### Persistencia F5
 
-Agregar al `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md`:
+Agregar al `$NEXUS_ROOT/doc/sdd/NNN-titulo/cierre.md`:
 ```markdown
 ## Release Gate
 - Checklist: [PASS/FAIL por item]
@@ -678,7 +678,7 @@ Agregar al `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md`:
    - AR/CR summary
    - Auto-Blindaje acumulado
    - **Release Gate status** (si F5 aplica)
-2. Escribir en `$NEXUS_ROOT/doc/sdd/NNN-titulo/report.md`
+2. Escribir en `$NEXUS_ROOT/doc/sdd/NNN-titulo/cierre.md`
 3. Actualizar `$NEXUS_ROOT/doc/sdd/_INDEX.md` con status DONE
 4. Recordar al humano cerrar el issue en el tracker del proyecto (Linear, GitHub Issues, Jira, o el configurado en `project-context.md`): Docs no lo cierra
 5. Si la HU generó nuevas reglas de proceso → actualizar `project-context.md` o el SKILL.md relevante

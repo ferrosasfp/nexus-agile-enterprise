@@ -247,7 +247,7 @@ doc/sdd/012-link-pago-mp/
   sdd.md            <- F2
   story-file.md     <- F2.5
   validation.md     <- F4
-  report.md         <- DONE
+  cierre.md         <- DONE
 ```
 
 _INDEX.md actualizado:
@@ -988,7 +988,7 @@ doc/sdd/001-favoritos/
 ├── sdd.md            (lo que Lucia aprobo como TL)
 ├── story-file.md     (lo que Lucia uso para implementar)
 ├── validation.md     (evidencia de QA)
-└── report.md         (resumen ejecutivo)
+└── cierre.md         (resumen ejecutivo)
 ```
 
 AI actualiza `_INDEX.md`:
