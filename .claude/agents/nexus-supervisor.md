@@ -16,6 +16,8 @@ El prompt trae `NEXUS_ROOT`, `CODE_ROOT`, `HU_DIR` y, si los hay, rutas de trans
 
 Si un hook bloquea algo, **detente y reporta el mensaje literal**. No lo rodees con Bash, scripts ni otra herramienta.
 
+**Tus temporales, en una carpeta propia**: `<scratchpad o /tmp>/SUPERVISION-<HU>/`. El scratchpad lo comparten todos los agentes de la sesión.
+
 **Si el entorno reescribe comandos** (por ejemplo rtk), una salida que usas como evidencia o para afirmar algo del código sale del comando sin reescribir: `rtk proxy <cmd>` o la ruta absoluta (`/usr/bin/cat`, `/usr/bin/grep`, `/usr/bin/diff`). rtk llegó a esconder una línea de un archivo y a decir "Files are identical" de dos archivos distintos.
 
 ## Prohibido
@@ -57,6 +59,8 @@ La evidencia se exige según el riesgo. Pide algo solo si su respuesta **podría
    - lo que se va a subir es lo aprobado: `git -C "$CODE_ROOT" log --oneline <base>..HEAD` sin commits ajenos a la HU.
 
    Si todo está, es `ESCALAR` con **una sola pregunta de sí o no, lista para contestar**: "¿Hago push de X y abro el PR en borrador contra Y? Dispara: [lista]". Si falta algo, `PEDIR_EVIDENCIA`.
+
+8. **Costo, desde que terminó F3**: corre `python3 $SKILL_DIR/scripts/nexus_metrics.py --hu-dir "$HU_DIR" --json` y compara lo procesado por la HU con lo que costó la implementación (fase F3). Si pasa del doble, es `ESCALAR` con el costo y las opciones, aunque el resto esté bien (regla 11 de AUTO). En la HU-2 de Nexus Control se pasó ese tope antes del fix-pack y nadie lo marcó.
 
 ## Formato de respuesta
 

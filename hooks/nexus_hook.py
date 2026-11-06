@@ -43,7 +43,7 @@ WRITE_RULES = {
     "nexus-architect": r"/doc/sdd/[^/]+/[^/]+\.md$",
     "nexus-analyst": r"(/doc/sdd/[^/]+/[^/]+\.md|/doc/sdd/_INDEX\.md|/doc/prd/.+|/(project|product)-context\.md)$",
 }
-GIT_DESTRUCTIVE = re.compile(r"\bgit\b[^|;&]*\s(reset\s+--hard|checkout\s+--|checkout\s+\.|clean\s|restore\s|stash\b|pull\b)")
+GIT_DESTRUCTIVE = re.compile(r"\bgit\b[^|;&]*\s(reset\s+--hard|checkout\s+--|checkout\s+\.|clean\s|restore\s|stash\b(?!\s+(list|show)\b)|pull\b)")
 NO_VERIFY = re.compile(r"\bgit\b[^|;&]*\s(commit|push)\b[^|;&]*\s--no-verify\b")
 GIT_WRITE = re.compile(r"\bgit\b[^|;&]*\s(commit|push|merge(?!-base)|rebase|apply|add|rm|mv|tag)\b")
 FILE_MUTATION = re.compile(r"\btee\b|\b(sed|perl)\b[^|;&]*\s-[a-zA-Z]*i|\b(rm|mv|cp|chmod|chown|truncate|dd)\s")
@@ -406,7 +406,7 @@ HEREDOC = re.compile(r"<<-?\s*(['\"]?)(\w+)\1[^\n]*\n.*?\n\s*\2\b", re.S)
 ASSIGN = re.compile(r"(?:^|[;&|]\s*|\bexport\s+)([A-Za-z_]\w*)=(['\"]?)(/[^\s'\"$`;&|]*)\2(?=\s*(?:$|[;&|]))")
 
 
-ASSIGN_ANY = re.compile(r"(?:^|[;&|]\s*|\bexport\s+)([A-Za-z_]\w*)=(['\"]?)([^\s'\";&|`]*)\2(?=\s*(?:$|[;&|]))")
+ASSIGN_ANY = re.compile(r"(?:^|[;&|\n][ \t]*|\bexport\s+)([A-Za-z_]\w*)=(['\"]?)([^\s'\";&|`]*)\2(?=[ \t]*(?:$|[;&|\n]))")
 
 
 def expand_vars(command):
@@ -434,15 +434,56 @@ def masked(command):
 
 def redirect_targets(command):
     """Destinos de > y >> reales: ignora los que estan dentro de comillas o en el cuerpo de un heredoc."""
-    return [command[m.start(1):m.end(1)].strip("'\"") for m in REDIRECT.finditer(masked(command))]
+    return [t for t, _ in redirect_targets_at(command)]
+
+
+def redirect_targets_at(command):
+    return [(command[m.start(1):m.end(1)].strip("'\""), m.start(1)) for m in REDIRECT.finditer(masked(command))]
+
+
+CD = re.compile(r"(?:^|[;&|\n]\s*)cd\s+(['\"]?)(/[^'\"\s;&|]+)\1\s*(?=&&|;|\n|$)")
+
+
+def single_cd(command):
+    """(posicion, directorio) del unico `cd /ruta` del comando, este donde este (despues de asignar variables, en otra linea).
+    Con mas de un cd, o con pushd, no se adivina: (None, None)."""
+    # Un cd dentro de un subshell, `(cd X && ...)`, no cambia el directorio del resto del comando: no cuenta.
+    top = re.sub(r"\(\s*cd\b[^()]*\)", lambda m: " " * len(m.group(0)), command)
+    found = list(CD.finditer(top))
+    if len(found) != 1 or len(re.findall(r"\b(cd|pushd)\b", top)) != 1:
+        return None, None
+    return found[0].end(), os.path.normpath(found[0].group(2))
 
 
 def leading_cd(command):
-    """Directorio de un `cd /ruta &&` inicial, si es el unico cd del comando. Sin el, una ruta relativa queda sin resolver."""
-    found = re.match(r"\s*cd\s+(['\"]?)(/[^'\"\s;&|]+)\1\s*(&&|;)", command)
-    if not found or len(re.findall(r"\b(cd|pushd)\b", command)) != 1:
+    """Directorio del unico cd del comando, si va antes que cualquier escritura. Se mantiene por compatibilidad."""
+    return single_cd(command)[1]
+
+
+def cd_base_at(command, position, default):
+    """Directorio vigente en `position`: el del ultimo `cd /ruta` antes de esa posicion, fuera de subshells.
+    Si antes hubo un cd que no se puede resolver (`cd ..`, `cd $X` sin asignar, pushd), devuelve None."""
+    top = re.sub(r"\(\s*cd\b[^()]*\)", lambda m: " " * len(m.group(0)), command[:position])
+    if re.search(r"\bpushd\b", top):
         return None
-    return os.path.normpath(found.group(2))
+    literal = {m.start(): m for m in CD.finditer(top)}
+    base = default
+    for word in re.finditer(r"(?:^|[;&|\n][ \t]*)cd\b", top):
+        match = next((m for start, m in literal.items() if start == word.start()), None)
+        if match is None:
+            return None
+        base = os.path.normpath(match.group(2))
+    return base
+
+
+def resolve_at(command, target, position, data):
+    """Ruta absoluta de `target`, que aparece en `position`, relativa al ultimo cd anterior (o al cwd)."""
+    if target.startswith(("/", "$", "~")):
+        return os.path.normpath(os.path.expanduser(target)) if not target.startswith("$") else target
+    base = cd_base_at(command, position, str(data.get("cwd") or os.getcwd()))
+    if base is None:
+        return target  # no se sabe donde esta: queda relativa y no cuenta como desechable
+    return os.path.normpath(os.path.join(base, target))
 
 
 def absolute(target, base):
@@ -486,14 +527,12 @@ def check_bash(agent, command, data):
     # Solo si el comando escribe en .gates.jsonl. Nombrarlo dentro de comillas o de un heredoc (una nota en la bitacora) no cuenta.
     visible = masked(command)
     expanded = expand_vars(command)
-    base = leading_cd(expanded)
-    # La ruta se resuelve contra el cd inicial: en la primera prueba real, `cd /tmp/x; printf ... > proj/.gates.jsonl`
-    # se bloqueaba porque la ruta relativa no parecia estar en /tmp.
-    if any(t.endswith(".gates.jsonl") and not disposable(absolute(t, base), data) for t in redirect_targets(expanded)) or \
-            (".gates.jsonl" in visible and FILE_MUTATION.search(visible)
-             and not (base and disposable(base + "/", data) and ".." not in visible
-                      and all(disposable(w, data) for w in visible.split() if w.startswith("/")))) or \
-            (INLINE_WRITE.search(command) and ".gates.jsonl" in command):
+    # Lo que decide es a donde apunta cada mencion de .gates.jsonl, con variables y cd resueltos: un archivo de
+    # prueba en /tmp se puede crear, el de una HU no. Se probo con los comandos literales de tres corridas reales.
+    mentions = [(m.group(0).strip("'\"();"), m.start()) for m in re.finditer(r"[^\s'\"=]*\.gates\.jsonl", expanded)]
+    outside = [t for t, pos in mentions if not disposable(resolve_at(expanded, t, pos, data), data)]
+    if outside and (any(t.endswith(".gates.jsonl") for t in redirect_targets(expanded))
+                    or FILE_MUTATION.search(masked(expanded)) or INLINE_WRITE.search(command)):
         deny("los gates solo los registra el hook")
     check_forbidden(command, data)
     if NO_VERIFY.search(command):
@@ -509,9 +548,12 @@ def check_bash(agent, command, data):
             not any(disposable(w.strip("'\"()"), data) for w in re.split(r"[\s,]+", command)):
         deny(f"{agent} no escribe con un interprete en linea. Si necesita un cambio, usa Write o Edit donde su rol lo permite, o reportalo")
     base = leading_cd(command)
-    for target in redirect_targets(command):
-        if not (target == "/dev/null" or disposable(absolute(target, base), data) or target.startswith(("$TMPDIR", "${TMPDIR"))):
-            deny(f"{agent} no escribe archivos por Bash ({target}). Usa una ruta absoluta en /tmp, escrita en el mismo comando")
+    for target, position in redirect_targets_at(command):
+        if not (target == "/dev/null" or disposable(resolve_at(command, target, position, data), data)
+                or target.startswith(("$TMPDIR", "${TMPDIR"))):
+            hint = ("Un artefacto de la HU se escribe con Write o Edit" if "doc/sdd/" in resolve_at(command, target, position, data)
+                    else "Usa una ruta absoluta en /tmp, escrita en el mismo comando")
+            deny(f"{agent} no escribe archivos por Bash ({target}). {hint}")
     if base:
         # Dentro de un cd a /tmp, toda ruta absoluta tambien debe ser desechable, y nada sube con "..".
         # El ".." que cuenta es el de una ruta, no el de un texto entre comillas (un import en un sed).

@@ -4,6 +4,11 @@
 
 ### Corregido
 - Hook con agentes en paralelo: un candado (una ejecucion a la vez) y escritura atomica del estado. En la HU-2 de Nexus Control, con AR y CR en paralelo, el hook leyo el estado vacio y freno un mensaje de la persona.
+- Rutas de Bash resueltas contra el ultimo `cd` anterior a cada ruta (no solo un `cd` inicial), con variables encadenadas en varias lineas y sin contar los `cd` dentro de un subshell. El `.gates.jsonl` de prueba se decide por a donde apunta cada mencion. Cuatro falsos bloqueos de la HU-2 de Nexus Control, rejugados con el hook nuevo: los cuatro pasan; el unico bloqueo correcto sigue y ahora dice que un artefacto se escribe con Write.
+- `git stash list` y `git stash show` son lectura.
+- `check_contract.py` reconoce ACs con sufijo (`AC-8b`), tambien dentro de listas.
+- El supervisor revisa el costo desde F3 (punto 8): la regla 11 de AUTO no la aplico nadie en la HU-2.
+- Cada agente guarda sus temporales en una carpeta propia del scratchpad compartido.
 - Las fotos de los artefactos que el hook toma antes de cada Bash se borran a las 6 horas: un Bash cancelado las dejaba para siempre, con copias de los artefactos (y datos del cliente) en el directorio del plugin.
 
 ### Cambiado

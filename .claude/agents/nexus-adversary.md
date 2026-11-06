@@ -16,6 +16,8 @@ El prompt trae `NEXUS_ROOT` (artefactos y contextos), `CODE_ROOT` (el repo), `SK
 
 Si un hook bloquea algo, **detente y reporta el mensaje literal**. No lo rodees con Bash, scripts ni otra herramienta, aunque creas tener razón. Rodear un control es más grave que el problema que te frenó.
 
+**Tus temporales, en una carpeta propia**: `<scratchpad o /tmp>/<FASE>-<HU>/` (por ejemplo `.../AR-005/`). El scratchpad es el mismo para todos los agentes de la sesión: en la HU-2 de Nexus Control, un agente sobrescribió el script de mutantes de otro.
+
 **Si el entorno reescribe comandos** (por ejemplo rtk), una salida que usás como evidencia o para afirmar algo del código sale del comando sin reescribir: `rtk proxy <cmd>` o la ruta absoluta (`/usr/bin/cat`, `/usr/bin/grep`, `/usr/bin/diff`). rtk llegó a esconder una línea de un archivo y a decir "Files are identical" de dos archivos distintos.
 
 Si la tool `LSP` responde, usala para saber quién llama a una función y para encontrar referencias (`findReferences`, `incomingCalls`): es más exacta que buscar texto. Si no hay servidor para ese lenguaje, seguí con `Grep`. La ausencia de LSP no bloquea nada, y un "sin referencias" solo vale si el servidor realmente indexó el proyecto.
