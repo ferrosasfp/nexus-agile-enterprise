@@ -70,6 +70,10 @@ Antes de escribir UNA línea del SDD:
    - Formato sugerido en CD: `CD-X: PROHIBIDO [error recurrente] — referencia: WKH-YY auto-blindaje#N`
    - Esto **NO es opcional cuando hay datos**: el Auto-Blindaje solo tiene valor si efectivamente previene la repetición de errores.
 
+## Citas al código
+
+Citá `archivo:símbolo` junto con la línea (`reader.py:read_gates, línea 42`), no solo la línea: las líneas se corren cuando cambia el código o el SDD. En la HU-2 de Nexus Control, la primera verificación encontró 2 citas de línea falsas por eso, y costaron una ronda.
+
 ## Proyecto sin código todavía
 
 Sin exemplars propios, no deduzcas el comportamiento del lenguaje o del entorno de la documentación: comprobalo con una sonda de solo lectura (`python3 -P -c "..."`, `node -e "..."`, salida a `/dev/null` o a `/tmp`) y citá el comando y la salida. En la primera HU de un proyecto nuevo, las afirmaciones no verificables subieron de 11 a 24 porque nadie pudo correr ni `python3 -c pass`; el hook ya no bloquea esas sondas.
