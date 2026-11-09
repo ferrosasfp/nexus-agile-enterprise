@@ -720,6 +720,25 @@ class PorDestino(HookCase):
         report.write_text("STATUS: APROBADO open_blq=0\n")
         self.assertAllowed(self.run_hook("after-bash", **data))
 
+    def test_sed_sobre_un_artefacto_se_frena_antes(self):
+        # HU-4 de Nexus Control: el dev corrio sed -i sobre auto-blindaje.md y el git commit del mismo comando lo guardo.
+        self.write("work-item.md", "- Pipeline: FAST\n## PREGUNTAS PARA EL HUMANO\nNinguna\n")
+        self.type_gate("HU_APPROVED")
+        self.write("auto-blindaje.md", "v1\n")
+        rel = self.hu.relative_to(self.repo)
+        cmd = (f"cd {self.repo}; S=/tmp/sp/F3-011-fp1; /usr/bin/sed -i '35s/aserción/asercion/' {rel}/auto-blindaje.md; "
+               f"/usr/bin/grep -cP '[^\\x00-\\x7F]' {rel}/auto-blindaje.md\ngit add {rel}/auto-blindaje.md && git commit -q -m x")
+        before, _ = self.bash("nexus-dev", "F3", cmd)
+        self.assertBlocked(before, "auto-blindaje.md")
+        dev = dict(agent_type="nexus-agile:nexus-dev", tool_name="Bash")
+        for other in (f"tee {self.hu}/sdd.md < /tmp/x", f"cd {self.hu} && cp /tmp/x sdd.md", f"rm {self.hu}/sdd.md",
+                      f"cd {self.hu}; sed -i 's/a b/c/' sdd.md"):
+            self.assertBlocked(self.run_hook("gate", tool_input={"command": other}, **dev))
+        # Leer un artefacto, copiarlo afuera o editar codigo sigue permitido; un script de sed con espacios no es un archivo
+        for fine in (f"cp {self.hu}/sdd.md /tmp/sp/sdd.md", f"sed -n 1,5p {self.hu}/sdd.md",
+                     f"cd {self.hu}; sed -i 's/a b/c/' /tmp/sp/x.md", f"cd {self.repo} && sed -i 's/a/b/' src/a.py && git add src/a.py"):
+            self.assertAllowed(self.run_hook("gate", tool_input={"command": fine}, **dev))
+
     def test_sesion_principal_no_se_vigila(self):
         self.write("sdd.md", "v1\n")
         self.assertAllowed(self.spawn("F1", "nexus-analyst"))
@@ -752,6 +771,30 @@ class Versiones(HookCase):
         self.write("work-item.md", "v4\n")
         self.run_hook("stop", agent_type="nexus-agile:nexus-dev")
         self.assertEqual(len(list((self.hu / ".versions").glob("work-item-*.md"))), 3)
+
+
+class Supervision(HookCase):
+    def consult(self, answer, name="sup.jsonl"):
+        transcript = self.tmp / name
+        prompt = f"FASE: SUPERVISION\nHU_DIR: {self.hu}\nPunto de parada: fin de F0+F1 de GH-11, en AUTO\nRevisa."
+        lines = [{"message": {"role": "user", "content": prompt}},
+                 {"message": {"role": "assistant", "content": [{"type": "tool_use", "name": "SubagentHandback", "input": {"message": answer}}]}}]
+        transcript.write_text("".join(json.dumps(l) + "\n" for l in lines))
+        self.assertAllowed(self.spawn("SUPERVISION", "nexus-supervisor"))
+        return self.run_hook("stop", agent_type="nexus-agile:nexus-supervisor", agent_transcript_path=str(transcript))
+
+    def test_el_veredicto_queda_en_gates(self):
+        # HU-4 de Nexus Control: para contar los veredictos hubo que leerlos de los transcripts.
+        self.consult("VEREDICTO: ESCALAR\n\n**Qué comprobé**\n- todo")
+        entry = [json.loads(l) for l in (self.hu / ".gates.jsonl").read_text().splitlines()][-1]
+        self.assertEqual((entry["gate"], entry["verdict"], entry["by"]), ("SUPERVISION", "ESCALAR", "nexus-supervisor"))
+        self.assertEqual(entry["point"], "fin de F0+F1 de GH-11, en AUTO")
+
+    def test_sin_veredicto_se_le_pide_el_formato(self):
+        stop = self.consult("Revise todo y esta bien.", name="sup2.jsonl")
+        self.assertIn("VEREDICTO", stop.stdout + stop.stderr)
+        entry = [json.loads(l) for l in (self.hu / ".gates.jsonl").read_text().splitlines()][-1]
+        self.assertIsNone(entry["verdict"])
 
 
 class Concurrencia(HookCase):

@@ -155,7 +155,7 @@ Aunque todos los criterios den PASS, escala a la persona cuando la decisión cam
 
 ### §4.3c Supervisor (experimental, `--supervisor`)
 
-Con `--supervisor`, en cada punto de parada lanza `nexus-agile:nexus-supervisor` con `FASE: SUPERVISION`, `HU_DIR:`, `RUTAS:`, tu reporte de ese punto y las rutas de los transcripts. No le pases tu razonamiento. Actúa según su primera línea:
+Con `--supervisor`, en cada punto de parada lanza `nexus-agile:nexus-supervisor` con `FASE: SUPERVISION`, `HU_DIR:`, `RUTAS:`, una línea `Punto de parada: <qué se decide>` (el hook la guarda en `.gates.jsonl` junto al veredicto), tu reporte de ese punto y las rutas de los transcripts. No le pases tu razonamiento. Actúa según su primera línea:
 
 | Veredicto | Acción |
 |-----------|--------|
@@ -241,7 +241,7 @@ El orquestador **PARA** y usa `AskUserQuestion` cuando:
 | 8 | SDD con items irresolubles sin conocimiento de dominio humano | Listar items pendientes, pedir decisión |
 | 9 | Conflicto de Scope IN entre HUs sin orden claro | Presentar overlap y opciones de ordenamiento |
 | 10 | Batch completo (todas las HUs en DONE) | Presentar completion report (§8.2) para cierre |
-| 11 | El costo acumulado de la HU pasa del doble de lo que cuesta su implementación | Antes del siguiente fix-pack: costo acumulado en tokens (`nexus_metrics.py`), lo que falta y las opciones (seguir, aceptar el riesgo como deuda, cambiar el enfoque). Lo ya gastado no es motivo para seguir: se decide por lo que falta. En la segunda corrida real, un test de imports se llevó dos fix-packs y más tokens que la implementación sin que nadie lo decidiera |
+| 11 | El costo acumulado de la HU pasa del doble de lo que cuesta su implementación | Antes del siguiente fix-pack: costo acumulado en tokens (`nexus_metrics.py`), lo que falta y las opciones (seguir, aceptar el riesgo como deuda, cambiar el enfoque). Lo ya gastado no es motivo para seguir: se decide por lo que falta. **Se pregunta una vez al pasar el tope**; si la persona decide seguir, se vuelve a preguntar solo cuando, desde esa decisión, se gasta de nuevo lo que costó F3. En la segunda corrida real, un test de imports se llevó dos fix-packs y más tokens que la implementación sin que nadie lo decidiera; en la cuarta HU de un proyecto nuevo, la especificación cara dejó el tope pasado al terminar F3 y cada paso siguiente trajo la misma pregunta de costo |
 
 **Regla general:** ante incertidumbre del orquestador sobre si self-aprobar o escalar → **escalar siempre**.
 Es más barato preguntar al humano que aprobar algo incorrecto.

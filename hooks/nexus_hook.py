@@ -458,15 +458,16 @@ def single_cd(command):
     return found[0].end(), os.path.normpath(found[0].group(2))
 
 
-def mutations_disposable(command, visible, data):
-    """True si cada archivo que tocan rm, mv, cp, tee, sed -i y compania resuelve a una ruta desechable.
-    En la HU-3 de Nexus Control, QA corrio `cd <repo>; rm -rf $S` con S en /tmp, y el cd al repo lo hizo parecer una escritura."""
+def mutation_targets(command, visible, data):
+    """Archivos que tocan rm, mv, cp, tee, sed -i y compania, resueltos contra el ultimo cd.
+    Las palabras se cortan sobre el texto con las comillas tapadas: un script de sed con espacios es una sola palabra."""
     targets = []
     for match in FILE_MUTATION.finditer(visible):
         end = re.search(r"[;&|\n]", visible[match.end():])
         stop = match.end() + end.start() if end else len(visible)
         tool = match.group(0).split()[0] if match.group(0).split() else ""
-        words = [(m.group(0), m.start() + match.end()) for m in re.finditer(r"\S+", command[match.end():stop])]
+        words = [(command[match.end() + m.start():match.end() + m.end()], match.end() + m.start())
+                 for m in re.finditer(r"\S+", visible[match.end():stop])]
         if tool in ("sed", "perl"):
             words = [w for w in words if not w[0].startswith("-")][1:]  # el primero es el script
         elif tool == "dd":
@@ -479,6 +480,13 @@ def mutations_disposable(command, visible, data):
             if word.startswith("-") or word in ("<", ">"):
                 continue
             targets.append(resolve_at(command, word.strip("'\""), pos, data))
+    return targets
+
+
+def mutations_disposable(command, visible, data):
+    """True si cada archivo que tocan rm, mv, cp, tee, sed -i y compania resuelve a una ruta desechable.
+    En la HU-3 de Nexus Control, QA corrio `cd <repo>; rm -rf $S` con S en /tmp, y el cd al repo lo hizo parecer una escritura."""
+    targets = mutation_targets(command, visible, data)
     return bool(targets) and all(t == "/dev/null" or disposable(t, data) or t.startswith(("$TMPDIR", "${TMPDIR")) for t in targets)
 
 
@@ -642,6 +650,13 @@ def check_bash_into_hu_dir(agent, command, data):
         resolved = os.path.realpath(os.path.join(base, os.path.expanduser(target)))
         if resolved.startswith(root):
             deny(f"{agent} no escribe artefactos de la HU por Bash ({target}). Usa Write o Edit, y el commit en otro comando")
+    # Lo mismo con sed -i, tee, cp, mv y rm: en la HU-4 de Nexus Control, el dev corrio un sed -i sobre su
+    # auto-blindaje.md y el git commit del mismo comando guardo la version del sed antes de que el hook la revirtiera.
+    for target in mutation_targets(expanded, masked(expanded), data):
+        if target.startswith("$"):
+            continue
+        if os.path.realpath(target).startswith(root):
+            deny(f"{agent} no modifica artefactos de la HU por Bash ({os.path.basename(target)}). Usa Edit o Write, y el commit en otro comando")
 
 
 def artifact_hashes(hu_dir):
@@ -795,6 +810,33 @@ def tree_hash(code_root):
     return hashlib.sha256("\0".join(outputs).encode()).hexdigest()
 
 
+VERDICT = re.compile(r"VEREDICTO:\s*(CONTINUAR|PEDIR_EVIDENCIA|ESCALAR)\b")
+
+
+def record_supervision(hu_dir, transcript):
+    """Cada veredicto del supervisor queda en .gates.jsonl, con el punto de parada, para medir AUTO sin leer transcripts.
+    En la HU-4 de Nexus Control, la herramienta que los cuenta tuvo que leerlos de los transcripts porque no estaban en ningun archivo."""
+    if not transcript or not Path(transcript).is_file():
+        return True  # sin transcript no hay de donde leerlo; no es culpa del supervisor
+    verdict = None
+    with open(transcript, encoding="utf-8", errors="replace") as handle:
+        for raw in handle:
+            try:
+                message = json.loads(raw).get("message") or {}
+            except ValueError:
+                continue
+            if message.get("role") != "assistant":
+                continue
+            found = VERDICT.findall(json.dumps(message.get("content"), ensure_ascii=False))
+            verdict = found[-1] if found else verdict
+    point = re.search(r"Punto de parada:\s*([^\n]{1,160})", transcript_prompt(transcript))
+    entry = {"gate": "SUPERVISION", "by": "nexus-supervisor", "verdict": verdict,
+             "point": point.group(1).strip() if point else None, "ts": int(time.time())}
+    with (hu_dir / ".gates.jsonl").open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    return verdict is not None
+
+
 def transcript_prompt(path):
     """El prompt original del sub-agente, para saber que fase corrio en AR+CR paralelos."""
     if not path or not Path(path).is_file():
@@ -843,6 +885,9 @@ def cmd_stop(data):
     for name in VERSIONED.get(spawn["phase"], ()):
         save_version(hu_dir, name)
     problems = []
+    if agent == "nexus-supervisor" and hu_dir.is_dir():
+        if not record_supervision(hu_dir, transcript):
+            problems.append("tu respuesta no empieza con VEREDICTO: CONTINUAR, PEDIR_EVIDENCIA o ESCALAR. Respondé con ese formato")
     if agent in READ_ONLY_BASH and previous_tree and spawn["tree"] != previous_tree:
         problems.append("el arbol de git cambio mientras corrias, y tu rol no modifica codigo. Restauralo y reporta por que")
     violations = [g for g in read_gates(hu_dir) if g.get("gate") == "VIOLATION" and g.get("by") == agent and g.get("ts", 0) >= previous_ts]
