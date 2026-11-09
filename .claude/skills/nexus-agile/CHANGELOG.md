@@ -2,6 +2,12 @@
 
 ## Sin publicar
 
+### Corregido (cuarta HU de Nexus Control)
+- El hook frena antes de correr un `sed -i`, `perl -i`, `tee`, `cp`, `mv` o `rm` sobre un artefacto de la HU, como ya hacia con las redirecciones. El dev corrio `sed -i` sobre su `auto-blindaje.md` y el `git commit` del mismo comando lo guardo antes de que el hook lo revirtiera. Rejugados 270 comandos reales que modifican archivos, con el HU_DIR de su corrida: el unico bloqueo nuevo es ese.
+- Cada veredicto del supervisor queda en `.gates.jsonl` (`gate: SUPERVISION`, con el veredicto y el punto de parada). Si la respuesta no empieza con `VEREDICTO:`, el hook se lo pide.
+- La regla de costo pregunta una vez al pasar el tope, y de nuevo solo si desde esa decision se gasta otra vez lo que costo F3. Con una especificacion cara, cada paso despues de F3 repetia la misma pregunta.
+- Los agentes que escriben artefactos citan los caracteres especiales por su codigo (`U+2028`): Write y Edit convierten el escape en el caracter real, tambien en Markdown.
+
 ### Agregado
 - El supervisor tambien revisa el merge (punto 9): CI en verde sobre el ultimo commit, que ese commit sea el aprobado por QA, que no queden BLQ ni decisiones atribuidas a la persona sin cita, y que dispara el merge en la rama base. Deja una sola pregunta de si o no y el comando exacto. **La autorizacion del push, del PR y del merge es siempre de la persona**: el orquestador corre el comando solo con su SI. Reemplaza al campo `entrega`, que dejaba al supervisor autorizar solo y se publico por error en el PR #5.
 

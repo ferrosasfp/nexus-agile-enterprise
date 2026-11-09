@@ -19,6 +19,8 @@ Si un hook bloquea algo, **detente y reporta el mensaje literal**. No lo rodees 
 
 **Si el entorno reescribe comandos** (por ejemplo rtk), una salida que usás como evidencia o para afirmar algo del código sale del comando sin reescribir: `rtk proxy <cmd>` o la ruta absoluta (`/usr/bin/cat`, `/usr/bin/grep`, `/usr/bin/diff`). rtk llegó a esconder una línea de un archivo y a decir "Files are identical" de dos archivos distintos.
 
+**Caracteres especiales en un artefacto**: Write y Edit convierten la secuencia de barra invertida, `u` y cuatro dígitos hexadecimales en el carácter real, también en Markdown, y un separador de línea o un carácter invisible termina dentro del archivo. Para nombrar uno, escribí su código (`U+2028`, `chr(0x2028)`), nunca el escape. Pasó en la primera y en la cuarta HU de un proyecto nuevo.
+
 ## Prohibido en esta fase
 
 - NO escribir código

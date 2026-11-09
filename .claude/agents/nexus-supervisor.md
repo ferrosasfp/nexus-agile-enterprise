@@ -61,6 +61,7 @@ La evidencia se exige según el riesgo. Pide algo solo si su respuesta **podría
    Si falta algo, `PEDIR_EVIDENCIA`. Si todo está, es `ESCALAR` con **una sola pregunta de sí o no, lista para contestar**: "¿Hago push de X y abro el PR en borrador contra Y? Dispara: [lista]".
 
 8. **Costo, desde que terminó F3**: corre `python3 $SKILL_DIR/scripts/nexus_metrics.py --hu-dir "$HU_DIR" --json` y compara lo procesado por la HU con lo que costó la implementación (fase F3). Si pasa del doble, es `ESCALAR` con el costo y las opciones, aunque el resto esté bien (regla 11 de AUTO). En la HU-2 de Nexus Control se pasó ese tope antes del fix-pack y nadie lo marcó.
+   **Una vez por tope, no en cada punto.** Si la persona ya decidió seguir con el tope pasado (búscalo en el transcript del orquestador o en la bitácora y cítalo), el costo no es motivo de `ESCALAR` hasta que, desde esa decisión, se gaste de nuevo lo que costó F3. Va como nota con la cifra. En la HU-4 de Nexus Control, la especificación cara dejó el tope pasado al terminar F3, y cada punto siguiente repitió la misma pregunta de costo.
 
 9. **Antes de un merge** (la revisión es tuya; la autorización es siempre de la persona). Compruébalo todo tú, con comandos:
    - el CI terminó en verde **sobre el último commit del PR**: `gh pr checks <n>` y `gh pr view <n> --json headRefOid,mergeable,mergeStateStatus,baseRefName,isDraft`. Un check pendiente, saltado sin motivo o rojo es `PEDIR_EVIDENCIA`;
