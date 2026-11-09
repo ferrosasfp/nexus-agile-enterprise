@@ -937,6 +937,50 @@ class TerceraHU(HookCase):
         # Una copia de respaldo a /tmp no habilita un script en linea que escribe en el repo
         self.assertBlocked(self.bash_as("nexus-adversary", "cd /home/x/repo && cp src/a.py /tmp/sp/a.bak && python3 - <<'PY'\np='/home/x/repo/src/a.py'\nopen(p,'w').write('x')\nPY"))
 
+    def test_sin_cd_cada_archivo_se_juzga_por_su_ruta(self):
+        # Antes alcanzaba con una palabra en /tmp: `rm src/a.py /tmp/x` pasaba.
+        self.assertBlocked(self.bash_as("nexus-qa", "rm src/a.py /tmp/sp/x"))
+        self.assertBlocked(self.bash_as("nexus-adversary", "cp /tmp/sp/orig.ts /home/x/repo/src/a.ts"))
+        self.assertAllowed(self.bash_as("nexus-qa", "rm -rf /tmp/sp/x && mkdir -p /tmp/sp/x && cp /home/x/repo/src/a.py /tmp/sp/x/"))
+        # Subcomandos de otra herramienta no son mutaciones de archivos locales
+        self.assertAllowed(self.bash_as("nexus-adversary", "docker cp /tmp/sp/supabase pg:/rama && docker rm -f pg"))
+        # Una carpeta de mktemp en /tmp es desechable; una plantilla relativa cae en el directorio actual
+        self.assertAllowed(self.bash_as("nexus-adversary", "D=$(mktemp -d /tmp/cr001mut.XXXX); cp /home/x/repo/tests/a.py $D/; sed -i 's/a/b/' $D/a.py"))
+        self.assertAllowed(self.bash_as("nexus-adversary", "T=$(mktemp -d); cp /home/x/repo/a.py $T/a.py"))
+        self.assertBlocked(self.bash_as("nexus-adversary", "D=$(mktemp -d copia.XXXX); cp /tmp/a $D/a.py"))
+
+    def test_falsos_positivos_del_parser_en_corridas_reales(self):
+        # Rejugando los comandos reales: --rm de docker run, 2>/dev/null, la barra de continuacion y un cd relativo.
+        self.assertAllowed(self.bash_as("nexus-qa", "docker run --rm -v /tmp/sp/supabase:/work -w /work postgres psql -f x.sql"))
+        self.assertAllowed(self.bash_as("nexus-qa", "cp /home/x/repo/a.md /tmp/sp/a.md 2>/dev/null; rm -f /tmp/sp/b 2>&1"))
+        self.assertAllowed(self.bash_as("nexus-qa", "cp /home/x/repo/a.md \\\n  /tmp/sp/a.md"))
+        self.assertAllowed(self.bash_as("nexus-adversary", "cd /tmp/sp/wt || exit 1\ncd apps/web && rm -rf .next"))
+        self.assertBlocked(self.bash_as("nexus-adversary", "cd /tmp/sp/wt; cd ..; cd x && rm -rf y"))
+        # La variable de un for cuenta como /tmp solo si el comando nombra /tmp
+        self.assertAllowed(self.bash_as("nexus-adversary", "cd /tmp/sp/wt; for f in a.ts b.ts; do cp /tmp/sp/orig/$f $f; done"))
+        self.assertBlocked(self.bash_as("nexus-adversary", "for f in a.ts b.ts; do rm $f; done"))
+        # tee dentro de una ruta no es tee; cd con redireccion antes del ||; variables de una funcion
+        self.assertAllowed(self.bash_as("nexus-qa", "L=$(ls -t ~/.local/share/rtk/tee/*vitest_run.log | head -1); head -1 \"$L\" > /tmp/sp/v.txt"))
+        self.assertAllowed(self.bash_as("nexus-adversary", "cd /tmp/sp/lab 2>/dev/null || exit 1\ncp src/a.ts /tmp/sp/a.bak"))
+        self.assertAllowed(self.bash_as("nexus-adversary", "S=/tmp/sp/ar; x() { M=$1; D=$S/$M; mkdir -p $D; cp /home/x/repo/a.py $D/; }; x m1"))
+        self.assertAllowed(self.bash_as("nexus-qa", "npx vitest run 2>&1 | /usr/bin/tee /tmp/sp/v.log"))
+        self.assertBlocked(self.bash_as("nexus-qa", "npx vitest run 2>&1 | tee /home/x/repo/v.log"))
+        # Corrida real: python3 -I -c que muta un archivo del repo, con la ruta en una variable relativa y un cp que lo restaura
+        self.assertBlocked(self.bash_as("nexus-adversary", "cd /home/x/repo/apps/web && f=lib/a.ts; python3 -I -c 'import sys;f=sys.argv[1];open(f,\"w\").write(\"x\")' $f; npx vitest run > /tmp/sp/mf.txt 2>&1; cp /tmp/sp/bk2 $f"))
+        # Un script en linea despues de un cd a /tmp, con copias desde el repo: el script escribe en la copia
+        self.assertAllowed(self.bash_as("nexus-adversary", "SP=/tmp/sp; R=/home/x/repo; cp $R/src/a.ts $SP/repo/src/a.ts; python3 - <<'EOF'\np='/tmp/sp/repo/src/a.ts'\nopen(p,'w').write('x')\nEOF\ncd $SP/repo && npx tsc --noEmit"))
+
+    def test_carpeta_de_evidencia_declarada(self):
+        # En un proyecto real, los revisores dejaban evidencia en una carpeta de auditoria fuera del repo.
+        (self.repo / "project-context.md").write_text("| **evidence_dir** | `/home/x/auditoria` |\n")
+        repo = dict(agent_type="nexus-agile:nexus-qa", tool_name="Bash", cwd=str(self.repo))
+        self.assertAllowed(self.run_hook("gate", tool_input={"command": "cp /tmp/sp/qa.md /home/x/auditoria/s1/qa.md"}, **repo))
+        self.assertAllowed(self.run_hook("gate", tool_input={"command": "npx vitest run 2>&1 | tee /home/x/auditoria/s1/tests.txt"}, **repo))
+        self.assertBlocked(self.run_hook("gate", tool_input={"command": "cp /tmp/sp/qa.md /home/x/otra/qa.md"}, **repo))
+        # Una carpeta de evidencia que contiene el repo no cuenta
+        (self.repo / "project-context.md").write_text(f"| **evidence_dir** | `{self.repo.parent}` |\n")
+        self.assertBlocked(self.run_hook("gate", tool_input={"command": f"cp /tmp/a {self.repo}/src/a.py"}, **repo))
+
     def test_git_stash_list_es_lectura(self):
         self.assertAllowed(self.bash_as("nexus-adversary", "cd /home/x/repo && git stash list | head -2; git diff main --stat -- tests"))
         self.assertBlocked(self.bash_as("nexus-adversary", "git -C /home/x/repo stash"), "git")

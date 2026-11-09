@@ -48,7 +48,8 @@ WRITE_RULES = {
 GIT_DESTRUCTIVE = re.compile(r"\bgit\b[^|;&]*\s(reset\s+--hard|checkout\s+--|checkout\s+\.|clean\s|restore\s|stash\b(?!\s+(list|show)\b)|pull\b)")
 NO_VERIFY = re.compile(r"\bgit\b[^|;&]*\s(commit|push)\b[^|;&]*\s--no-verify\b")
 GIT_WRITE = re.compile(r"\bgit\b[^|;&]*\s(commit|push|merge(?!-base)|rebase|apply|add|rm|mv|tag)\b")
-FILE_MUTATION = re.compile(r"\btee\b|\b(sed|perl)\b[^|;&]*\s-[a-zA-Z]*i|\b(rm|mv|cp|chmod|chown|truncate|dd)\s")
+# (?<![\w-]): `--rm` de docker run no es rm. `tee` solo como comando, no dentro de una ruta (`~/.local/share/rtk/tee/`).
+FILE_MUTATION = re.compile(r"(?:^|(?<=[\s|;&(])|(?<=/bin/))tee\b|\b(sed|perl)\b[^|;&]*\s-[a-zA-Z]*i|(?<![\w-])(rm|mv|cp|chmod|chown|truncate|dd)\s")
 REDIRECT = re.compile(r"(?<![0-9&<>])>>?\s*([^\s&|;]+)")
 
 
@@ -450,6 +451,9 @@ ASSIGN = re.compile(r"(?:^|[;&|]\s*|\bexport\s+)([A-Za-z_]\w*)=(['\"]?)(/[^\s'\"
 ASSIGN_ANY = re.compile(r"(?:^|[;&|\n][ \t]*|\bexport\s+)([A-Za-z_]\w*)=(['\"]?)([^\s'\";&|`]*)\2(?=[ \t]*(?:$|[;&|\n]))")
 
 
+MKTEMP_ASSIGN = re.compile(r"(?:^|[;&|\n][ \t]*|\bexport\s+)([A-Za-z_]\w*)=\"?\$\(mktemp\b([^)]*)\)\"?")
+
+
 def expand_vars(command):
     """Expande $X y ${X} cuando el mismo comando asigna X a una ruta, tambien encadenada (W=$S/copia).
     Lo que viene de otra llamada, se reasigna con otro valor o no queda en una ruta literal, no se adivina."""
@@ -457,9 +461,25 @@ def expand_vars(command):
     # Una asignacion dentro del cuerpo de un heredoc es texto del archivo que se escribe, no del shell:
     # en la HU-3 de Nexus Control, un S="$S/..." en el script de QA anulo el S del comando y el hook bloqueo $S/mk.py.
     shell_only = HEREDOC.sub(lambda m: m.group(0)[: m.group(0).index("\n")] + "\n", command)
-    for name, _, raw in ASSIGN_ANY.findall(shell_only):
+    for name, args in MKTEMP_ASSIGN.findall(shell_only):
+        # D=$(mktemp -d /tmp/x.XXXX): una carpeta nueva en /tmp. Sin plantilla, o con -t, va a $TMPDIR (/tmp).
+        template = next((w for w in args.split() if w.startswith("/")), None)
+        folder = re.search(r"(?:-p\s+|--tmpdir=)(\S+)", args)
+        if template is None and folder is None and (not args.split() or "-t" in args.split() or all(w.startswith("-") for w in args.split())):
+            template = "/tmp/mktemp.XXXXXX"
+        elif folder and folder.group(1).startswith("/"):
+            template = folder.group(1).rstrip("/") + "/mktemp.XXXXXX"
+        seen.setdefault(name, set()).add(os.path.normpath(template) if template else None)
+        if template:
+            values[name] = os.path.normpath(template)
+    # Tambien se ignoran las que estan dentro de comillas (`python3 -c 'f=sys.argv[1]'`): se buscan sobre el texto
+    # con las comillas tapadas y el valor se lee del original, en la misma posicion.
+    covered = masked(shell_only)
+    found = [(m.group(1), shell_only[m.start(3):m.end(3)]) for m in ASSIGN_ANY.finditer(covered)]
+    for name, raw in found:
         value = re.sub(r"\$\{(\w+)\}|\$(\w+)", lambda m: values.get(m.group(1) or m.group(2), m.group(0)), raw)
-        resolved = os.path.normpath(value) if value.startswith("/") and "$" not in value else None
+        # Una ruta relativa literal tambien se expande: resolve_at la resuelve despues contra el cd vigente.
+        resolved = (os.path.normpath(value) if value.startswith("/") else value) if value and "$" not in value and not value.startswith("~") else None
         seen.setdefault(name, set()).add(resolved)
         if resolved:
             values[name] = resolved
@@ -485,7 +505,9 @@ def redirect_targets_at(command):
     return [(command[m.start(1):m.end(1)].strip("'\""), m.start(1)) for m in REDIRECT.finditer(masked(command))]
 
 
-CD = re.compile(r"(?:^|[;&|\n]\s*)cd\s+(['\"]?)(/[^'\"\s;&|]+)\1\s*(?=&&|;|\n|$)")
+CD = re.compile(r"(?:^|[;&|\n]\s*)cd\s+(['\"]?)(/[^'\"\s;&|]+)\1\s*(?:\d*>\S+\s*)*(?=&&|\|\||;|\n|$)")
+# cd apps/web despues de un cd absoluto: se resuelve contra el anterior. `cd ..`, `cd -` y `cd $X` no.
+REL_CD = re.compile(r"(?:^|[;&|\n]\s*)cd\s+(['\"]?)((?!\.\.|-|\$|~)[^/'\"\s;&|][^'\"\s;&|]*)\1\s*(?=&&|\|\||;|\n|$)")
 
 
 def single_cd(command):
@@ -503,12 +525,19 @@ def mutation_targets(command, visible, data):
     """Archivos que tocan rm, mv, cp, tee, sed -i y compania, resueltos contra el ultimo cd.
     Las palabras se cortan sobre el texto con las comillas tapadas: un script de sed con espacios es una sola palabra."""
     targets = []
-    for match in FILE_MUTATION.finditer(visible):
+    # Una barra al final de linea continua el comando: misma longitud, para no mover las posiciones
+    command, visible = command.replace("\\\n", "  "), visible.replace("\\\n", "  ")
+    for match in real_mutations(visible):
         end = re.search(r"[;&|\n]", visible[match.end():])
         stop = match.end() + end.start() if end else len(visible)
         tool = match.group(0).split()[0] if match.group(0).split() else ""
-        words = [(command[match.end() + m.start():match.end() + m.end()], match.end() + m.start())
-                 for m in re.finditer(r"\S+", visible[match.end():stop])]
+        words = []
+        for m in re.finditer(r"\S+", visible[match.end():stop]):
+            word = command[match.end() + m.start():match.end() + m.end()]
+            if re.match(r"\d*[<>]", word):
+                break  # desde aca son redirecciones, que se juzgan aparte
+            if word != "\\":
+                words.append((word, match.end() + m.start()))
         if tool in ("sed", "perl"):
             words = [w for w in words if not w[0].startswith("-")][1:]  # el primero es el script
         elif tool == "dd":
@@ -524,11 +553,64 @@ def mutation_targets(command, visible, data):
     return targets
 
 
+# `docker cp`, `docker rm`, `kubectl cp`: el verbo es de otra herramienta, no toca archivos locales del modo que se juzga aca.
+# Los `git rm` y `git mv` los juzga GIT_WRITE.
+NOT_FILE_TOOLS = {"docker", "podman", "kubectl", "git", "gh", "npm", "pnpm", "yarn", "bun", "cargo", "supabase", "vercel"}
+
+
+def real_mutations(visible):
+    """Las mutaciones de archivos del comando, sin las que son subcomandos de otra herramienta."""
+    found = []
+    for match in FILE_MUTATION.finditer(visible):
+        before = re.search(r"(\S+)\s+$", visible[: match.start()])
+        if before and os.path.basename(before.group(1)) in NOT_FILE_TOOLS:
+            continue
+        found.append(match)
+    return found
+
+
+def evidence_dirs(data):
+    """Carpetas fuera del repo donde los revisores pueden dejar evidencia (`evidence_dir` en project-context.md)."""
+    session = load_session(data)
+    for base in filter(None, [session.get("nexus_root"), data.get("cwd"), os.environ.get("NEXUS_ROOT")]):
+        for sub in (".nexus", ".", "docs"):
+            path = Path(base) / sub / "project-context.md"
+            if path.is_file():
+                found = re.search(r"evidence_dir\W+`([^`]+)`", path.read_text(encoding="utf-8"))
+                cwd = os.path.realpath(str(data.get("cwd") or os.getcwd()))
+                dirs = [os.path.realpath(d) for d in re.split(r"[\s,]+", found.group(1)) if d.startswith("/")] if found else []
+                # Una carpeta de evidencia nunca es el repo ni lo contiene
+                return [d for d in dirs if not (cwd + os.sep).startswith(d + os.sep) and not (d + os.sep).startswith(cwd + os.sep)]
+    return []
+
+
+def writable(path, data):
+    """Donde un agente de solo lectura puede escribir: /tmp o una carpeta de evidencia declarada."""
+    if disposable(path, data):
+        return True
+    real = os.path.realpath(path) if path.startswith("/") else None
+    return bool(real) and any((real + os.sep).startswith(d + os.sep) for d in evidence_dirs(data))
+
+
 def mutations_disposable(command, visible, data):
     """True si cada archivo que tocan rm, mv, cp, tee, sed -i y compania resuelve a una ruta desechable.
     En la HU-3 de Nexus Control, QA corrio `cd <repo>; rm -rf $S` con S en /tmp, y el cd al repo lo hizo parecer una escritura."""
+    if not real_mutations(visible):
+        return True
     targets = mutation_targets(command, visible, data)
-    return bool(targets) and all(t == "/dev/null" or disposable(t, data) or t.startswith(("$TMPDIR", "${TMPDIR")) for t in targets)
+    known = [t for t in targets if not t.startswith("$")]
+    for target in targets:
+        if not target.startswith("$"):
+            continue
+        # La variable de un for, el argumento de una funcion o una armada con otra variable no se resuelven por texto:
+        # cuentan como /tmp solo si el comando nombra /tmp. El control del arbol de git al terminar cubre el resto.
+        name = re.match(r"\$\{?(\w+)", target)
+        # Una carpeta de mktemp con plantilla relativa cae en el directorio actual: no es desechable.
+        relative_mktemp = name and re.search(rf"\b{name.group(1)}=\"?\$\(mktemp\b(?![^)]*(?:\s/|-t\b|-p\s+/|--tmpdir))[^)]*\s[^\s/-][^)]*\)", command)
+        paths = re.findall(r"(?:^|(?<=[\s='\"(]))(/[^\s;&|'\")]+)", command)
+        if not name or relative_mktemp or not (any(writable(w, data) for w in paths) or "TMPDIR" in command):
+            return False
+    return bool(targets) and all(t == "/dev/null" or writable(t, data) for t in known)
 
 
 def leading_cd(command):
@@ -543,12 +625,17 @@ def cd_base_at(command, position, default):
     if re.search(r"\bpushd\b", top):
         return None
     literal = {m.start(): m for m in CD.finditer(top)}
+    relative = {m.start(): m for m in REL_CD.finditer(top)}
     base = default
     for word in re.finditer(r"(?:^|[;&|\n][ \t]*)cd\b", top):
-        match = next((m for start, m in literal.items() if start == word.start()), None)
-        if match is None:
+        match = literal.get(word.start())
+        if match is not None:
+            base = os.path.normpath(match.group(2))
+            continue
+        step = relative.get(word.start())
+        if step is None or ".." in step.group(2).split("/"):
             return None
-        base = os.path.normpath(match.group(2))
+        base = os.path.normpath(os.path.join(base, step.group(2)))
     return base
 
 
@@ -625,7 +712,7 @@ def check_bash(agent, command, data):
         deny(f"{agent} no escribe con un interprete en linea. Si necesita un cambio, usa Write o Edit donde su rol lo permite, o reportalo")
     base = leading_cd(command)
     for target, position in redirect_targets_at(command):
-        if not (target == "/dev/null" or disposable(resolve_at(command, target, position, data), data)
+        if not (target == "/dev/null" or writable(resolve_at(command, target, position, data), data)
                 or target.startswith(("$TMPDIR", "${TMPDIR"))):
             hint = ("Un artefacto de la HU se escribe con Write o Edit" if "doc/sdd/" in resolve_at(command, target, position, data)
                     else "Usa una ruta absoluta en /tmp, escrita en el mismo comando")
@@ -633,19 +720,21 @@ def check_bash(agent, command, data):
     if base:
         # Dentro de un cd a /tmp, toda ruta absoluta tambien debe ser desechable, y nada sube con "..".
         # El ".." que cuenta es el de una ruta, no el de un texto entre comillas (un import en un sed).
-        cut = visible.index("&&") + 2 if "&&" in visible else visible.index(";") + 1
+        separator = re.search(r"&&|\|\||;|\n", visible)
+        cut = separator.end() if separator else len(visible)
         rest, rest_visible = command[cut:], visible[cut:]
         paths = [w.strip("'\"") for w in rest.split() if w.strip("'\"").startswith("/")]
         safe = disposable(base + "/", data) and ".." not in rest_visible and all(disposable(p, data) or p == "/dev/null" for p in paths)
     else:
-        # Laxo a proposito: alcanza con una palabra en /tmp. Endurecerlo frena, en las corridas reales, docker cp,
-        # docker rm y carpetas de mktemp; queda pendiente con su propia prueba.
-        safe = any(disposable(w, data) or "TMPDIR" in w for w in command.split())
+        # Sin cd, cada archivo que se toca se juzga por su ruta (mutations_disposable). Antes alcanzaba con que
+        # alguna palabra del comando estuviera en /tmp: `rm src/a.py /tmp/x` pasaba.
+        safe = False
     # Un patron de grep entre comillas ('cp |tee |sed -i') no es una mutacion.
     # Juzgar por archivo solo vale si nada mas escribe: un interprete en linea despues de un cd al repo puede tocarlo.
     inline = (INLINE_CMD.search(visible) and INLINE_WRITE.search(command)) or \
         re.search(r"\b(python[0-9.]*|node|ruby|perl|bash|sh)\s+(-I\s+)?-\s*<<|<<\S*\s*\|\s*(python[0-9.]*|node|ruby|perl|bash|sh)\b", visible)
-    if FILE_MUTATION.search(visible) and not safe and (inline or not mutations_disposable(command, visible, data)):
+    # El interprete en linea pesa solo despues de un cd fuera de /tmp; sin cd, lo cubre el control del arbol de git al terminar.
+    if real_mutations(visible) and not safe and ((inline and base and not writable(base + "/", data)) or not mutations_disposable(command, visible, data)):
         deny(f"{agent} tiene Bash de solo lectura: {command[:80]}")
 
 
