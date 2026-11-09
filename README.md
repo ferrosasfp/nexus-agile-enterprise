@@ -95,7 +95,7 @@ flowchart LR
 
 ## Cómo funciona el arnés hoy
 
-Esta sección describe lo que hay en `main` (2.0.0-rc.5 más los PRs #2 a #6). La fuente es el código: `hooks/nexus_hook.py`, `hooks/hooks.json`, `.claude/agents/`, `.claude/commands/` y `.claude/skills/nexus-agile/`.
+Esta sección describe lo que hay en `main` (2.0.0-rc.5 más los PRs mergeados después; el detalle está en el CHANGELOG). La fuente es el código: `hooks/nexus_hook.py`, `hooks/hooks.json`, `.claude/agents/`, `.claude/commands/` y `.claude/skills/nexus-agile/`.
 
 ### Las piezas
 
@@ -129,7 +129,7 @@ El hook es uno solo porque los sub-agentes de un plugin ignoran los hooks de su 
 
 El orquestador es la sesión principal. No escribe código, SDDs ni reportes: lanza agentes, lee la primera línea de cada reporte (`STATUS:`) y maneja los gates.
 
-Cada prompt a un agente lleva tres líneas que el hook exige:
+Cada prompt a un agente lleva estas tres líneas. El hook exige siempre `FASE:` y `HU_DIR:`; con el plugin, también `SKILL_DIR` en `RUTAS:`. Sin `CODE_ROOT`, usa el directorio actual:
 
 ```
 RUTAS: NEXUS_ROOT=/ruta · CODE_ROOT=/ruta · SKILL_DIR=/ruta · BASE_REF=commit-o-rama
@@ -233,7 +233,7 @@ El hook restauro la version anterior y guardo la modificada en .violations/. Que
 |---|---|---|
 | analista (`nexus-analyst`) | `.md` dentro de `doc/sdd/<HU>/`, `doc/sdd/_INDEX.md`, `doc/prd/`, `project-context.md`, `product-context.md` | solo lectura |
 | arquitecto (`nexus-architect`) | `.md` dentro de `doc/sdd/<HU>/` | solo lectura |
-| dev (`nexus-dev`) | código y sus notas; no los documentos aprobados (`work-item.md`, `sdd.md`, `story-file.md`) ni los reportes de otros roles. El alcance dentro del código lo marca el contrato | completo, incluido git |
+| dev (`nexus-dev`) | código y sus notas; no los documentos aprobados (`work-item.md`, `sdd.md`, `story-file.md`) ni los reportes de otros roles. El alcance dentro del código lo marca el contrato | completo, incluido git, salvo escribir o modificar artefactos de `HU_DIR` (abajo) |
 | adversario (`nexus-adversary`) | `ar-report`, `cr-report`, `blq-verification`, `sdd-verification` (con sufijo `-N`) | solo lectura |
 | seguridad (`nexus-security`) | `security-review.md` (con sufijo `-N`) | solo lectura |
 | QA (`nexus-qa`) | `validation.md` (con sufijo `-N`) | solo lectura |
@@ -244,9 +244,10 @@ El hook restauro la version anterior y guardo la modificada en .violations/. Que
 "Solo lectura" quiere decir, para el hook:
 
 - nada de git que escriba (`commit`, `push`, `merge`, `rebase`, `add`, `rm`, `mv`, `tag`, `apply`) ni destructivo (`reset --hard`, `checkout --`, `clean`, `restore`, `stash` salvo `list` y `show`, `pull`);
-- nada de redirecciones ni mutaciones de archivos fuera de `/tmp`;
+- nada de redirecciones ni mutaciones de archivos fuera de `/tmp` o de una carpeta de evidencia declarada en `evidence_dir`. Cada archivo que tocan `rm`, `cp`, `mv`, `tee` o `sed -i` se juzga por su ruta;
 - nada de intérpretes en línea que escriban (`python -c`, `node -e` y similares);
-- ninguna redirección a un archivo de `HU_DIR`. Esta se frena antes de correr: en una HU real, el mismo comando hizo `git commit` y la versión prohibida quedó en el historial.
+
+Para todos los agentes, también el dev: ninguna redirección, `sed -i`, `perl -i`, `tee`, `cp`, `mv` ni `rm` sobre un archivo de `HU_DIR`. Se frena antes de correr, porque restaurar después no alcanza: en dos HUs reales, el mismo comando hizo `git commit` y la versión prohibida quedó en el historial. Los artefactos se escriben con Write o Edit.
 
 ### Artefactos que deja cada HU
 
@@ -428,7 +429,7 @@ Todos en `.claude/skills/nexus-agile/scripts/`. Ninguno usa un modelo.
 | `check_spec_ids.py` | después de fusionar deltas de una spec viva: ningún requisito se pierde | docs, solo con la spec viva, que es opcional (`references/living_spec.md`) |
 | `check_consistency.sh` | agentes, comandos, skill y README dicen lo mismo (conteos, modelos, herramientas, frases obligatorias) | CI |
 
-El CI (`.github/workflows/ci.yml`) corre en cada push y PR las pruebas sin modelo de `tests/`, `check_consistency.sh` y la sintaxis de scripts y JSON. El eval con modelo corre solo a mano.
+El CI (`.github/workflows/ci.yml`) corre en cada PR y en cada push a `main`, `feat/**` y `fix/**` las pruebas sin modelo de `tests/`, `check_consistency.sh` y la sintaxis de scripts y JSON. El eval con modelo corre solo a mano.
 
 ### Límites conocidos y estado experimental
 
@@ -442,7 +443,7 @@ El CI (`.github/workflows/ci.yml`) corre en cada push y PR las pruebas sin model
 - **El dev no tiene límite de ruta en el hook.** Su alcance lo controlan el contrato, el CR (Scope Drift) y QA (Drift Detection).
 - **El hook no ve todo:**
   - la fase la declara el orquestador, y una fase mal declarada pasa como esa fase;
-  - en AUTO, el gate delegado se registra al lanzar la fase siguiente, sin comprobar el checklist ni el supervisor;
+  - en AUTO sin `--supervisor` (modo checklist), el gate delegado se registra al lanzar la fase siguiente, sin comprobar el checklist;
   - los topes de rondas, de fix-packs y de costo los aplica el orquestador, no el hook.
 - **`forbidden_commands` compara texto.** Un alias o un script que envuelve el comando no coincide.
 - **Proxies que reescriben comandos**, como rtk, pueden cambiar la salida de `cat`, `grep` o `diff`. La evidencia se toma con el comando sin reescribir (`rtk proxy <cmd>` o la ruta absoluta).
@@ -507,12 +508,11 @@ Los gates de sprint son convenciones de texto del skill (`references/sprint_cade
   - el tope de rondas de F2.
 
   Los cambios del hook del PR #5 se rejugaron contra 51.694 comandos reales de agentes de solo lectura: 0 bloqueos nuevos.
-- **Pruebas sin modelo:** 131 funciones `test_` en `tests/` (foto del 8 de noviembre de 2026). El CI las corre en cada push.
+- **Pruebas sin modelo:** 146 funciones `test_` en `tests/` (foto del 9 de noviembre de 2026). El CI las corre en cada PR y en cada push a `main`, `feat/**` y `fix/**`.
 
 **Lo que no se midió:**
 
-- QA en el eval: sus casos necesitan Bash y están en `evals/_requieren-bash/`;
-- la entrega por el supervisor (puntos 7 y 9) en una corrida real después del PR #6;
+- QA en el eval: sus casos necesitan Bash y están en `evals/_requieren-bash/`. En local no corren porque el sandbox niega Bash si `~/.docker` tiene enlaces simbólicos; el eval del CI los incluye (etiquetas `qa` y `hook`);
 - una comparación contra otra metodología.
 
 Unas pocas corridas reales son casos de estudio, no un benchmark.
@@ -787,7 +787,7 @@ setup/mcp.json                           # bloque de Engram que setup.sh copia c
 tests/                                   # pruebas sin modelo del hook, las métricas y los scripts (CI)
 evals/                                   # evals de conducta por fase + RESULTADOS.md
 docs/                                    # planes de diseño (plan-2.0.md, plan-cerebro.md)
-.github/workflows/ci.yml                 # pruebas, consistencia y sintaxis en cada push; eval a mano
+.github/workflows/ci.yml                 # pruebas, consistencia y sintaxis en cada PR y push; eval a mano
 
 .claude/
 ├── agents/                              # 8 agentes

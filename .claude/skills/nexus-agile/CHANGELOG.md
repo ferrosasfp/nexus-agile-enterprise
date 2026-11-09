@@ -2,6 +2,14 @@
 
 ## Sin publicar
 
+### Corregido (deuda del hook)
+- Sin `cd`, cada archivo que tocan `rm`, `cp`, `mv`, `tee` o `sed -i` se juzga por su ruta. Antes alcanzaba con una palabra en `/tmp`: `rm src/a.py /tmp/x` pasaba. Rejugados 58.145 comandos unicos de agentes de solo lectura de todas las corridas: 130 bloqueos nuevos, todos esperados (93 escrituras en el repo revisado, 34 en una carpeta de evidencia que ahora se declara en `evidence_dir`, 3 en worktrees fuera de `/tmp`), y 186 falsos positivos menos, ninguno con escrituras fuera de `/tmp`.
+- El parser entiende `--rm` de docker run, `docker cp`, redirecciones como `2>/dev/null`, la barra de continuacion, `cd` relativo despues de uno absoluto, `cd ... 2>/dev/null ||`, carpetas de `mktemp`, variables de un `for` o de una funcion, rutas relativas en variables y `tee` dentro de una ruta. Las asignaciones dentro de comillas no cuentan.
+- Un `cd` seguido de `||` y un salto de linea hacia caer el hook. Pasados 114.706 comandos reales por el hook nuevo: 0 caidas.
+- Campo nuevo `evidence_dir` en `project-context.md`: carpetas fuera del repo donde los revisores pueden dejar evidencia.
+- El eval del CI incluye los casos de QA y del hook que necesitan Bash (etiquetas `qa` y `hook`).
+- README y `enforcement.md` alineados con el codigo (revision independiente: 6 contradicciones).
+
 ### Corregido (gate delegado sin revision)
 - Con `--supervisor`, el hook registra un gate delegado (`HU_APPROVED`, `SPEC_APPROVED`) solo si hay un veredicto del supervisor sobre la version actual del documento: `CONTINUAR`, o `ESCALAR` seguido de la respuesta de la persona. La respuesta, en la ventana de opciones o escrita en el chat, queda en `.gates.jsonl` como `DECISION`. Antes lo registraba al lanzar la fase siguiente sin mirar si hubo revision. El modo checklist queda igual.
 
