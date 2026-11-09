@@ -1,291 +1,611 @@
 # NexusAgile Enterprise
 
-> *"The human decides WHAT. The agents decide HOW."*
+> *"La persona decide QUÉ. Los agentes deciden CÓMO."*
 
-You describe a feature. Claude writes code confidently, imports a module that doesn't exist, follows patterns inconsistent with your codebase, and modifies files it wasn't supposed to touch. You spend 40 minutes fixing what should have taken 10.
+NexusAgil es una metodología de desarrollo con agentes para Claude Code. Procesa una Historia de Usuario (HU) por vez, por fases, con agentes especializados, gates que da una persona y un hook que hace cumplir las reglas que no deben depender de la memoria del modelo.
 
-That's not a Claude problem. That's a structure problem.
+Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.0.0-rc.5**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
 
-**NexusAgile is a software development methodology built for AI agents.** It covers the full lifecycle: sprint planning, feature implementation, adversarial review, QA, and retrospectives — with specialized agents, strict gates, and zero tolerance for hallucination. It knows your project through two living context files (stack + business) and **learns from its own errors across sessions** via persistent memory.
-
-Stack-agnostic. Installs in minutes as a Claude Code skill. Works with any framework.
-
-```
-npm i  →  No.  Just copy one folder into your project.  Done.
-```
+**Estado:** release candidate. El supervisor de AUTO es experimental. Las mediciones están en [Evaluación](#evaluación).
 
 
-## The Problem It Solves
+## El problema que resuelve
 
-| Problem | NexusAgile Solution |
+| Problema | Qué hace NexusAgil |
 |---|---|
-| AI invents imports and modules | **Codebase Grounding** — reads real files before generating anything |
-| AI creates inconsistent patterns | **Exemplar Pattern** — references existing files in your codebase |
-| AI doesn't know your stack or your product | **Two living contexts** — `project-context.md` (stack, patterns, guardrails) + `product-context.md` (business, personas, decisions), read before every HU |
-| AI ignores restrictions | **Constraint Directives** — explicit REQUIRED / FORBIDDEN per task |
-| Implementation drifted from the plan | **Drift Detection** — plan vs implementation verified in QA |
-| Errors repeat across sessions | **Auto-Blindaje + Engram memory** — verified facts are stored tied to the git hash of their file and reused only while it matches; lessons are saved after a person approves them |
-| Two agents (or two people) do the same HU | **Ownership gate** — before F0 the tracker is asked who owns the HU; the hook will not start one owned by someone else |
-| Context overload → hallucinations | **Sub-Agent Protocol** — each phase starts with a clean context window |
-| AI recalls an older version of a library | **Installed-version grounding** — the SDD records the version actually installed and where each external symbol was verified. A range like `^1.2.0` does not tell you what is installed |
-| A green sub-gate hides a red gate | **The repo gate runs in F4** — QA runs the project's single gate command once. Running the parts of a gate is not running the gate |
-| AI over-engineers a few-line integration | **Scale budget** — the SDD declares the expected diff size and CR check 7 compares it against the real diff. Volume is usually a sign the API was not understood |
-| A test is green because it cannot fail | **Empty-control checks** — before a control counts, its fixture must fail without the fix, its mutant must die for the literal reason, and something must call it on every run |
-| Numbers in the docs drift away from the code | **Claims need a witness** — CR check 8: every published number is re-derived by the run that publishes it, or dated as a snapshot. Every "this is covered" names the edit that would falsify it |
-| Wrong skills loaded for the task | **Skills Router** — loads only the 1-2 skills relevant to each HU |
-| Components talking in incompatible formats | **Integration Contract** — exact request/response format between components |
-| No sprint visibility | **Sprint Cadence** — Planning, Status, and Retrospective built in |
+| La IA inventa imports y módulos | **Codebase Grounding**: lee archivos reales antes de generar nada |
+| La IA crea patrones inconsistentes | **Exemplar Pattern**: cada archivo a tocar referencia uno existente |
+| La IA no conoce el stack ni el producto | **Dos contextos vivos**: `project-context.md` (stack, patrones, guardas) y `product-context.md` (negocio, personas, decisiones) |
+| La IA ignora restricciones | **Constraint Directives**: OBLIGATORIO / PROHIBIDO explícitos por tarea |
+| La implementación se aleja del plan | **Drift Detection** en QA: plan contra implementación |
+| El SDD afirma cosas falsas del código | **SPEC_VERIFY**: un agente aparte verifica cada afirmación del SDD contra el código, y el hook no deja empezar F3 con falsas abiertas |
+| Los errores se repiten entre sesiones | **Auto-Blindaje + memoria (Engram)**: los hechos verificados se guardan atados al hash de git de su archivo; las lecciones, solo si una persona las aprueba |
+| Dos agentes (o dos personas) hacen la misma HU | **Gate de propiedad**: antes de F0 se consulta el tracker, y el hook no deja empezar una HU ajena |
+| Contexto saturado y alucinaciones | **Protocolo de sub-agentes**: cada fase empieza con contexto limpio |
+| La IA recuerda otra versión de una librería | **Versión instalada**: el SDD anota la versión instalada y dónde se verificó cada símbolo externo |
+| Un sub-gate en verde esconde un gate en rojo | **El gate del repo corre en F4**: QA corre una vez el comando único del proyecto |
+| La IA sobredimensiona una integración chica | **Presupuesto de escala**: el SDD declara el tamaño esperado del diff y el check 7 del CR lo compara con el real |
+| Un test pasa porque no puede fallar | **Controles vacíos**: antes de contar un control, su fixture debe fallar sin el fix y su mutante debe morir por el motivo literal |
+| Números de la documentación que se alejan del código | **Afirmaciones con testigo** (check 8 del CR): cada número se re-deriva o se fecha como foto |
+| Se cargan skills que no hacen falta | **Skills Router**: 1 o 2 skills de dominio por HU |
 
 
-## How an HU Flows (at a glance)
+## Cómo fluye una HU
 
-Rounded boxes are agents, hexagons are checks, and the bold boxes are the gates a person types. Everything between two gates runs on its own.
+Las cajas redondeadas son agentes, los hexágonos son verificaciones y las cajas en negrita son gates. Entre dos gates, todo corre solo.
 
 ```mermaid
 flowchart TD
-    START([New HU]) --> OWN{{"Ownership gate<br/>tracker: who owns it?"}}
-    OWN -- "owned by someone else" --> ESC[["Stop: the person decides"]]
-    OWN -- "mine or free" --> F0F1("F0 + F1 · Analyst<br/>project-context, sizing, work-item.md")
-    F0F1 --> SIZE{"Smart Sizing"}
+    START([HU nueva]) --> OWN{{"Gate de propiedad<br/>tracker: ¿de quién es?"}}
+    OWN -- "ajena" --> ESC[["Para: decide la persona"]]
+    OWN -- "propia, libre o autorizada" --> F0F1("F0 + F1 · Analista<br/>project-context, sizing, work-item.md")
+    F0F1 --> G1[/"HU_APPROVED"/]
+    G1 --> SIZE{"Pipeline<br/>del work-item"}
 
     SIZE -- "FAST" --> FDEV
     SIZE -- "FAST+AR" --> FDEV
-    SIZE -- "QUALITY" --> G1
+    SIZE -- "QUALITY" --> F2
 
-    subgraph FASTPATH ["FAST / FAST+AR"]
-        FDEV("F3 · Dev") --> FAR{"risky?"}
-        FAR -- "FAST+AR" --> FREV("AR + CR · Adversary")
+    subgraph FASTPATH ["FAST / FAST+AR (sin SDD: el work-item es el contrato)"]
+        FDEV("F3 · Dev") --> FAR{"¿FAST+AR?"}
     end
-    FAR -- "FAST" --> F4
-    FREV --> F4
+    FAR -- "no" --> F4
+    FAR -- "sí" --> ARCR
 
-    G1[/"HU_APPROVED"/] --> F2("F2 · Architect<br/>sdd.md + implementation contract")
-    F2 --> SV{{"SPEC_VERIFY · Adversary<br/>every claim checked against the code"}}
-    SV -- "false claims" --> F2
-    SV -- "clean" --> SECQ{"security_review<br/>required?"}
-    SECQ -- "yes" --> SEC{{"SECURITY · Security<br/>who can do what"}}
-    SEC -- "findings" --> F2
-    SEC -- "clean" --> G2
+    F2("F2 · Arquitecto<br/>sdd.md + contrato de implementación") --> SV{{"SPEC_VERIFY · Adversario<br/>cada afirmación contra el código"}}
+    SV -- "falsas o controles débiles<br/>(máx. 2 rondas)" --> F2
+    SV -- "limpio" --> SECQ{"¿security_review<br/>required?"}
+    SECQ -- "sí" --> SEC{{"SECURITY · Seguridad<br/>quién puede qué"}}
+    SEC -- "hallazgos (mismas 2 rondas)" --> F2
+    SEC -- "limpio" --> G2
     SECQ -- "no" --> G2
-    G2[/"SPEC_APPROVED"/] --> F3("F3 · Dev<br/>waves W0, W1, W2…")
-    F3 --> ARCR("AR + CR in parallel · Adversary")
-    ARCR -- "BLOCKER confirmed" --> FIX("Dev fixes") --> ARCR
-    ARCR -- "approved" --> F4("F4 · QA<br/>runs the repo gate, evidence per AC")
-    F4 -- "fails" --> FIX
-    F4 -- "approved" --> DONE("DONE · Docs<br/>cierre.md, _INDEX, memory")
-    DONE --> REL{"release_gate?"}
-    REL -- "yes" --> G3[/"RELEASE_APPROVED"/]
-    REL -- "no" --> END([Closed])
-    G3 --> END
+    G2[/"SPEC_APPROVED"/] --> F3("F3 · Dev<br/>waves W0, W1, W2…<br/>(F2.5 antes, solo con classic)")
+    F3 --> ARCR("AR + CR en paralelo · Adversario")
+    ARCR -- "BLQ" --> VER{{"VERIFY · Adversario nuevo<br/>reproduce cada BLQ"}}
+    VER -- "confirmado o indeterminado" --> FIX("Fix-pack · Dev<br/>máx. 3, después escala") --> ARCR
+    ARCR -- "aprobado" --> F4("F4 · QA<br/>gate del repo, evidencia por AC")
+    F4 -- "rechazado" --> FIX
+    F4 -- "aprobado" --> REL{"¿release_gate?"}
+    REL -- "sí" --> G3[/"RELEASE_APPROVED<br/>(siempre una persona)"/]
+    REL -- "no" --> DONE
+    G3 --> DONE("DONE · Docs<br/>cierre.md, _INDEX, lecciones.md")
+    DONE --> ENT[["Push, PR y merge<br/>solo con el SÍ de la persona"]]
+    ENT --> END([Cerrada])
 
     classDef gate fill:#fde68a,stroke:#b45309,stroke-width:2px,color:#000,font-weight:bold
     classDef stop fill:#fecaca,stroke:#b91c1c,color:#000
     class G1,G2,G3 gate
-    class ESC stop
+    class ESC,ENT stop
 ```
 
-The hooks enforce the shape of this chart: a phase cannot start without the artifact and gate before it, F3 cannot start with open false claims or open security findings, and a gate only counts when a person types it as the whole message. In AUTO, `HU_APPROVED` and `SPEC_APPROVED` are reviewed by a checklist or the supervisor instead of asked; product decisions and `RELEASE_APPROVED` still go to the person.
+El hook hace cumplir la forma de este gráfico: una fase no arranca sin el artefacto y el gate anteriores, F3 no arranca con afirmaciones falsas ni hallazgos de seguridad abiertos, F4 no arranca con BLQ abiertos y DONE no arranca sin `validation.md` aprobado. Los topes de rondas, la verificación de BLQ y la entrega los aplica el orquestador según los comandos; el hook no los cuenta.
 
-### Which command runs each step (QUALITY, manual)
+### Qué comando corre cada paso (QUALITY, manual)
 
 ```mermaid
 flowchart LR
     P1["/nexus-p1-f0-f1"] -->|HU_APPROVED| P2["/nexus-p2-f2<br/>SDD + SPEC_VERIFY<br/>+ SECURITY"]
     P2 -->|SPEC_APPROVED| P4["/nexus-p4-f3"]
-    P2 -.->|"only contract_mode: classic"| P3["/nexus-p3-f2-5"] -.-> P4
-    P4 --> P5["/nexus-p5-ar<br/>AR + CR"] --> P7["/nexus-p7-f4"] --> P8["/nexus-p8-done"]
+    P2 -.->|"solo contract_mode: classic"| P3["/nexus-p3-f2-5"] -.-> P4
+    P4 --> P5["/nexus-p5-ar<br/>AR + CR + VERIFY"] --> P7["/nexus-p7-f4"] --> P8["/nexus-p8-done"]
 ```
 
-`/nexus-p6-cr` re-runs CR alone after AR fixes.
+`/nexus-p6-cr` vuelve a correr el CR solo, después de los fixes de AR. FAST y FAST+AR tienen un comando de punta a punta cada uno. Con el plugin, los comandos llevan el prefijo: `/nexus-agile:nexus-p1-f0-f1`.
 
 
-## How a Sprint Works
+## Cómo funciona el arnés hoy
+
+Esta sección describe lo que hay en `main` (2.0.0-rc.5 más los PRs #2 a #6). La fuente es el código: `hooks/nexus_hook.py`, `hooks/hooks.json`, `.claude/agents/`, `.claude/commands/` y `.claude/skills/nexus-agile/`.
+
+### Las piezas
+
+| Pieza | Dónde | Qué hace |
+|---|---|---|
+| Manifiesto del plugin | `.claude-plugin/plugin.json` | Declara la versión, el skill, los 11 comandos y los 8 agentes |
+| Skill | `.claude/skills/nexus-agile/` | La metodología: `SKILL.md`, `references/` y `scripts/` |
+| Agentes | `.claude/agents/` | Un archivo por rol, con sus herramientas, su modelo y sus prohibiciones |
+| Comandos | `.claude/commands/` | Una fase por lanzamiento, con el prompt completo del agente |
+| Hook | `hooks/nexus_hook.py`, registrado en `hooks/hooks.json` | Un solo despachador para todos los eventos. Solo usa la biblioteca estándar de Python |
+
+El hook es uno solo porque los sub-agentes de un plugin ignoran los hooks de su frontmatter (`references/enforcement.md`).
+
+### Fases y quién las hace
+
+| Fase | Agente | Artefacto | Comando |
+|---|---|---|---|
+| Gate de propiedad | orquestador (sesión principal) | línea `PROPIEDAD:` en el prompt del analista | dentro de p1, FAST, FAST+AR y AUTO |
+| F0 + F1 | `nexus-analyst` | `project-context.md` (si falta), `work-item.md` | `/nexus-p1-f0-f1` |
+| F2 | `nexus-architect` | `sdd.md` con la sección "Contrato de implementación" | `/nexus-p2-f2` |
+| SPEC_VERIFY | `nexus-adversary`, contexto nuevo | `sdd-verification.md` | dentro de `/nexus-p2-f2` |
+| SECURITY (solo con `security_review: required`) | `nexus-security`, contexto nuevo | `security-review.md` | dentro de `/nexus-p2-f2` |
+| F2.5 (solo `contract_mode: classic`) | `nexus-architect` | `story-file.md` | `/nexus-p3-f2-5` |
+| F3 | `nexus-dev` | código y `auto-blindaje.md` | `/nexus-p4-f3` |
+| AR y CR, en paralelo | `nexus-adversary` dos veces | `ar-report.md`, `cr-report.md` | `/nexus-p5-ar` |
+| VERIFY (si hay BLQ) | `nexus-adversary`, otro contexto | `blq-verification.md` | dentro de `/nexus-p5-ar` |
+| F4 | `nexus-qa` | `validation.md` | `/nexus-p7-f4` |
+| F5 (solo `release_gate: true`) | según `references/quality_pipeline.md` | checklist de release | dentro de `/nexus-p7-f4` |
+| DONE | `nexus-docs` | `cierre.md`, `_INDEX.md`, `lecciones.md` | `/nexus-p8-done` |
+| SUPERVISION (AUTO con `--supervisor`) | `nexus-supervisor` | veredicto en su respuesta, sin archivo | dentro de `/nexus-auto` |
+
+El orquestador es la sesión principal. No escribe código, SDDs ni reportes: lanza agentes, lee la primera línea de cada reporte (`STATUS:`) y maneja los gates.
+
+Cada prompt a un agente lleva tres líneas que el hook exige:
 
 ```
-⛔ SPRINT_APPROVED     ← Sprint Planning: HU list, estimates, order, branch strategy
+RUTAS: NEXUS_ROOT=/ruta · CODE_ROOT=/ruta · SKILL_DIR=/ruta · BASE_REF=commit-o-rama
+FASE: F2
+HU_DIR: /ruta/absoluta/doc/sdd/NNN-titulo
+```
 
-  For each HU in the sprint:
+Fases válidas para el hook: `F0F1`, `F1`, `F2`, `SPEC_VERIFY`, `SECURITY`, `F2.5`, `F3`, `AR`, `CR`, `VERIFY`, `F4`, `DONE` y `SUPERVISION`.
+
+### Gates: quién los aprueba
+
+El hook registra tres gates. Los demás (`SPRINT_APPROVED`, `REVIEW_APPROVED`, `RETRO_APPROVED`, `LAUNCH_APPROVED`) existen en el skill como convención de texto: el hook no los registra ni los exige.
+
+| Gate | Documento atado | Quién lo da en manual | Quién lo da en AUTO | Lo exige |
+|---|---|---|---|---|
+| `HU_APPROVED` | `work-item.md` | la persona | `claude-delegated`, tras el checklist o el supervisor | F2, SPEC_VERIFY, SECURITY y F3 |
+| `SPEC_APPROVED` | `sdd.md` | la persona | `claude-delegated`, tras el checklist o el supervisor | F2.5, y F3 en QUALITY |
+| `RELEASE_APPROVED` | ninguno | la persona | **siempre la persona**: nunca se delega | DONE, si `project-context.md` dice `release_gate: true` |
+
+Cómo cuenta un gate:
+
+- Es el mensaje entero de la persona: `HU_APPROVED`, o `HU_APPROVED 003` (o una ruta) para nombrar la HU. También cuenta elegir en `AskUserQuestion` la opción con el nombre del gate.
+- Un gate dentro de una frase no cuenta. Si el mensaje tiene 400 caracteres o menos y nombra un gate, el hook avisa: "el gate NO se registro".
+- "sí", "ok", "dale" o "go" no activan nada.
+- El hook guarda en `.gates.jsonl` quién lo dio (`human` o `claude-delegated`), el sha256 del documento y la hora, y copia el documento a `.versions/`.
+- Si el documento cambia después del gate, la fase siguiente se bloquea hasta que una persona lo vuelva a escribir. En AUTO pasa lo mismo: el hook no vuelve a registrar solo un gate que ya existe.
+
+**Cómo registra el hook un gate delegado.** En una sesión delegada, cuando se lanza una fase que necesita `HU_APPROVED` o `SPEC_APPROVED` y el gate no está, el hook lo registra como `claude-delegated` en ese momento. El hook no comprueba que el checklist o el supervisor hayan pasado: eso lo hace el orquestador según `/nexus-auto`.
+
+**Falsos positivos.** La persona escribe `NEXUS_OVERRIDE <motivo>`. Deja pasar el próximo bloqueo de lanzamiento de fase y lo registra como `OVERRIDE` en `.gates.jsonl`. No sirve para los bloqueos de Write, Edit o Bash, ni para la falta de `FASE:`, `HU_DIR:`, prefijo del plugin, `SKILL_DIR` o `CODE_ROOT`: esos bloquean siempre.
+
+### Qué hace cumplir el hook
+
+| Evento | Qué hace |
+|---|---|
+| `UserPromptSubmit` | Registra los gates escritos por la persona. Marca la sesión como delegada cuando la persona escribe `/nexus-auto` (o `/nexus-agile:nexus-auto`) al inicio de una línea. Recibe `NEXUS_OVERRIDE` |
+| `PreToolUse(Agent, Task)` | Al lanzar un agente `nexus-*`: exige `FASE:` y `HU_DIR:`, el prefijo `nexus-agile:` cuando corre el plugin, `SKILL_DIR` dentro del plugin, `CODE_ROOT` resuelto y repo git (salvo F0F1, F1 y SUPERVISION), y el artefacto y el gate de la fase |
+| `PreToolUse(Write, Edit)` | Nadie escribe `.gates.jsonl`. Cada agente de especificación o revisión escribe solo sus artefactos |
+| `PreToolUse(Bash)` | Para todos, incluida la sesión principal: nada de `--no-verify`, ni comandos de `forbidden_commands`, ni escribir `.gates.jsonl`. Para los agentes que no implementan: Bash de solo lectura. Antes de cada Bash de un agente, toma una foto de los artefactos de `HU_DIR` |
+| `PostToolUse(Bash)` | Compara los artefactos con la foto. Si un Bash cambió alguno que no se escribió con Write o Edit, restaura la versión anterior, guarda la modificada en `.violations/`, registra un `VIOLATION` y frena al agente |
+| `PostToolUse(AskUserQuestion)` | Registra el gate si se eligió la opción con su nombre |
+| `SubagentStop` | Al terminar un agente: exige su artefacto y su línea `STATUS:`, revisa el árbol de git si el agente no implementa, busca caracteres invisibles y guarda la versión entregada en `.versions/`. Insiste una sola vez |
+| `SessionStart(compact, resume)` | Recuerda la HU activa y su `.nexus-state.json` |
+
+Requisitos por fase al lanzar (de `check_phase`):
+
+| Fase | El hook exige |
+|---|---|
+| Primer F0F1 o F1 de la HU | línea `PROPIEDAD:` con `propia`, `libre` o `autorizada`. Con `ajena`, bloquea |
+| F2 | `work-item.md`, `HU_APPROVED` vigente, sin `- [ ]` abiertas en `PREGUNTAS PARA EL HUMANO` |
+| SPEC_VERIFY, SECURITY | `sdd.md` y `HU_APPROVED` |
+| F2.5 | `sdd.md`, `SPEC_APPROVED` y `contract_mode: classic` |
+| F3 (todos los pipelines) | `work-item.md`, `HU_APPROVED`, sin preguntas abiertas |
+| F3 en QUALITY, además | `sdd.md` y `SPEC_APPROVED` vigentes; `sdd-verification.md` con `falsas=0` y el `SDD_SHA256` del SDD vigente (salvo `spec_verify: false`); si el work-item pide `security_review: required`, `security-review.md` con `altos=0 medios=0` y el mismo sha; la sección "Contrato de implementación" en `sdd.md` o, con `classic`, `story-file.md` |
+| F4 (todo salvo FAST) | el último `ar-report` y `cr-report` con `STATUS:`, sin `RECHAZADO` ni `open_blq=` mayor que 0 |
+| DONE | el último `validation.md` con `STATUS:` que diga `APROBADO`; `RELEASE_APPROVED` si hay `release_gate: true` |
+
+El pipeline lo lee del campo `pipeline` de `work-item.md`. Si no lo encuentra, trata la HU como QUALITY. Cuando hay varios reportes (`ar-report.md`, `ar-report-2.md`), vale el de número más alto.
+
+Al terminar cada agente, `SubagentStop` también exige:
+
+- en F0F1 y F1, las secciones `PREGUNTAS PARA EL HUMANO` y `MEMORIA CONSULTADA` en el work-item, aunque digan "Ninguna";
+- en F4, que QA haya corrido al menos un comando Bash;
+- que no haya caracteres de formato invisibles (U+202E, U+FEFF y similares) en los artefactos que escribió.
+
+Ejemplos de bloqueos (mensajes literales del hook):
+
+```
+NEXUS GATE: F2 requiere el gate HU_APPROVED, escrito por una persona. Registrados en ...: ninguno
+NEXUS GATE: sdd.md cambio despues de SPEC_APPROVED. Pidele a la persona que lo revise y vuelva a escribir SPEC_APPROVED
+NEXUS GATE: sdd-verification.md tiene afirmaciones falsas sin corregir: ...
+NEXUS GATE: security-review.md reviso otra version de sdd.md: revisa la aprobada
+NEXUS GATE: la HU es de otra persona o sesion (...). Escala: tomarla lo decide la persona
+NEXUS GATE: esta sesion usa el plugin: lanza nexus-agile:nexus-dev. Sin prefijo correria otra version instalada
+NEXUS GATE: nexus-qa no puede escribir /repo/src/x.ts. Reporta el hallazgo en lugar de modificarlo
+NEXUS GATE: nexus-adversary no modifica el repo con git: git commit ...
+NEXUS GATE: los gates solo los registra el hook
+NEXUS GATE: no se usa --no-verify: arregla lo que el hook del repo rechaza
+NEXUS GATE: el proyecto prohibe este comando (...). Detente y preguntale a la persona
+NEXUS GATE: QA no ejecuto ningun comando: su evidencia debe ser comando y salida
+```
+
+Y después de un Bash que cambió un artefacto:
+
+```
+NEXUS GATE: este comando Bash cambio sdd.md. Los artefactos solo se escriben con Write o Edit, y solo los de tu rol.
+El hook restauro la version anterior y guardo la modificada en .violations/. Quedo registrado en .gates.jsonl.
+```
+
+**Cómo resuelve el hook las rutas de un Bash.** El filtro previo lee el texto del comando:
+
+- Expande `$X` y `${X}` cuando el mismo comando asigna `X` a una ruta absoluta, también encadenada (`W=$S/copia`). Si `X` se reasigna con otro valor, no la expande.
+- Una asignación dentro del cuerpo de un heredoc es texto del archivo, no del shell, y no cuenta.
+- Cada ruta relativa se resuelve contra el último `cd /ruta` anterior. Un `cd` dentro de un subshell `(cd X && …)` no cuenta. Después de un `cd` que no puede resolver (`cd ..`, `pushd`), la ruta queda sin resolver y no cuenta como desechable.
+- `/tmp` es desechable, salvo que el proyecto viva bajo `/tmp`. `$TMPDIR` y `/dev/null` también.
+- `rm`, `mv`, `cp`, `tee`, `sed -i` y similares se juzgan por los archivos que tocan, salvo que un intérprete en línea también escriba.
+
+### Permisos por rol
+
+| Agente | Write y Edit (fuera de `/tmp`) | Bash |
+|---|---|---|
+| analista (`nexus-analyst`) | `.md` dentro de `doc/sdd/<HU>/`, `doc/sdd/_INDEX.md`, `doc/prd/`, `project-context.md`, `product-context.md` | solo lectura |
+| arquitecto (`nexus-architect`) | `.md` dentro de `doc/sdd/<HU>/` | solo lectura |
+| dev (`nexus-dev`) | sin restricción de ruta del hook (el alcance lo marca el contrato) | completo, incluido git |
+| adversario (`nexus-adversary`) | `ar-report`, `cr-report`, `blq-verification`, `sdd-verification` (con sufijo `-N`) | solo lectura |
+| seguridad (`nexus-security`) | `security-review.md` (con sufijo `-N`) | solo lectura |
+| QA (`nexus-qa`) | `validation.md` (con sufijo `-N`) | solo lectura |
+| docs (`nexus-docs`) | `cierre.md`, `_INDEX.md`, `lecciones.md`, `_LECCIONES.md` | solo lectura |
+| supervisor (`nexus-supervisor`) | nada (tampoco tiene Write ni Edit) | solo lectura |
+| sesión principal | todo salvo `.gates.jsonl` | sin límite de rol; sí `--no-verify` y `forbidden_commands` |
+
+"Solo lectura" quiere decir, para el hook:
+
+- nada de git que escriba (`commit`, `push`, `merge`, `rebase`, `add`, `rm`, `mv`, `tag`, `apply`) ni destructivo (`reset --hard`, `checkout --`, `clean`, `restore`, `stash` salvo `list` y `show`, `pull`);
+- nada de redirecciones ni mutaciones de archivos fuera de `/tmp`;
+- nada de intérpretes en línea que escriban (`python -c`, `node -e` y similares);
+- ninguna redirección a un archivo de `HU_DIR`. Esta se frena antes de correr: en una HU real, el mismo comando hizo `git commit` y la versión prohibida quedó en el historial.
+
+### Artefactos que deja cada HU
+
+```
+$NEXUS_ROOT/doc/sdd/
+├── _INDEX.md                    ← historial de HUs (analista al empezar, docs al cerrar)
+├── _LECCIONES.md                ← lecciones aprobadas, solo sin Engram
+└── NNN-titulo/
+    ├── work-item.md             ← F1
+    ├── sdd.md                   ← F2, con el contrato (QUALITY)
+    ├── sdd-verification.md      ← SPEC_VERIFY; STATUS con falsas= y SDD_SHA256
+    ├── security-review.md       ← SECURITY; STATUS con altos= medios= y SDD_SHA256
+    ├── story-file.md            ← F2.5, solo con classic
+    ├── auto-blindaje.md         ← F3, si hubo errores
+    ├── review-package-<sha>.diff← diff para AR y CR (review_package.sh)
+    ├── ar-report.md             ← AR
+    ├── cr-report.md             ← CR
+    ├── blq-verification.md      ← VERIFY, si hubo BLQ
+    ├── validation.md            ← F4
+    ├── cierre.md                ← DONE (antes report.md)
+    ├── lecciones.md             ← DONE: propuestas, la persona decide cuáles se guardan
+    ├── .gates.jsonl             ← lo escribe solo el hook: gates, OVERRIDE y VIOLATION
+    ├── .versions/               ← copia por hash de cada work-item, sdd y story-file entregado o aprobado
+    ├── .violations/             ← la versión que un Bash dejó en un artefacto, antes de restaurarla
+    └── .nexus-state.json        ← fase, agente, pipeline y estado, para retomar
+```
+
+Detalles:
+
+- **`.gates.jsonl`.** Cada línea es JSON:
+  - un gate: `{"gate", "by", "sha256", "ts", "copy"}`;
+  - un override: `{"gate": "OVERRIDE", "by": "human", "reason", "blocked"}`;
+  - una violación: `{"gate": "VIOLATION", "by": <agente>, "files", "restored", "command"}`.
+- **`.versions/`.** Un archivo `<nombre>-<12 primeros del sha>.md` por versión. Se guarda cuando se registra un gate y cada vez que termina un analista o un arquitecto, también si fue retomado con `SendMessage`. Antes del PR #5, las correcciones de un arquitecto retomado no quedaban.
+- **`cierre.md`.** Se llama así porque Claude Code rechaza que un sub-agente escriba `report.md` ("Subagents should return findings as text"). Si igual rechaza el Write, el agente devuelve el contenido entre `<<<ARTEFACTO cierre.md` y `ARTEFACTO>>>`, y el orquestador lo copia tal cual con su sha256 (`/nexus-p8-done`).
+- **`.nexus-state.json`.** Va al `.gitignore`. La auditoría (`.gates.jsonl`, `.versions/`, `.violations/`) sí se versiona (CHANGELOG).
+- **Repetir una fase sobre una HU en DONE** no la reabre: queda como `rerun` en `.nexus-state.json`.
+
+Fuera del repo, el hook guarda su estado por sesión en `$CLAUDE_PLUGIN_DATA` (o `~/.claude/nexus-state`): la sesión, un log de escrituras y las fotos previas a cada Bash. Las fotos se borran a las 6 horas. Una ejecución del hook a la vez, con candado, y escritura atómica del estado.
+
+### Modo AUTO y supervisor
+
+```
+/nexus-agile:nexus-auto HU-42                          # una HU
+/nexus-agile:nexus-auto HU-42 HU-43 HU-44              # lote
+/nexus-agile:nexus-auto HU-42 --user=Ana --supervisor  # con supervisor
+```
+
+**La delegación la da la persona.** El hook marca la sesión como delegada solo cuando la persona escribe el comando al inicio de una línea, y lo confirma: "sesion delegada (AUTO)". Si un agente invoca AUTO con la herramienta Skill, no delega nada.
+
+**Cómo corre:**
+
+1. Los analistas corren en paralelo, uno por HU. El sizing propone FAST, FAST+AR o QUALITY. El orquestador puede subir el pipeline, nunca bajarlo.
+2. En `HU_APPROVED` y `SPEC_APPROVED`, el gate se revisa en lugar de preguntarse:
+   - **Por defecto, checklist** de 7 criterios que corre el propio orquestador. Todo PASS: sigue y el gate queda como `claude-delegated`. Un FAIL: pregunta a la persona.
+   - **Con `--supervisor` (experimental):** en cada punto de parada, un agente aparte de solo lectura (`nexus-supervisor`) recibe el reporte del orquestador, los artefactos y los transcripts, nunca su razonamiento.
+3. F3 corre en serie por defecto. Las HUs con Scope IN superpuesto se ordenan; la dependiente espera el merge de la otra antes de F3.
+4. El lote cierra con un reporte de cierre (`references/auto_completion_report.md`).
+
+**Veredictos del supervisor** (primera línea de su respuesta):
+
+| Veredicto | Cuándo | Qué hace el orquestador |
+|---|---|---|
+| `CONTINUAR` | Lo pedido tiene evidencia y es técnico y reversible | Sigue y lo anota |
+| `PEDIR_EVIDENCIA` | Falta algo verificable: hash, transcript, comando y salida, `archivo:línea` | Reúne lo pedido y vuelve a consultar. Máximo 2 vueltas; después escala |
+| `ESCALAR` | Es decisión de una persona, o la evidencia no alcanza | Pregunta a la persona con lo que el supervisor dejó listo |
+
+El supervisor pide evidencia en proporción al riesgo. Un cambio trivial y reversible, con la diferencia comprobada, es `CONTINUAR` aunque falte un hash.
+
+**Se escala siempre**, aunque todo dé PASS (`/nexus-auto` §4.3b y el supervisor):
+
+- lo que cambia lo que ve o puede hacer un usuario, el alcance o los ACs aprobados;
+- seguridad, permisos, datos, producción o migraciones;
+- prioridad de negocio, como qué HU tomar, y una HU `ajena`;
+- costo desproporcionado (regla #11, abajo);
+- aceptar un hallazgo de seguridad como riesgo, o descartar un BLQ-ALTO o de las categorías 1, 9, 10 u 11 de AR;
+- un agente que rodeó un bloqueo, aunque lo haya declarado;
+- `RELEASE_APPROVED`, que nunca se delega.
+
+**Qué verifica el supervisor** (`.claude/agents/nexus-supervisor.md`):
+
+1. Lanzamiento: nombre y rutas de cada agente, y `PROPIEDAD:` con evidencia del tracker.
+2. Que llegó el reporte de cada agente; si no, que se leyeron su artefacto y su transcript.
+3. Que no quedan preguntas abiertas en el work-item.
+4. Que el documento a aprobar se comparó con su versión en `.versions/` y que su hash coincide.
+5. Que cada "lo revisé" o "está cubierto" tiene evidencia que él comprueba.
+6. Que nadie escribió por Bash o con un intérprete después de un `NEXUS GATE`.
+7. Antes de un push o de abrir un PR (ver abajo).
+8. El costo, desde que terminó F3, con `nexus_metrics.py`.
+9. Antes de un merge (ver abajo).
+
+### Entrega: push, PR y merge
+
+**La autorización del push, del PR y del merge es siempre de la persona**, también en AUTO. El PR #5 agregó un campo `entrega` que dejaba al supervisor autorizarlos solo. El PR #6 lo quitó.
+
+Cómo queda:
+
+1. **Push y PR.** En AUTO, el supervisor revisa (punto 7):
+   - los workflows completos y la lista de lo que dispara el push o el PR: jobs, migraciones, previews;
+   - que las versiones fijadas existan hoy;
+   - que la base del PR sea la correcta y esté explicada (en una HU apilada, la rama de la que depende);
+   - que el PR no cierre un issue que la persona quiere cerrar a mano;
+   - que lo que se sube sea solo lo aprobado: `git log <base>..HEAD` sin commits ajenos.
+
+   Si todo está, responde `ESCALAR` con una sola pregunta de sí o no: "¿Hago push de X y abro el PR en borrador contra Y? Dispara: […]". Con el SÍ, el orquestador hace el push y abre el PR en borrador.
+2. **Merge.** Cuando termina el CI, el supervisor revisa (punto 9):
+   - el CI en verde sobre el último commit del PR;
+   - que ese commit sea el que aprobó QA, o lo siga solo con artefactos;
+   - que no haya conflictos y que la base sea la correcta;
+   - que no queden BLQ abiertos ni decisiones atribuidas a la persona sin cita;
+   - qué dispara el merge en la rama base, con producción primero si la hay.
+
+   Deja la pregunta y el comando exacto: `gh pr ready <n>` si es borrador, y `gh pr merge <n> --squash --match-head-commit <sha>`. Nunca `--admin` ni rodear una protección de rama.
+3. El push y el merge los corre el orquestador en la sesión principal, nunca un sub-agente. Un SÍ vale para lo que se preguntó: otro push u otro commit es otra pregunta. Con un NO, o sin respuesta, no se mergea.
+4. Sin supervisor (manual, o AUTO con checklist), la persona decide el push, el PR y el merge. Antes del push, el orquestador le muestra qué va a disparar, leyendo los workflows completos (`/nexus-p8-done`).
+
+DONE es solo cierre documental: `nexus-docs` no hace push ni merge.
+
+### Topes
+
+| Tope | Valor | Dónde |
+|---|---|---|
+| Rondas de corrección entre SPEC_VERIFY y SECURITY | 2 por HU. Lo que quede va a `Límites conocidos` del SDD y lo decide la persona en el gate | `/nexus-p2-f2` paso 4c |
+| Corrección de una falsa | arregla la frase; no agrega afirmaciones nuevas sobre el código | `/nexus-p2-f2` paso 4 |
+| Fix-packs después de AR/CR | 3. Después se escala | `/nexus-auto` §6 regla #2 y §9 regla 9 |
+| Costo (regla #11) | si el costo acumulado de la HU pasa del doble de lo que costó la implementación (F3), se escala antes del siguiente fix-pack, con el costo y las opciones. Lo ya gastado no es motivo para seguir | `/nexus-auto` §6 regla #11; supervisor punto 8 |
+| `PEDIR_EVIDENCIA` seguidos | 2 vueltas; después se escala | `/nexus-auto` §4.3c |
+| `SubagentStop` | insiste una vez por agente | hook |
+
+Dos casos que no se repiten enteros:
+
+- **Enmienda corta del contrato.** Si un BLQ confirmado exige cambiar el contrato del SDD, el arquitecto cambia solo esas líneas. SPEC_VERIFY y SECURITY revisan solo ese diff, en una vuelta, y la persona vuelve a escribir `SPEC_APPROVED` (`/nexus-p5-ar`).
+- **Confirmación corta de seguridad.** Un cambio del SDD posterior a la revisión de seguridad, aunque sea solo de redacción, cambia el sha y el hook pide un `security-review.md` nuevo. El agente de seguridad recibe el diff desde la versión que aprobó. Si no toca ninguna acción, actor, entrada, dato sensible ni control de su matriz, escribe `STATUS: APROBADO` con el sha nuevo y `CONFIRMACION: solo redaccion (diff de N lineas)`, sin rehacer la matriz.
+
+### Gate de propiedad
+
+El tracker del equipo es la autoridad sobre quién tiene una HU (`references/tracker.md`). Se configura en `project-context.md`: `tracker` (`jira`, `linear`, `github`, `archivo` o `propio`), `tracker_project`, `tracker_user` y `tracker_write` (por defecto `false`).
+
+Antes del primer analista, el orquestador consulta el responsable y el estado de la HU en el tracker, y el reclamo `trabajo/<HU>` en memoria. Clasifica el resultado:
+
+| Resultado | Cuándo |
+|---|---|
+| `propia` | el responsable es `tracker_user` |
+| `libre` | sin responsable y sin reclamo en memoria en los últimos 3 días |
+| `ajena` | la tiene otra persona, la reclamó otra sesión hace menos de 3 días, o está cerrada o en revisión |
+| `autorizada` | era `ajena` y la persona decidió tomarla, con su decisión citada |
+
+Con `ajena`, se para y se escala, también en AUTO. El hook no deja lanzar el primer F0/F1 sin la línea `PROPIEDAD:` ni con `ajena`. Con `tracker_write: true`, NexusAgil comenta en el ticket al tomarla y al cerrarla. Mover el ticket de estado lo hace la persona. Si la memoria contradice al tracker, manda el tracker.
+
+### Rutas
+
+| Variable | Qué es | Por defecto |
+|---|---|---|
+| `NEXUS_ROOT` | dónde viven `project-context.md`, `product-context.md`, `doc/sdd/` y `doc/prd/` | la raíz git del directorio actual |
+| `CODE_ROOT` | el repo donde corren git, tests y gates | la raíz git del directorio actual. Si no hay, se escala |
+| `SKILL_DIR` | el skill | la primera que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` y `~/.claude/skills/nexus-agile` |
+| `BASE_REF` | la base real de la HU, para comparar el diff | la rama por defecto. En una HU apilada, la rama o el commit del que parte |
+
+Lo más explícito gana: variable de entorno, después el campo en `project-context.md`, después la raíz git (`references/paths.md`). `project-context.md` se busca en `.nexus/`, en la raíz y en `docs/`.
+
+Los sub-agentes no heredan estas variables: el orquestador las escribe resueltas, como rutas absolutas, en la línea `RUTAS:`. El hook bloquea:
+
+- un `CODE_ROOT` o un `SKILL_DIR` sin resolver (`[valor]`);
+- un `CODE_ROOT` que no es un repo git;
+- con el plugin, un `SKILL_DIR` fuera del plugin, porque correría otra versión instalada.
+
+Con artefactos fuera del repo, cada HU apunta `CODE_ROOT` a su propio worktree, y `NEXUS_ROOT` se respalda por separado.
+
+### Scripts
+
+Todos en `.claude/skills/nexus-agile/scripts/`. Ninguno usa un modelo.
+
+| Script | Para qué | Quién lo corre |
+|---|---|---|
+| `check_contract.py <HU_DIR> --code-root DIR` | antes de F3: cada AC con su tarea y su test, y las rutas del Scope IN existentes. Entiende listas y rangos (`AC-1, 2, 3`) y sufijos (`AC-8b`) | el orquestador, en `/nexus-p4-f3` |
+| `review_package.sh <base> <HU_DIR> [CODE_ROOT]` | deja el diff de la HU en `HU_DIR/review-package-<sha>.diff`, para no pegarlo en el prompt | el orquestador, en `/nexus-p5-ar` |
+| `nexus_metrics.py --hu-dir HU_DIR [--json]` | por agente: fase, tokens, tiempo, herramientas, Bash y bloqueos del hook, leídos de los transcripts y de `.gates.jsonl`. Solo lee | el orquestador antes de DONE; el supervisor para la regla #11 |
+| `nexus_memory.py hecho / vigente` | arma un hecho para la memoria con el blob SHA de git de cada archivo, y comprueba si sigue vigente. Solo lee | analista, arquitecto y docs |
+| `check_spec_ids.py` | después de fusionar deltas de una spec viva: ningún requisito se pierde | docs, solo con la spec viva, que es opcional (`references/living_spec.md`) |
+| `check_consistency.sh` | agentes, comandos, skill y README dicen lo mismo (conteos, modelos, herramientas, frases obligatorias) | CI |
+
+El CI (`.github/workflows/ci.yml`) corre en cada push y PR las pruebas sin modelo de `tests/`, `check_consistency.sh` y la sintaxis de scripts y JSON. El eval con modelo corre solo a mano.
+
+### Límites conocidos y estado experimental
+
+- **No es una frontera de seguridad.** Frena errores honestos y racionalizaciones. Un agente decidido puede escribir por Bash de formas que el filtro de texto no ve. Por eso existe la comparación después de cada Bash y la del árbol de git al terminar.
+- **La comparación posterior tiene huecos:**
+  - no restaura archivos de más de 1 MB;
+  - no ve `.gates.jsonl`;
+  - no ve un proceso que siga escribiendo en segundo plano después de que el comando termina.
+- **El filtro previo es por texto.** Con `rm`, `cp` y similares sin un `cd`, alcanza con una palabra en `/tmp` para dejarlos pasar. Endurecerlo frenaba `docker cp`, `docker rm` y carpetas de `mktemp`, y quedó pendiente.
+- **La sesión principal no está limitada por rol.** Un orquestador que implementa por su cuenta no se bloquea.
+- **El dev no tiene límite de ruta en el hook.** Su alcance lo controlan el contrato, el CR (Scope Drift) y QA (Drift Detection).
+- **El hook no ve todo:**
+  - la fase la declara el orquestador, y una fase mal declarada pasa como esa fase;
+  - en AUTO, el gate delegado se registra al lanzar la fase siguiente, sin comprobar el checklist ni el supervisor;
+  - los topes de rondas, de fix-packs y de costo los aplica el orquestador, no el hook.
+- **`forbidden_commands` compara texto.** Un alias o un script que envuelve el comando no coincide.
+- **Proxies que reescriben comandos**, como rtk, pueden cambiar la salida de `cat`, `grep` o `diff`. La evidencia se toma con el comando sin reescribir (`rtk proxy <cmd>` o la ruta absoluta).
+- **Requisitos del hook.** Sin `python3` falla, y con `onFailure: block` eso bloquea a propósito. El candado usa `fcntl`, que solo existe en sistemas tipo Unix.
+- **El supervisor es experimental.** Coincidió con la persona en 15 de 15 paradas reales, en una sola HU en AUTO más paradas en sombra (`references/supervisor.md`). Alcanza para usarlo, no para hacerlo el default: AUTO sigue con el checklist por defecto. El supervisor también es un modelo, y un reporte engañoso pero convincente puede pasar.
+- **Corridas desatendidas.** Un sub-agente en segundo plano pide permisos en la sesión principal y, sin nadie mirando, queda esperando. Hay que configurar permisos granulares en `.claude/settings.json` antes de F3, F4 o DONE (`references/subagent_protocol.md`).
+
+
+## Cómo funciona un sprint
+
+```
+SPRINT_APPROVED     ← Sprint Planning: lista de HUs, estimaciones, orden, ramas
+
+  Por cada HU del sprint:
   ┌─────────────────────────────────────────────────────┐
-  │  Ownership gate: the tracker says who owns the HU   │
+  │  Gate de propiedad: el tracker dice de quién es     │
   │  F0: Bootstrap + Smart Sizing + Skills Router       │
-  │  F1: Work Item + EARS ACs + Scope + Dependencies    │
-  │  ⛔ HU_APPROVED                                     │
-  │  F2: Codebase Grounding + SDD + contract            │
-  │      SPEC_VERIFY (+ SECURITY on risky HUs)          │
-  │  ⛔ SPEC_APPROVED                                   │
-  │  F2.5: Story File (only contract_mode: classic)     │
-  │  F3: Implementation — Waves + Anti-Hallucination    │
-  │  AR + CR in parallel — BLOCKER / MINOR / OK         │
-  │  F4: QA — runs the repo gate, not just cites it     │
-  │  DONE: report + _INDEX.md + memory + issue closed   │
+  │  F1: Work Item + ACs EARS + Scope + Dependencias    │
+  │  HU_APPROVED                                        │
+  │  F2: Codebase Grounding + SDD + contrato            │
+  │      SPEC_VERIFY (+ SECURITY en HUs con riesgo)     │
+  │  SPEC_APPROVED                                      │
+  │  F2.5: Story File (solo contract_mode: classic)     │
+  │  F3: Implementación por waves + anti-alucinación    │
+  │  AR + CR en paralelo: BLOQUEANTE / MENOR / OK       │
+  │  F4: QA corre el gate del repo, no solo lo cita     │
+  │  (F5 + RELEASE_APPROVED si release_gate: true)      │
+  │  DONE: cierre.md + _INDEX.md + lecciones            │
+  │  Push, PR y merge con el SÍ de la persona           │
   └─────────────────────────────────────────────────────┘
 
-⛔ REVIEW_APPROVED     ← Mid-sprint Status Meeting (optional)
-⛔ RETRO_APPROVED      ← Sprint Retrospective + Closure Checklist
+REVIEW_APPROVED     ← Status Meeting de mitad de sprint (opcional)
+RETRO_APPROVED      ← Retrospectiva + checklist de cierre
 ```
 
-The human makes decisions at the gates. **Everything else runs automatically.**
+Los gates de sprint son convenciones de texto del skill (`references/sprint_cadence.md`). El hook no los registra.
 
 
-## What Is Enforced by Code
+## Evaluación
 
-Rules in prose are suggestions. With the hooks in `hooks/`, a phase can't start without its artifact and human gate, reviewers can't write outside their reports, and a gate only counts if a person typed it. See `references/enforcement.md`, including what this does **not** guarantee: it stops honest mistakes, and it is not a security boundary.
+`evals/` prueba la conducta de los agentes fase por fase, con defectos sembrados, controles limpios y entradas hostiles. Ver `references/evaluation.md` y los resultados en `evals/RESULTADOS.md`.
 
-Load everything as a plugin with `claude --plugin-dir .`, or copy the files with `setup.sh`.
+**Lo medido (fotos de noviembre de 2026):**
 
-## Evaluating the Methodology
+- **Eval, rc.5 (5 de noviembre):** 32 de 34 casos en 3/3, US$18,50 por pasada. Los dos que fallaron se investigaron:
+  - `spec-verify-afirmaciones-falsas` dio 10 de 12 en total, sin una falla reproducida;
+  - en `security-diseno-limpio`, el agente tenía razón: el caso de control tenía huecos reales.
+- **Primera HU real, de punta a punta** (2 puntos, monorepo Next.js/Supabase en producción, con una persona supervisando cada parada):
+  - DONE con CI en verde: 20 lanzamientos de agentes, 2,6 M tokens, 1 h 48 min de agente;
+  - la metodología sola encontró 6 de 26 defectos; el resto lo encontraron una verificación extra del SDD, la persona y la sesión que supervisaba.
 
-`evals/` tests agent behaviour phase by phase, with seeded defects, clean controls and hostile inputs. See `references/evaluation.md` and the measured results in `evals/RESULTADOS.md`.
+  De ahí salieron SPEC_VERIFY como fase, el bloqueo por destino real y el contrato dentro del SDD.
+- **Primera HU real en AUTO con supervisor** (3 de noviembre, 1 punto, QUALITY):
+  - 10 consultas al supervisor: 8 `CONTINUAR` y 2 `ESCALAR`, los dos correctos;
+  - 0 aprobaciones indebidas;
+  - 2,6 % del total de la HU en tokens del supervisor (`references/supervisor.md`).
+- **Tres HUs de un proyecto nuevo** (Nexus Control). De sus fricciones salieron la rc.5, los PRs #4 y #5 (CHANGELOG):
+  - el candado del hook;
+  - las rutas resueltas contra el último `cd`;
+  - `cierre.md`;
+  - las versiones del arquitecto retomado;
+  - el tope de rondas de F2.
 
-**What has been measured (November 2026):**
+  Los cambios del hook del PR #5 se rejugaron contra 51.694 comandos reales de agentes de solo lectura: 0 bloqueos nuevos.
+- **Pruebas sin modelo:** 131 funciones `test_` en `tests/` (foto del 8 de noviembre de 2026). El CI las corre en cada push.
 
-- **Eval suite:** 29 cases, 3 runs each, 87/87 perfect runs (AR, gates, dev, analyst, security, roles, supervisor, AUTO checklist, SDD verification, real command template). About USD 16 per full pass.
-- **One real HU, end to end** (a 2-point feature in a production Next.js/Supabase monorepo, with a human supervising every stop): DONE with CI green, 20 agent launches, 2.6 M tokens, 1 h 48 min of agent time. The methodology alone found 6 of 26 defects; the rest came from an extra SDD verification, the human, and the supervising session. Those findings are what this version fixes: the SDD verification is now a phase, the hook blocks by real destination and restores artifacts, and the contract lives in the SDD by default.
-- **Hook tests without a model:** 100+ in `tests/`, run by CI on every push.
+**Lo que no se midió:**
 
-**Project memory and ownership (rc.4).** Before the first analyst, an ownership gate asks the team's tracker (Jira, Linear, GitHub Issues, a file, or your own tool) who owns the story, and the hook refuses to start one owned by someone else. Facts the agents verified are stored tied to the git blob SHA of their files and reused without re-reading only while the hash matches; lessons go to memory only after a person approves them. See `references/tracker.md` and `references/engram_protocol.md`.
+- QA en el eval: sus casos necesitan Bash y están en `evals/_requieren-bash/`;
+- la entrega por el supervisor (puntos 7 y 9) en una corrida real después del PR #6;
+- una comparación contra otra metodología.
 
-**What has not been measured:** QA in the eval (its cases need Bash, which the eval sandbox refused on the test machine); AUTO with the supervisor on a real HU without a human preparing the answers (the second real run, in progress, measures exactly that); any comparison against another methodology. One real run is a case study, not a benchmark.
+Unas pocas corridas reales son casos de estudio, no un benchmark.
 
-Per-HU metrics come from `scripts/nexus_metrics.py`, which reads the Claude Code transcripts and `.gates.jsonl`.
 
-## 4 Modes
+## Modos
 
 | | FAST | FAST+AR | QUALITY | AUTO |
 |---|---|---|---|---|
-| **Best for** | Fix a bug, tweak a style, update text | Small change that touches auth, DB writes, RLS, streaming | Ship a feature to real users | Batch of 1-N HUs, hands-off execution |
-| **You get** | Working code in ~12 min | AR + CR security review in ~25 min | Full audit trail in ~60-120 min | All of the above, pipeline auto-selected per HU |
-| **Human gates** | `HU_APPROVED` | `HU_APPROVED` | `HU_APPROVED` + `SPEC_APPROVED` (after `SPEC_VERIFY`) | Delegated: clinical review or supervisor; product decisions still escalate |
-| **AR/CR** | Skipped | Yes (parallel) | Yes (parallel) | Yes (when pipeline requires it) |
-| **Command** | `/nexus-fast-pipeline` | `/nexus-fast-plus-ar` | `/nexus-p1-f0-f1` → `p8` | `/nexus-auto [--supervisor]` |
-| **When in doubt** | | | Use this one | |
+| **Para** | Un fix, un estilo, un texto: hasta 2 archivos de código más sus tests, menos de 50 líneas, sin DB ni lógica nueva | Cambio chico que toca auth, escrituras a DB, RLS, streaming, admin o secretos (hasta 5 archivos y 10 ACs) | Feature para usuarios reales | Lote de 1 a N HUs |
+| **SDD** | No: el work-item es el contrato | No | Sí, con SPEC_VERIFY (y SECURITY si hay riesgo) | Según el pipeline de cada HU |
+| **Gates de la persona** | `HU_APPROVED` | `HU_APPROVED` | `HU_APPROVED` + `SPEC_APPROVED` | Delegados al checklist o al supervisor; las decisiones de producto, `RELEASE_APPROVED`, el push y el merge siguen siendo de la persona |
+| **AR/CR** | No | Sí, en paralelo | Sí, en paralelo | Cuando el pipeline lo pide |
+| **Comando** | `/nexus-fast-pipeline` | `/nexus-fast-plus-ar` | `/nexus-p1-f0-f1` → `p8` | `/nexus-auto [--supervisor]` |
+
+Ante la duda, QUALITY. El skill también describe LAUNCH (MVP o prototipo, `references/launch_flow.md`, con un gate `LAUNCH_APPROVED`), sin comando propio.
 
 
-## AUTO Mode, FAST+AR Pipeline, Custom Agents & Sub-Agent Protocol
+## Agentes, comandos y protocolo de sub-agentes
 
-### AUTO Mode — Autonomous Multi-HU Orchestrator
+### Agentes (`.claude/agents/`)
 
-One command, N user stories. The human delegates two gates and keeps every product decision:
+Ocho agentes, uno por rol, con el rol, las herramientas y las prohibiciones en el propio archivo.
 
-```
-/nexus-agile:nexus-auto WKH-42                          # single HU
-/nexus-agile:nexus-auto WKH-42 WKH-43 WKH-44           # batch of 3
-/nexus-agile:nexus-auto WKH-42 --user=Fernando --supervisor
-```
-
-**Delegation is the human's act.** The hook marks the session as delegated only when a person types the command at the start of a line, and says so ("sesion delegada (AUTO)"). An agent invoking AUTO on its own does not delegate anything.
-
-**How it works:**
-1. All analysts run in parallel (one per HU), and Smart Sizing picks FAST, FAST+AR or QUALITY. The orchestrator may raise the pipeline, never lower it.
-2. At `HU_APPROVED` and `SPEC_APPROVED`, the gate is reviewed instead of asked:
-   - **Default: clinical review.** A 7-criterion checklist run by the orchestrator. All PASS → it records the gate as `claude-delegated`; any FAIL → it asks the human.
-   - **`--supervisor` (experimental):** at every stop, a separate read-only agent (`nexus-supervisor`) gets the orchestrator's report and the artifacts, never its reasoning, and answers `CONTINUAR`, `PEDIR_EVIDENCIA` or `ESCALAR`. It exists because an orchestrator that approves its own work wants to finish: in the first real run, most serious defects were caught by a second context asking for evidence, not by the checklist.
-3. In QUALITY, `SPEC_VERIFY` checks every claim of the SDD against the code before the spec gate; the hook won't let F3 start with false claims open.
-4. **Always escalated, even if every check passes:** anything that changes what a user sees or can do, the scope or the approved ACs; security, permissions, data, production or migrations; business priority; disproportionate cost. `RELEASE_APPROVED` is never delegated.
-5. The hooks apply exactly as in manual mode: phases need their artifacts and gates, reviewers can't write outside their reports, and a Bash command that changes an artifact is reverted and logged.
-6. Dependent HUs (overlapping Scope IN) are serialized; a completion report closes the batch.
-
-**Status:** the supervisor matched the human's verdict in 5 of 5 real stop points run in shadow, and passes 18/18 synthetic cases. Until a real AUTO run confirms it, the checklist remains the default.
-
-### FAST+AR — The Sweet Spot
-
-For small changes that touch risky territory (auth, DB writes, streaming, admin panels, RLS policies):
-
-```
-/nexus-fast-plus-ar WKH-42
-```
-
-Same speed as FAST (~17-32 min) but with AR + CR running in parallel after implementation. Catches the bugs that FAST would miss — without the overhead of a full SDD.
-
----
-
-### Custom Agents, Slash Commands & Sub-Agent Protocol
-
-Four structural additions that eliminate context overload AND prevent the orchestrator from "forgetting" to delegate:
-
-### Custom Sub-Agents (`.claude/agents/`)
-
-Eight specialized Claude Code agents — one per pipeline role — with the role, allowed tools, and forbidden-actions block baked into the agent file itself. The orchestrator literally **cannot** invoke them without inheriting the constraints.
-
-| Agent | Phases | Model | Tools | Output |
+| Agente | Fases | Modelo | Herramientas | Salida |
 |---|---|---|---|---|
-| `nexus-analyst` | F0, F1 | sonnet (opus in AUTO QUALITY) | Read, Glob, Grep, Bash, Write, Edit, WebFetch, Jira read | `project-context.md`, `work-item.md` |
-| `nexus-architect` | F2, F2.5 (`classic` only) | opus (effort high) | Read, Glob, Grep, Write, Edit, Bash, LSP | `sdd.md` with its contract, `story-file.md` |
-| `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash, LSP | code + `auto-blindaje.md` |
-| `nexus-adversary` | SPEC_VERIFY, AR, CR | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `sdd-verification.md`, `ar-report.md`, `cr-report.md`, `blq-verification.md` |
+| `nexus-analyst` | F0, F1 | sonnet (opus en AUTO QUALITY) | Read, Glob, Grep, Bash, Write, Edit, WebFetch, lectura de Jira, lectura de Engram | `project-context.md`, `work-item.md` |
+| `nexus-architect` | F2, F2.5 (solo `classic`) | opus (effort high) | Read, Glob, Grep, Write, Edit, Bash, LSP, lectura de Engram | `sdd.md` con su contrato, `story-file.md` |
+| `nexus-dev` | F3 | opus | Read, Write, Edit, Glob, Grep, Bash, LSP | código + `auto-blindaje.md` |
+| `nexus-adversary` | SPEC_VERIFY, AR, CR, VERIFY | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `sdd-verification.md`, `ar-report.md`, `cr-report.md`, `blq-verification.md` |
 | `nexus-qa` | F4 | sonnet | Read, Glob, Grep, Bash, Write | `validation.md` |
-| `nexus-docs` | DONE | sonnet | Read, Write, Edit, Bash | `cierre.md`, `_INDEX.md` |
-| `nexus-security` | SECURITY (HUs with `security_review: required`) | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `security-review.md` |
-| `nexus-supervisor` | AUTO, experimental | opus (effort high) | Read, Glob, Grep, Bash | verdict in its reply |
+| `nexus-docs` | DONE | sonnet (haiku en el DONE de FAST y FAST+AR) | Read, Write, Edit, Bash, lectura y escritura de Engram | `cierre.md`, `_INDEX.md`, `lecciones.md` |
+| `nexus-security` | SECURITY (HUs con `security_review: required`) | opus (effort high) | Read, Glob, Grep, Bash, Write, LSP | `security-review.md` |
+| `nexus-supervisor` | AUTO, experimental | opus (effort high) | Read, Glob, Grep, Bash | veredicto en su respuesta |
 
-`nexus-adversary` and `nexus-qa` have no Edit tool. They have Write for their own report and Bash to run things, so they could technically change code: the role rule forbids it, and Drift Detection catches it.
+Que un agente tenga Write o Bash no quiere decir que pueda escribir donde quiera: el hook lo limita según la tabla de [Permisos por rol](#permisos-por-rol).
 
-### Slash Commands (`.claude/commands/`)
+### Comandos (`.claude/commands/`)
 
-Eleven typed shortcuts that wrap each phase. The orchestrator types one command and the entire Task tool invocation is built — sub-agent type, full prompt, prerequisites check, expected output, and forbidden block.
+Once comandos. Cada uno lanza una fase (o dos fases contiguas sin gate en el medio, como F0+F1), con el tipo de sub-agente, el prompt completo, los pre-requisitos y el bloque de prohibiciones.
 
-| Command | Phase | Sub-agent launched | Pre-requisite |
+| Comando | Fase | Sub-agente | Pre-requisito |
 |---|---|---|---|
-| `/nexus-p1-f0-f1 <HU>` | F0 + F1 | `nexus-analyst` | — |
-| `/nexus-p2-f2 <HU>` | F2 (SDD) + SPEC_VERIFY | `nexus-architect`, then `nexus-adversary` | `HU_APPROVED` |
-| `/nexus-p3-f2-5 <HU>` | F2.5 (Story File, `classic` only) | `nexus-architect` | `SPEC_APPROVED` |
-| `/nexus-p4-f3 <HU>` | F3 (impl) | `nexus-dev` | the contract exists and `SPEC_VERIFY` has no open false claims |
-| `/nexus-p5-ar <HU>` | AR + CR | `nexus-adversary` x2 | F3 finished |
-| `/nexus-p6-cr <HU>` | CR | `nexus-adversary` | AR APPROVED |
-| `/nexus-p7-f4 <HU>` | F4 (QA) | `nexus-qa` | CR APPROVED |
-| `/nexus-p8-done <HU>` | DONE | `nexus-docs` | F4 APPROVED |
-| `/nexus-fast-pipeline <HU>` | FAST (end-to-end) | analyst → dev → qa → docs | — |
-| `/nexus-fast-plus-ar <HU>` | FAST+AR (end-to-end) | analyst → dev → adversary → qa → docs | — |
-| `/nexus-auto <HU> [HU ...]` | AUTO (analyst decides) | orchestrator (self) | — |
+| `/nexus-p1-f0-f1 <HU>` | F0 + F1 | `nexus-analyst` | gate de propiedad |
+| `/nexus-p2-f2 <HU>` | F2 + SPEC_VERIFY + SECURITY | `nexus-architect`, `nexus-adversary`, `nexus-security` | `HU_APPROVED` |
+| `/nexus-p3-f2-5 <HU>` | F2.5 (solo `classic`) | `nexus-architect` | `SPEC_APPROVED` |
+| `/nexus-p4-f3 <HU>` | F3 | `nexus-dev` | el contrato existe; SPEC_VERIFY sin falsas y SECURITY sin hallazgos, de la versión aprobada |
+| `/nexus-p5-ar <HU>` | AR + CR + VERIFY | `nexus-adversary` (2 en paralelo, más 1 para verificar) | F3 terminado |
+| `/nexus-p6-cr <HU>` | CR solo | `nexus-adversary` | F3 o re-F3 terminado |
+| `/nexus-p7-f4 <HU>` | F4 (y F5 si hay `release_gate`) | `nexus-qa` | AR y CR aprobados |
+| `/nexus-p8-done <HU>` | DONE | `nexus-docs` | F4 aprobado; `RELEASE_APPROVED` si hay `release_gate` |
+| `/nexus-fast-pipeline <HU>` | FAST completo | analyst → dev → qa → docs | gate de propiedad |
+| `/nexus-fast-plus-ar <HU>` | FAST+AR completo | analyst → dev → adversary → qa → docs | gate de propiedad |
+| `/nexus-auto <HU> [HU ...]` | AUTO | el orquestador | la persona escribe el comando al inicio de una línea |
 
-> **`pN` prefix**: the step number marks the mandatory execution order for QUALITY mode. Always start at `p1` and go sequentially. Human gates happen after `p1` (`HU_APPROVED`) and after `p2` (`SPEC_APPROVED`). With `contract_mode: unified` (the default) `p3` is skipped and `p4` follows; from there to `p8` the pipeline runs on its own. For FAST/FAST+AR, use the single-command variants. For autonomous execution, use `/nexus-auto`.
+> **Prefijo `pN`**: marca el orden en QUALITY. Los gates de la persona van después de `p1` (`HU_APPROVED`) y de `p2` (`SPEC_APPROVED`). Con `contract_mode: unified` (el default), `p3` se salta. De `p4` a `p8` el pipeline corre solo.
 
-**Critical constraint built into every command**: only ONE gate per launch. You cannot pipe `HU_APPROVED → F2 → SPEC_APPROVED` in a single sub-agent invocation, because one-shot sub-agents can't pause for human input — they would silently auto-approve. Each command launches exactly one phase (or two adjacent gateless phases like F0+F1).
+**Un gate por lanzamiento.** Un sub-agente de una sola corrida no puede pausar para esperar a una persona: se aprobaría solo. Por eso cada comando lanza una fase.
 
-### Why this matters
+### Protocolo de sub-agentes
 
-Without custom agents and slash commands, the orchestrator has to remember to:
-1. Pass the FORBIDDEN block in every prompt
-2. Restrict tools per phase
-3. Verify pre-requisites before launching
-4. Not split a gate across two sub-agent calls
-
-In practice, these get forgotten under load. With custom agents + slash commands, **the rules live in the file system, not in the orchestrator's context window** — which means they survive compaction, context overflow, and human typos.
-
-### Sub-Agent Protocol
-
-Without sub-agents, a full QUALITY pipeline accumulates context in a single session. By F4, the context window is saturated — and that's where hallucinations start.
-
-With sub-agents, each phase starts fresh:
+Cada fase empieza con contexto limpio. Los artefactos de `HU_DIR` son el canal entre fases, no el historial del chat.
 
 ```
-Orchestrator (minimal context — coordinates only; runs the ownership gate)
+Orquestador (contexto mínimo; corre el gate de propiedad y maneja los gates)
      │
-     ├─► [sub-agent F0+F1]     → delivers: project-context.md + sizing + work-item.md
-     │         ⛔ HU_APPROVED
-     ├─► [sub-agent F2]        → delivers: sdd.md (with its contract)
-     ├─► [sub-agent SPEC_VERIFY] → delivers: sdd-verification.md
-     ├─► [sub-agent SECURITY]  → delivers: security-review.md (risky HUs)
-     │         ⛔ SPEC_APPROVED
-     ├─► [sub-agent F2.5]      → delivers: story-file.md (classic only)
-     ├─► [sub-agent F3]        → delivers: code + auto-blindaje log
-     ├─► [sub-agent AR] ┐      → delivers: ar-report.md
-     ├─► [sub-agent CR] ┘ in parallel → cr-report.md
-     ├─► [sub-agent F4]        → delivers: validation.md
-     └─► [sub-agent DONE]      → delivers: cierre.md + _INDEX updated + memory
+     ├─► [F0+F1]       → project-context.md + sizing + work-item.md
+     │         HU_APPROVED
+     ├─► [F2]          → sdd.md (con su contrato)
+     ├─► [SPEC_VERIFY] → sdd-verification.md   ┐ pueden correr en paralelo
+     ├─► [SECURITY]    → security-review.md    ┘ sobre la misma versión del SDD
+     │         SPEC_APPROVED
+     ├─► [F2.5]        → story-file.md (solo classic)
+     ├─► [F3]          → código + auto-blindaje.md
+     ├─► [AR] ┐        → ar-report.md
+     ├─► [CR] ┘ en paralelo → cr-report.md
+     ├─► [VERIFY]      → blq-verification.md (si hubo BLQ)
+     ├─► [F4]          → validation.md
+     ├─► [DONE]        → cierre.md + _INDEX + lecciones.md
+     └─► push, PR y merge: el orquestador, con el SÍ de la persona
 ```
 
-The orchestrator never writes code, generates SDDs, or touches files. It coordinates, receives artifacts, and manages gates.
+Reglas del orquestador para el costo (`/nexus-auto` §8.3):
 
-**Works with:** Claude Code (Task tool), OpenCode (spawned agents), or any IDE with sub-agent support. Falls back gracefully to single-session with Skills Router when sub-agents aren't available.
+- Pasa rutas, no contenido.
+- Lee los reportes por su línea `STATUS:`.
+- Una llamada que un hook puede modificar va sola en su mensaje.
 
 ### Skills Router
 
-Without a router: a monolithic `AGENTS.md` with 1000+ lines loaded on every turn — Angular patterns loaded for a Supabase migration, blockchain instructions loaded for a CSS fix.
+En F0, el analista detecta el dominio de la HU y carga solo 1 o 2 skills relevantes:
 
-With the Skills Router, the Analyst runs a lightweight detection at F0 and loads only the 1-2 skills relevant to the current HU:
-
-| Signal in the HU | Skill loaded |
+| Señal en la HU | Skill |
 |---|---|
 | component, UI, React, layout | `skill-frontend` |
 | table, migration, query, Supabase | `skill-database` |
@@ -293,388 +613,288 @@ With the Skills Router, the Analyst runs a lightweight detection at F0 and loads
 | contract, Solidity, Web3, wallet | `skill-web3` |
 | endpoint, route, REST, middleware | `skill-backend` |
 
-Max 2 domain skills per HU. More than 2 is a signal the HU is too large — split it.
-
-Skills can come from your own project-specific skill files or from a shared `skills/` directory in your monorepo. The router is agnostic to the source.
+Más de 2 skills de dominio es señal de que la HU es demasiado grande. Los skills pueden venir del proyecto o de un directorio compartido (`references/skills_router.md`).
 
 
-## The Feature Pipeline (per HU)
+## El pipeline por HU
 
 ### F0: Bootstrap + Smart Sizing + Skills Router
 
-Checks for `project-context.md`. If not found, reads the codebase from scratch (dependencies, structure, patterns, commands, DB, auth) and generates it — once, reused across every session. It also loads `product-context.md` (the business layer: product, personas, flows, and product decisions already made) so the agents understand not just *how* your code is built, but *what* they're building and *for whom*. Both files are read before every HU and can be updated anytime.
+Busca `project-context.md`. Si no existe, lee el código (dependencias, estructura, patrones, comandos, DB, auth) y lo genera una vez. También carga `product-context.md`: producto, personas, flujos y decisiones de producto ya tomadas. Si no existe, el analista pregunta cómo dar el contexto de negocio.
 
-Classifies the HU by SDD_MODE:
+Clasifica la HU por SDD_MODE:
 
-| Signal | SDD_MODE |
+| Señal | SDD_MODE |
 |---|---|
-| Up to 2 code files (plus tests), under 50 lines, no DB, no new logic | `patch` → FAST pipeline |
-| Bug with reproduction steps | `bugfix` → lightweight SDD |
-| Refactor or tech task | `mini` → minimal SDD |
-| Feature with logic | `full` → full pipeline |
-
-Then runs the Skills Router: detects the domain from the HU and loads only the relevant skills.
+| Hasta 2 archivos de código (más tests), menos de 50 líneas, sin DB, sin lógica nueva | `patch` → FAST |
+| Bug con pasos para reproducirlo | `bugfix` → SDD liviano |
+| Refactor o tarea técnica | `mini` → SDD mínimo |
+| Feature con lógica | `full` → pipeline completo |
 
 ### F1: Discovery
 
-Analyst normalizes the HU into a Work Item: objective, EARS Acceptance Criteria, Scope IN/OUT, and missing inputs. UX contributes microcopy and user flows when UI is involved. Analyst analyzes dependencies and proposes execution order.
+El analista normaliza la HU en un work-item: objetivo, ACs en EARS, Scope IN/OUT, decisiones técnicas, Constraint Directives, pipeline propuesto y, si la HU toca auth, permisos, datos, pagos, RLS o entradas públicas, `security_review: required`. Las dudas van en `PREGUNTAS PARA EL HUMANO` (como máximo 3) y lo que consultó en memoria, en `MEMORIA CONSULTADA`.
 
-Output: `work-item.md`
-
-Gate: `HU_APPROVED`
+Salida: `work-item.md`. Gate: `HU_APPROVED`.
 
 ### F2: SDD
 
-Deep Codebase Grounding: reads 2-3 real files related to the HU, extracts patterns (imports, naming, structure), identifies an Exemplar for every file that will be touched. Everything documented in a Context Map.
+Codebase Grounding profundo: lee archivos reales relacionados, extrae patrones y fija un Exemplar para cada archivo a tocar. Después escribe el SDD: Context Map, decisiones técnicas, Constraint Directives, waves, plan de tests, Readiness Check y la sección "Contrato de implementación" (`contract_mode: unified`, el default).
 
-Then writes the SDD: routes, schema, UI spec, Constraint Directives (REQUIRED / FORBIDDEN), Integration Contract when components communicate, and a Readiness Check that verifies every AC has a file and every file has a valid Exemplar.
+**SPEC_VERIFY.** El adversario, en contexto nuevo, marca cada afirmación verificable del SDD como VERDADERA, FALSA o NO VERIFICABLE, y anota controles débiles del plan de tests. Las falsas vuelven al arquitecto, que corrige solo esas. Se apaga con `spec_verify: false` en `project-context.md`.
 
-No `[NEEDS CLARIFICATION]` items allowed at the gate.
+**SECURITY (solo HUs con riesgo).** `nexus-security` revisa el *diseño*: una matriz de quién puede qué, dónde se hace cumplir cada control y qué pasa si alguien llama una acción directo. Cada hallazgo necesita un camino de ataque concreto, contra un atacante de afuera del código de la HU.
 
-**SPEC_VERIFY.** Before the gate, the adversary, in a fresh context, checks every verifiable claim of the SDD against the code (paths, signatures, configuration, cited lines) and marks each TRUE, FALSE or NOT VERIFIABLE. False claims go back to the architect. In the first real run, the architect's own Readiness Check passed with 4 false claims that an independent check found. Turn it off with `spec_verify: false`.
+Salida: `sdd.md`, `sdd-verification.md`, `security-review.md` (con riesgo). Gate: `SPEC_APPROVED`.
 
-**SECURITY (risky HUs only).** When the analyst marks `security_review: required` (auth, roles, permissions, RLS, personal data, secrets, payments, external inputs), `nexus-security` reviews the *design* before the gate: an authorization matrix of who can do what, where each check is enforced, and what happens if someone calls an action directly. Every finding needs a concrete attack path. Code is still reviewed later by AR; this catches design holes while fixing them costs a line of the SDD instead of a fix-pack.
+### F2.5: Story File (solo con `contract_mode: classic`)
 
-Output: `sdd.md`, `sdd-verification.md`, `security-review.md` (risky HUs)
+Un contrato autocontenido aparte, para tareas L. Por defecto el contrato es una sección del SDD y F2.5 se salta: en la primera corrida real, un Story File aparte repetía casi todo el SDD y cada fix había que hacerlo dos veces.
 
-Gate: `SPEC_APPROVED`
+**Sin contrato no hay código.**
 
-### F2.5: Story File (only with `contract_mode: classic`)
+### F3: Implementación
 
-The self-contained contract Dev implements. Dev may read the SDD to understand the why, but only the contract defines the work. Contains: goal in 1-2 sentences, ACs from the SDD, files to create/modify each with a real Exemplar, Integration Contract, Constraint Directives, Waves, and an Escalation Rule.
+El dev sigue el protocolo anti-alucinación en cada tarea: lee el Exemplar, verifica que los imports existan, revisa los símbolos externos contra la versión instalada y verifica en el registro toda versión que fija. No toca archivos fuera del Scope IN.
 
-By default (`contract_mode: unified`) this contract is a section of the SDD and F2.5 is skipped. `contract_mode: classic` keeps a separate Story File, for L tasks. In the first real run, a separate Story File repeated most of the SDD and every fix had to be made twice.
+Trabaja por waves: W0 en serie, W1+ en paralelo si se puede. Antes de cada wave relee lo que tocó la anterior. Cada error va a Auto-Blindaje en el momento. Typecheck y tests después de cada wave.
 
-**No contract = No coding. No exceptions.**
+### AR + CR
 
-Output: `story-file.md`
+AR ataca la implementación en 12 categorías: seguridad, manejo de errores, integridad de datos, rendimiento, integración, tipos, cobertura de tests, scope drift, migraciones destructivas, funciones SECURITY DEFINER, invalidación de caché y afirmaciones sin testigo. CR revisa calidad con 8 checks, en paralelo.
 
-### F3: Implementation
-
-Dev follows the Anti-Hallucination Protocol before each task: reads the Exemplar, verifies imports exist, checks external symbols against the installed version's types, follows the project's patterns. No unapproved dependencies. No touching files outside Scope IN.
-
-Work organized in Waves. W0 serial (the foundation). W1+ parallel. Before each wave, Dev re-maps: reads files created or modified in the previous wave to verify what the current wave needs actually exists. Every error documented immediately in Auto-Blindaje.
-
-Incremental typecheck: passes after every wave. Fails → fix before continuing.
-
-### Adversarial Review
-
-A separate agent attacks the implementation across 12 categories: security, error handling, data integrity, performance, integration, type safety, test coverage, scope drift, destructive migrations, SECURITY DEFINER functions, cache invalidation, and claims without a witness.
-
-Each BLOCKER is first checked by a separate agent that tries to reproduce it (`blq-verification.md`), which cuts false positives and rework. Confirmed or undecided BLOCKERs must be fixed before continuing. Adversary re-reviews after each fix.
+Cada BLQ lo verifica primero un agente nuevo que intenta reproducirlo (`blq-verification.md`). Lo confirmado o indeterminado va al fix-pack, que empieza por convertir cada reproducción en un test en rojo. Si el CR rechazó, el re-CR acotado es obligatorio: el hook no deja lanzar F4 mientras el último `cr-report` tenga BLQ abiertos.
 
 ### F4: QA
 
-Drift Detection: files created vs expected, files modified vs expected, new dependencies, files outside scope. Every AC verified with the literal command and its output. No evidence = not done. The repo's single gate runs once, in the validation environment the project declares.
+Drift Detection: archivos creados y modificados contra lo esperado, dependencias nuevas, archivos fuera de alcance. Cada AC con el comando literal y su salida. El gate único del repo corre una vez, en el entorno de validación que declara el proyecto.
 
-Output: `validation.md`
+Veredictos:
+
+- `APROBADO PARA DONE`: sigue a DONE, o a F5 si hay `release_gate`.
+- `APROBADO con observaciones`: lo decide la persona, y si cierra, las observaciones van como deuda en `cierre.md`.
+- `RECHAZADO`: vuelve a F3.
+
+Salida: `validation.md`.
 
 ### DONE
 
-```
-doc/sdd/
-└── NNN-title/
-    ├── work-item.md          ← F1
-    ├── sdd.md                ← F2
-    ├── sdd-verification.md   ← SPEC_VERIFY
-    ├── security-review.md    ← SECURITY (risky HUs)
-    ├── story-file.md         ← F2.5 (classic only)
-    ├── ar-report.md          ← AR
-    ├── cr-report.md          ← CR
-    ├── validation.md         ← F4
-    ├── cierre.md             ← DONE
-    ├── .gates.jsonl          ← every gate: who gave it, document hash, time (written by the hook)
-    └── .versions/            ← copy of each document as it was approved
-doc/sdd/_INDEX.md             ← history of every HU
-```
+`nexus-docs` escribe `cierre.md`:
+
+- resumen;
+- gates y fechas;
+- resultados de ACs;
+- hallazgos;
+- Auto-Blindaje consolidado;
+- archivos tocados;
+- métricas de `nexus_metrics.py` tal cual;
+- dependencias de merge en una HU apilada.
+
+También actualiza `_INDEX.md` y propone lecciones en `lecciones.md`. Después, el orquestador:
+
+- presenta las lecciones a la persona y guarda con `mem_save` solo las que ella aprueba (en AUTO, al cierre del lote);
+- borra los temporales de `/tmp`;
+- cierra el reclamo `trabajo/<HU>`;
+- pide el SÍ para el push, el PR y el merge.
 
 
-## The Roles
+## Roles
 
-Eight roles have an agent file in `.claude/agents/`. UX, SM and Triage have no file of their own: the orchestrator takes them on when needed.
+Ocho roles tienen archivo de agente. UX, SM y Triage no lo tienen: los toma el orquestador cuando hacen falta.
 
-| Agent | Role | Active in |
+| Rol | Qué hace | Cuándo |
 |---|---|---|
-| **Analyst** | Interprets input, normalizes into Work Item, writes EARS ACs, defines scope, sizes the HU | F0, F1 |
-| **Architect** | Codebase Grounding, Context Map, Exemplars, SDD, Story File | F2, F2.5 |
-| **UX** | Microcopy, user flows, accessibility — only when the HU has UI | F1 (UI only) |
-| **Adversary** | Attacks the implementation (AR) across 12 categories. Sole owner of Code Review (8 checks). Never implements. | AR, CR |
-| **Dev** | Implements only the contract, in Waves, reading the SDD only for the why. Anti-Hallucination Protocol always on. | F3, post-AR fixes |
-| **SM** | Sprint Planning, Status Meeting, Retrospective, Sprint Closure Checklist | Sprint cadence |
-| **QA** | Drift Detection, AC evidence as command + output, repo gate, Validation Report | F4 |
-| **Triage** | Evaluates if a change qualifies for FAST. Escalates if it grows beyond scope. | FAST flow |
-| **Docs** | Compiles report, updates `_INDEX.md`, verifies all artifacts, closes issue, saves verified facts to memory | DONE |
-| **Security** | Reviews the design before `SPEC_APPROVED`: who can do what, where each check is enforced. Only on risky HUs | SECURITY |
-| **Supervisor** | In AUTO, reviews every stop asking for evidence: continue, ask for evidence, or escalate. Read-only, experimental | AUTO |
+| **Analista** | Normaliza la HU en un work-item, escribe ACs EARS, define alcance, hace el sizing | F0, F1 |
+| **Arquitecto** | Codebase Grounding, Context Map, Exemplars, SDD, Story File | F2, F2.5 |
+| **UX** | Microcopy, flujos, accesibilidad, solo con UI | F1 (con UI) |
+| **Adversario** | Verifica el SDD, ataca la implementación (12 categorías), es el único dueño del CR (8 checks), verifica los BLQ. Nunca implementa | SPEC_VERIFY, AR, CR, VERIFY |
+| **Dev** | Implementa solo el contrato, por waves; lee el SDD solo para el porqué | F3, fix-packs |
+| **SM** | Planning, Status, Retro, checklist de cierre de sprint | Cadencia de sprint |
+| **QA** | Drift Detection, evidencia por AC, gate del repo | F4 |
+| **Triage** | Evalúa si un cambio califica para FAST y escala si crece | FAST |
+| **Docs** | `cierre.md`, `_INDEX.md`, lecciones propuestas, hechos verificados a memoria | DONE |
+| **Seguridad** | Revisa el diseño antes de `SPEC_APPROVED`, solo en HUs con riesgo | SECURITY |
+| **Supervisor** | En AUTO, revisa cada parada pidiendo evidencia. Solo lectura, experimental | AUTO |
 
-**Separation rules:**
 ```
-Analyst (defines)   ≠  Architect (specifies)  ≠  Dev (implements)  ≠  Adversary (attacks)  ≠  QA (validates)
+Analista (define) ≠ Arquitecto (especifica) ≠ Dev (implementa) ≠ Adversario (ataca) ≠ QA (valida)
 ```
 
 
-## Gates
+## Instalación
 
-| Gate | Exact text | When |
-|---|---|---|
-| `SPRINT_APPROVED` | `SPRINT_APPROVED` | After Sprint Planning |
-| `HU_APPROVED` | `HU_APPROVED` | After F1 Work Item |
-| `SPEC_APPROVED` | `SPEC_APPROVED` | After F2 SDD |
-| `RELEASE_APPROVED` | `RELEASE_APPROVED` | After F5, only with `release_gate: true`. Never self-approved |
-| `REVIEW_APPROVED` | `REVIEW_APPROVED` | After Status Meeting |
-| `RETRO_APPROVED` | `RETRO_APPROVED` | After Retrospective |
-
-Only the exact text activates the gate. "yes", "ok", "go", "sure" do **not** activate any gate. The one exception is `/nexus-auto`, where you explicitly delegate `HU_APPROVED` and `SPEC_APPROVED` to a clinical review that escalates on any failure.
-
-Between gates, the pipeline runs automatically. The agent never asks "shall I continue?" — that is a process error.
-
-
-## Installation
-
-NexusAgile distributes the **skill** (methodology), the **sub-agents**, the **slash commands**, and wires up **persistent memory** (Engram) so the system learns from its own errors across sessions.
-
-### As a plugin (recommended)
+### Como plugin (recomendado)
 
 ```bash
 /plugin marketplace add ferrosasfp/nexus-agile-enterprise
 /plugin install nexus-agile@nexus-agile
 ```
 
-Agents are namespaced (`nexus-agile:nexus-dev`), the hooks load with the plugin, and the commands are `/nexus-agile:nexus-p1-f0-f1` and so on. To try a local checkout without installing: `claude --plugin-dir /path/to/nexus-agile-enterprise`.
+Para probar un checkout local sin instalarlo:
 
-### One command (copy into a project)
+```bash
+claude --plugin-dir ~/proyectos/nexus-agile-enterprise
+```
+
+Con el plugin, los hooks cargan solos, los agentes llevan prefijo (`nexus-agile:nexus-dev`) y los comandos también (`/nexus-agile:nexus-p1-f0-f1`). El hook bloquea lanzar un agente sin prefijo, porque correría otra versión instalada.
+
+### Copia en un proyecto
 
 ```bash
 git clone https://github.com/ferrosasfp/nexus-agile-enterprise /tmp/nexus-agile
-cd your-project && /tmp/nexus-agile/setup.sh
+cd tu-proyecto && /tmp/nexus-agile/setup.sh
 ```
 
-`setup.sh` copies the skill + agents + commands, installs the Engram memory engine if it's missing (Homebrew or `go install`), and writes a project `.mcp.json` that exposes `mem_save` / `mem_search` to the pipeline. Restart Claude Code and you're ready.
+`setup.sh`:
 
-> **Memory (Engram).** Persistent memory is what powers Auto-Blindaje — every error and fix is saved and recalled on the next HU, so the system improves with use. The engine is [Engram](https://github.com/Gentleman-Programming/engram) by Gentleman Programming (MIT, separate project — NexusAgile integrates it, doesn't vendor it). No Engram? NexusAgile falls back to `doc/sdd/_LECCIONES.md`, versioned in the repo. See `references/engram_protocol.md`.
+- copia el skill, los agentes, los comandos y `hooks/nexus_hook.py` a `.claude/`;
+- instala Engram si falta (Homebrew o `go install`);
+- escribe un `.mcp.json` con el servidor de Engram.
 
-### Per-project (manual)
+**No registra los hooks**: hay que agregar el bloque de `hooks/hooks.json` a `.claude/settings.json`, cambiando `${CLAUDE_PLUGIN_ROOT}/hooks` por la ruta real (`references/enforcement.md`). Sin eso, las reglas son solo texto.
+
+> **Memoria (Engram).** La memoria persistente sostiene Auto-Blindaje y los hechos verificados. El motor es [Engram](https://github.com/Gentleman-Programming/engram), de Gentleman Programming (MIT, proyecto aparte: NexusAgil lo integra, no lo incluye). Sin Engram, las lecciones van a `doc/sdd/_LECCIONES.md`. Ver `references/engram_protocol.md`.
+
+### Copia manual o global
 
 ```bash
 git clone https://github.com/ferrosasfp/nexus-agile-enterprise /tmp/nexus-agile
-mkdir -p your-project/.claude/skills your-project/.claude/agents your-project/.claude/commands
-cp -r /tmp/nexus-agile/.claude/skills/nexus-agile/ your-project/.claude/skills/
-cp /tmp/nexus-agile/.claude/agents/nexus-*.md your-project/.claude/agents/
-cp /tmp/nexus-agile/.claude/commands/nexus-*.md your-project/.claude/commands/
-cp /tmp/nexus-agile/setup/mcp.json your-project/.mcp.json   # engram MCP — merge if you already have one
-rm -rf /tmp/nexus-agile
+# por proyecto: DEST=tu-proyecto/.claude   · global: DEST=~/.claude
+mkdir -p $DEST/skills $DEST/agents $DEST/commands
+cp -r /tmp/nexus-agile/.claude/skills/nexus-agile/ $DEST/skills/
+cp /tmp/nexus-agile/.claude/agents/nexus-*.md $DEST/agents/
+cp /tmp/nexus-agile/.claude/commands/nexus-*.md $DEST/commands/
 ```
 
-### Global (every project gets it automatically)
+Estas copias no traen el hook. Sin el hook registrado en `settings.json`, nada de [lo que hace cumplir el hook](#qué-hace-cumplir-el-hook) se cumple. Para la memoria en una instalación global, instalá el [plugin de Engram](https://github.com/Gentleman-Programming/engram) o agregá el servidor `engram` a `~/.claude.json`.
 
-```bash
-git clone https://github.com/ferrosasfp/nexus-agile-enterprise /tmp/nexus-agile
-mkdir -p ~/.claude/skills ~/.claude/agents ~/.claude/commands
-cp -r /tmp/nexus-agile/.claude/skills/nexus-agile/ ~/.claude/skills/
-cp /tmp/nexus-agile/.claude/agents/nexus-*.md ~/.claude/agents/
-cp /tmp/nexus-agile/.claude/commands/nexus-*.md ~/.claude/commands/
-rm -rf /tmp/nexus-agile
+**Primera sesión:**
+
 ```
-
-> For a global install, wire the Engram memory once at the user level — install the [Engram plugin](https://github.com/Gentleman-Programming/engram) (recommended, gives the always-on Memory Protocol) or add the `engram` server to your global `~/.claude.json` `mcpServers`. The per-project `.mcp.json` above only applies per project.
-
-Restart Claude Code. The skill, the 8 sub-agents, and the 11 slash commands load automatically. Type `/nexus-` in the prompt to see autocomplete for all commands.
-
-**First session:**
-```
-NexusAgile, this is a new project. Read the codebase and generate project-context.md
-```
-
-Claude discovers: language, framework, architecture, commands, patterns. No manual setup.
-
-**Or use it immediately on an existing project:**
-```
-NexusAgile, sprint planning
+NexusAgil, este es un proyecto nuevo. Leé el código y generá project-context.md
 ```
 
 
-## Repo Structure
+## Estructura del repo
 
 ```
-setup.sh                                 # 🆕 one-command install (skill + agents + commands + Engram memory)
-setup/mcp.json                           # Engram MCP block that setup.sh copies to your project as .mcp.json (kept out of the repo root so the plugin does not start its own engram)
-README.md
-.claude-plugin/plugin.json               # plugin manifest (version, agents, skills, commands)
-hooks/nexus_hook.py                      # the enforcement hooks (see references/enforcement.md)
-tests/                                   # hook, metrics and script tests, no model needed (CI)
-evals/                                   # agent behaviour evals per phase + RESULTADOS.md
+.claude-plugin/plugin.json               # manifiesto del plugin (versión, agentes, skill, comandos)
+.claude-plugin/marketplace.json          # entrada del marketplace
+hooks/nexus_hook.py                      # el hook: un despachador para todos los eventos
+hooks/hooks.json                         # qué evento llama a qué subcomando del hook
+setup.sh                                 # copia en un proyecto (skill, agentes, comandos, hook, Engram)
+setup/mcp.json                           # bloque de Engram que setup.sh copia como .mcp.json
+tests/                                   # pruebas sin modelo del hook, las métricas y los scripts (CI)
+evals/                                   # evals de conducta por fase + RESULTADOS.md
+docs/                                    # planes de diseño (plan-2.0.md, plan-cerebro.md)
+.github/workflows/ci.yml                 # pruebas, consistencia y sintaxis en cada push; eval a mano
 
 .claude/
-├── agents/                              # 8 custom sub-agents
+├── agents/                              # 8 agentes
 │   ├── nexus-analyst.md                 #     F0, F1 — sonnet
 │   ├── nexus-architect.md               #     F2, F2.5 — opus
 │   ├── nexus-dev.md                     #     F3 — opus
-│   ├── nexus-adversary.md               #     SPEC_VERIFY, AR, CR — opus
+│   ├── nexus-adversary.md               #     SPEC_VERIFY, AR, CR, VERIFY — opus
 │   ├── nexus-qa.md                      #     F4 — sonnet
 │   ├── nexus-docs.md                    #     DONE — sonnet
-│   ├── nexus-security.md                #     SECURITY, risky HUs — opus
+│   ├── nexus-security.md                #     SECURITY, HUs con riesgo — opus
 │   └── nexus-supervisor.md              #     AUTO, experimental — opus
 │
-├── commands/                            # 11 slash commands
-│   ├── nexus-p1-f0-f1.md                #     /nexus-p1-f0-f1 — bootstrap + work-item
-│   ├── nexus-p2-f2.md                   #     /nexus-p2-f2 — SDD generation
-│   ├── nexus-p3-f2-5.md                 #     /nexus-p3-f2-5 — Story File generation
-│   ├── nexus-p4-f3.md                   #     /nexus-p4-f3 — implementation by waves
-│   ├── nexus-p5-ar.md                   #     /nexus-p5-ar — adversarial review + CR
-│   ├── nexus-p6-cr.md                   #     /nexus-p6-cr — code review
-│   ├── nexus-p7-f4.md                   #     /nexus-p7-f4 — QA validation
-│   ├── nexus-p8-done.md                 #     /nexus-p8-done — pipeline closure
-│   ├── nexus-fast-pipeline.md           #     /nexus-fast-pipeline — FAST end-to-end
-│   ├── nexus-fast-plus-ar.md            #     /nexus-fast-plus-ar — FAST+AR end-to-end
-│   └── nexus-auto.md                    #     /nexus-auto — autonomous multi-HU orchestrator
+├── commands/                            # 11 comandos
+│   ├── nexus-p1-f0-f1.md … nexus-p8-done.md
+│   ├── nexus-fast-pipeline.md
+│   ├── nexus-fast-plus-ar.md
+│   └── nexus-auto.md
 │
 └── skills/nexus-agile/
-    ├── SKILL.md                         # Full pipeline, modes, global rules
-    ├── CHANGELOG.md                     # What changed
+    ├── SKILL.md                         # pipeline, modos, reglas globales
+    ├── CHANGELOG.md                     # qué cambió
     ├── scripts/
-    │   ├── check_consistency.sh         # Verifies counts, models, tools and paths match
-    │   ├── check_contract.py            # Before F3: contract vs ACs and repo, deterministic
-    │   ├── check_spec_ids.py            # After merging deltas: no requirement lost
-    │   ├── nexus_metrics.py             # Per-HU metrics from transcripts and .gates.jsonl
-    │   └── nexus_memory.py              # Verified facts tied to the git blob SHA
+    │   ├── check_consistency.sh         # agentes, comandos, skill y README dicen lo mismo
+    │   ├── check_contract.py            # antes de F3: contrato contra ACs y repo
+    │   ├── check_spec_ids.py            # después de fusionar deltas: ningún requisito perdido
+    │   ├── nexus_metrics.py             # métricas por HU desde transcripts y .gates.jsonl
+    │   ├── nexus_memory.py              # hechos verificados atados al blob SHA de git
+    │   └── review_package.sh            # diff de la HU a un archivo, para AR y CR
     └── references/
-        ├── enforcement.md               # What the hooks enforce, and what they do not
-        ├── tracker.md                   # Ownership gate: who owns each HU
-        ├── security.md                  # Pipeline security
-        ├── supervisor.md                # AUTO supervisor (experimental)
-        ├── auto_blindaje.md             # Auto-Blindaje: errors documented as they happen
-        ├── evaluation.md                # How the methodology is evaluated
-        ├── experiments.md               # Open experiments
-        ├── living_spec.md               # Living spec (opt-in)
-        ├── reference_detail.md          # Lookup detail
-        ├── agents_roster.md             # roles: 8 agent files + UX, SM, Triage
-        ├── subagent_protocol.md         # Orchestration + AUTO clinical review + Bash Auto-Blindaje
-        ├── skills_router.md             # Selective skill loading — clean context per HU
-        ├── sdd_template.md              # SDD templates: FULL / BUGFIX / MINI
-        ├── story_file_template.md       # Architect-Dev contract + Integration Contract
-        ├── adversarial_review_checklist.md  # 12 attack categories for the Adversary
-        ├── paths.md                     # NEXUS_ROOT / CODE_ROOT: keep artifacts outside the repo
-        ├── validation_report_template.md    # QA: drift + ACs + quality gates
-        ├── launch_flow.md               # Detailed LAUNCH/QUALITY mode pipeline
-        ├── quick_flow.md                # Detailed FAST mode pipeline
-        ├── quality_pipeline.md          # QUALITY pipeline detailed flow
-        ├── case_types.md                # HU classification and sizing criteria
-        ├── sprint_cadence.md            # SM Planning / Status / Retro / Closure
-        ├── project_context_template.md  # Stack-agnostic project-context template (the stack)
-        ├── product_context_template.md  # Business-context template (product, personas, decisions)
-        ├── engram_protocol.md           # Persistent memory protocol for cross-session learning
-        ├── roles_matrix.md              # Enterprise: human roles + gate authority
-        ├── concurrent_work_protocol.md  # Enterprise: multi-dev branches, PRs
-        ├── metrics.md                   # KPIs, production baselines, token analysis, sprint reports
-        ├── onboarding.md                # Enterprise: quick start by role
-        ├── enterprise.md                # Enterprise: entry point for teams
-        ├── auto_completion_report.md    # AUTO: completion report format
-        ├── workflow_evaluation.md       # Why AUTO is not a Workflow script yet
-        ├── governance.md                # Enterprise: scope changes, disputes, incidents
-        ├── greenfield_bootstrap.md      # Enterprise: new project from scratch
-        ├── cross_team_protocol.md       # Enterprise: multi-team coordination
-        └── integration_contract_template.md  # Enterprise: API/service contract
+        ├── enforcement.md               # qué hace cumplir el hook y qué no
+        ├── supervisor.md                # supervisor de AUTO (experimental)
+        ├── tracker.md                   # gate de propiedad
+        ├── paths.md                     # NEXUS_ROOT / CODE_ROOT / SKILL_DIR / BASE_REF
+        ├── subagent_protocol.md         # orquestación, permisos, worktrees
+        ├── security.md                  # seguridad del pipeline e inyección
+        ├── engram_protocol.md           # memoria persistente
+        ├── quality_pipeline.md          # QUALITY en detalle
+        ├── quick_flow.md                # FAST y FAST+AR en detalle
+        ├── launch_flow.md               # LAUNCH en detalle
+        ├── sdd_template.md              # plantillas de SDD
+        ├── story_file_template.md       # contrato Architect-Dev (classic)
+        ├── adversarial_review_checklist.md  # 12 categorías de AR
+        ├── validation_report_template.md    # plantilla de validation.md
+        ├── auto_completion_report.md    # reporte de cierre de un lote AUTO
+        ├── project_context_template.md  # plantilla de project-context.md
+        ├── product_context_template.md  # plantilla de product-context.md
+        └── …                            # sprint, enterprise, gobernanza, métricas y otras
 ```
 
 
+## Enterprise: equipos y organizaciones
 
+NexusAgile Enterprise extiende la metodología para equipos de 2 o más personas que trabajan a la vez sobre el mismo código.
 
-## Enterprise — Teams & Organizations
-
-NexusAgile Enterprise extends the core methodology for teams of 2+ developers working concurrently on the same codebase.
-
-### What's New
-
-| Capability | Solo | Enterprise |
+| Capacidad | Solo | Enterprise |
 |---|---|---|
-| **Human roles** | One person does everything | PO, Tech Lead, Dev, QA Lead, SM — each with defined authority |
-| **Gate approval** | Self-approved | Specific human approver per gate, with backup and audit trail |
-| **Concurrent work** | Sequential HUs | Multiple devs in parallel with branch protection and PR workflow |
-| **AI delegation** | Full autonomy | Autonomy matrix: what AI can do alone vs what needs human approval |
-| **Metrics** | None | Lead time, BLOQUEANTE rate, drift rate, cost/HU, sprint dashboard |
-| **Onboarding** | Read everything | Role-based reading paths, first HU in <1 hour |
-| **Escalation** | N/A | Dev → TL (2h) → PO (4h) with defined timeouts |
+| **Roles humanos** | Una persona hace todo | PO, Tech Lead, Dev, QA Lead, SM, cada uno con su autoridad |
+| **Aprobación de gates** | La misma persona | Un aprobador por gate, con suplente y auditoría |
+| **Trabajo concurrente** | HUs en serie | Varios devs en paralelo con ramas protegidas y PRs |
+| **Delegación a la IA** | Autonomía total | Matriz de qué hace la IA sola y qué necesita aprobación |
+| **Métricas** | Ninguna | Lead time, tasa de BLOQUEANTEs, drift, costo por HU |
+| **Onboarding** | Leer todo | Recorridos por rol |
+| **Escalado** | No aplica | Dev → TL (2 h) → PO (4 h) |
 
-### Enterprise References
-
-| Document | What it covers |
+| Documento | Qué cubre |
 |---|---|
-| `references/roles_matrix.md` | 5 human roles, gate authority matrix, AI delegation levels, escalation paths, team size configs |
-| `references/concurrent_work_protocol.md` | Branch strategy, PR workflow, HU ownership, conflict prevention, dependency coordination |
-| `references/metrics.md` | 20+ KPIs, production baselines (53 HUs, 4 days), token analysis script, project report template |
-| `references/onboarding.md` | Role-based quick start, first HU walkthrough, cheat sheet, common mistakes, FAQ |
+| `references/roles_matrix.md` | Roles humanos, autoridad sobre gates, niveles de delegación, escalado |
+| `references/concurrent_work_protocol.md` | Ramas, PRs, propiedad de HUs, conflictos, dependencias |
+| `references/metrics.md` | KPIs, línea base de producción, análisis de tokens |
+| `references/onboarding.md` | Inicio rápido por rol, primera HU, errores comunes |
+| `references/governance.md` | Cambios de alcance, disputas sobre un BLQ, incidentes, FAST que resulta complejo |
+| `references/greenfield_bootstrap.md` | Proyecto nuevo desde cero |
+| `references/cross_team_protocol.md` | Coordinación entre equipos |
+| `references/integration_contract_template.md` | Contrato entre componentes o servicios |
 
-### Team Size Configurations
+### Tamaño de equipo
 
-| Size | Setup |
+| Tamaño | Configuración |
 |---|---|
-| **Solo (1)** | Original NexusAgile. Self-approved gates. Max AI delegation. |
-| **Small (2-4)** | PO part-time. TL doubles as QA. 1-2 devs. SM rotates. |
-| **Medium (5-8)** | Dedicated PO, TL, QA. 3-5 devs. SM dedicated. |
-| **Large (9+)** | Split into 2+ independent NexusAgile teams. Scrum of Scrums for coordination. |
+| **Solo (1)** | NexusAgil original. La misma persona aprueba los gates |
+| **Chico (2-4)** | PO part-time. TL también hace QA. 1-2 devs. SM rota |
+| **Mediano (5-8)** | PO, TL y QA dedicados. 3-5 devs. SM dedicado |
+| **Grande (9+)** | Dos o más equipos NexusAgil independientes, coordinados con Scrum of Scrums |
+
+### Línea base de producción (anterior a la 2.0)
+
+`references/metrics.md` registra un proyecto real hecho con una versión anterior de NexusAgil: un SaaS de IA desde cero, con 53 HUs en 4 días, 256 tests y 0 bugs en producción. Esos números no se volvieron a medir con la 2.0.
 
 
-
-### Governance & Exception Protocols
-
-Real-world development is messy. NexusAgile Enterprise defines protocols for when things don't go as planned:
-
-| Situation | Protocol | Reference |
-|---|---|---|
-| PO changes scope after approval gate | Scope Change Tiers (Trivial/Minor/Major) | `references/governance.md` |
-| Dev disputes an AR BLOQUEANTE finding | Dispute Resolution (Confirm/Downgrade/Dismiss) | `references/governance.md` |
-| Production incident mid-sprint | Incident Protocol (P0/P1/P2) with severity, SLA, and sprint adjustment | `references/governance.md` |
-| FAST mode turns out to be complex | Clean escalation to QUALITY with artifact carry-over | `references/governance.md` |
-| Building from scratch (no codebase) | Greenfield Bootstrap with stack capture + scaffold | `references/greenfield_bootstrap.md` |
-| Cross-team dependencies | Scrum of Scrums, dependency board, escalation ladder | `references/cross_team_protocol.md` |
-| Components/services communicate | Formal Integration Contract with schema + SLA | `references/integration_contract_template.md` |
-
-### Production Validated
-
-NexusAgile has been validated in production on a **real AI SaaS** built from scratch:
-
-| Metric | Value |
-|---|---|
-| HUs completed | 53 |
-| Development time | 4 days |
-| Test suite | 256 tests passing |
-| Bugs in production | 0 |
-| Lines of code | 10,258 TS/TSX + 5,072 tests |
-| Database | 10 tables, 29 RLS policies, 13 migrations |
-
-Pipeline distribution from the project:
+## Relación con NexusFactory
 
 ```
-QUALITY:    ████████░░░░░░░░░░░░░░░░░░░░░░  8  (15%)  — core architecture
-FAST+AR:    ████████████░░░░░░░░░░░░░░░░░░  12 (23%)  — small + risky
-FAST:       ██████████████████░░░░░░░░░░░░  18 (34%)  — hotfixes, UI, config
-Pre-Nexus:  ███████████████░░░░░░░░░░░░░░░  15 (28%)  — before NexusAgile adoption
+NexusFactory  =  plantilla de proyecto con opinión (Next.js + Supabase + Viem + Foundry)
+             +   NexusAgil preconfigurado (conoce el stack, sin bootstrap)
+
+NexusAgil     =  metodología independiente (cualquier stack)
 ```
 
-Measured pipeline times: FAST ~8-15 min, FAST+AR ~15-20 min, QUALITY ~45-90 min.
+NexusAgil funciona sin NexusFactory. NexusFactory incluye NexusAgil por defecto.
+
+→ [Repo de NexusFactory](https://github.com/ferrosasfp/NexusFactory)
 
 
-## Relationship with NexusFactory
+## Créditos
 
-```
-NexusFactory  =  opinionated project template (Next.js + Supabase + Viem + Foundry)
-             +   NexusAgile pre-configured (stack-aware, no bootstrap needed)
+Metodología creada por [Fernando Rosas](https://github.com/ferrosasfp). Une el Nexus SDD Workflow con prácticas ágiles de sprint y roles de agentes especializados.
 
-NexusAgile    =  standalone methodology (any stack, any framework)
-```
+La memoria persistente usa [**Engram**](https://github.com/Gentleman-Programming/engram), un motor de memoria open source e independiente del agente, de [Gentleman Programming](https://github.com/Gentleman-Programming) (MIT). NexusAgil lo integra como su capa de memoria de referencia; el crédito del motor es de sus autores.
 
-NexusAgile works without NexusFactory.
-NexusFactory includes NexusAgile by default.
-
-→ [NexusFactory repo](https://github.com/ferrosasfp/NexusFactory)
-
-
-## Credits
-
-Methodology created by [Fernando Rosas](https://github.com/ferrosasfp).
-Merges the Nexus SDD Workflow with agile sprint practices and specialized AI agent roles.
-
-Persistent memory powered by [**Engram**](https://github.com/Gentleman-Programming/engram) — an open-source, agent-agnostic memory engine by [Gentleman Programming](https://github.com/Gentleman-Programming) (MIT). NexusAgile integrates Engram as its reference memory layer; all credit for the engine goes to its authors.
-
-MIT License
-
+Licencia MIT
