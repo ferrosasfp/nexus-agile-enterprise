@@ -42,6 +42,8 @@ WRITE_RULES = {
     "nexus-docs": r"/(cierre\.md|_INDEX\.md|lecciones\.md|_LECCIONES\.md)$",
     "nexus-architect": r"/doc/sdd/[^/]+/[^/]+\.md$",
     "nexus-analyst": r"(/doc/sdd/[^/]+/[^/]+\.md|/doc/sdd/_INDEX\.md|/doc/prd/.+|/(project|product)-context\.md)$",
+    # El dev escribe codigo y sus notas; no los documentos aprobados ni los reportes de otros roles.
+    "nexus-dev": r"^(?!.*/doc/sdd/[^/]+/(work-item|sdd|story-file|ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?|sdd-verification(-\d+)?|security-review(-\d+)?|validation(-\d+)?|cierre(-\d+)?)\.md$)(?!.*/doc/sdd/[^/]+/\.(versions|violations)/)",
 }
 GIT_DESTRUCTIVE = re.compile(r"\bgit\b[^|;&]*\s(reset\s+--hard|checkout\s+--|checkout\s+\.|clean\s|restore\s|stash\b(?!\s+(list|show)\b)|pull\b)")
 NO_VERIFY = re.compile(r"\bgit\b[^|;&]*\s(commit|push)\b[^|;&]*\s--no-verify\b")
@@ -358,7 +360,7 @@ def check_phase(data, session):
             elif not (hu_dir / "story-file.md").is_file() and "Contrato de implementaci" not in (hu_dir / "sdd.md").read_text(encoding="utf-8"):
                 # Una HU anterior a este default puede traer su story-file.md: sigue valiendo.
                 blocked("sdd.md no tiene la seccion Contrato de implementacion (contract_mode: unified, el default)")
-    elif phase == "F4" and pipeline != "FAST":
+    elif phase == "F4" and pipeline not in ("FAST", "LAUNCH"):  # LAUNCH no tiene AR ni CR (SKILL.md)
         for stem in ("ar-report", "cr-report"):
             report = latest(hu_dir, stem)
             if report is None:

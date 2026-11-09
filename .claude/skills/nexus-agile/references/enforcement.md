@@ -28,12 +28,12 @@
 
 ## Falsos positivos
 
-La persona escribe `NEXUS_OVERRIDE <motivo>`: pasa el proximo bloqueo y queda registrado. Un agente no puede dar un override.
+La persona escribe `NEXUS_OVERRIDE <motivo>`: pasa el proximo bloqueo **al lanzar una fase** (un gate que falta, un documento que cambio despues de aprobarse, una verificacion pendiente) y queda registrado. Los bloqueos de Write, Edit y Bash no tienen override: se resuelve la causa. Un agente no puede dar un override.
 
 ## Instalacion
 
 - **Como plugin** (`--plugin-dir` o marketplace): los hooks cargan solos.
-- **Copia en `.claude/`** (`setup.sh`): copia `hooks/` y agrega el bloque de `hooks/hooks.json` a `settings.json`, cambiando `${CLAUDE_PLUGIN_ROOT}/hooks` por la ruta real. Sin eso, las reglas siguen siendo solo texto.
+- **Copia en `.claude/`** (`setup.sh`): copia `hooks/nexus_hook.py` a `.claude/hooks/`. El bloque de `hooks/hooks.json` se agrega a mano en `settings.json`, cambiando `${CLAUDE_PLUGIN_ROOT}/hooks` por la ruta real; `setup.sh` lo avisa al terminar. Sin eso, las reglas siguen siendo solo texto.
 
 ## Lo que NO garantiza
 

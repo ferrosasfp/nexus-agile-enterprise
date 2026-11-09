@@ -189,6 +189,13 @@ class Fases(HookCase):
         digest = sha or hashlib.sha256((self.hu / "sdd.md").read_bytes()).hexdigest()
         self.write("sdd-verification.md", f"STATUS: {status}\nSDD_SHA256: {digest}\n")
 
+    def test_f4_de_launch_no_pide_ar_ni_cr(self):
+        # SKILL.md: LAUNCH no tiene AR ni CR; el hook se los pedia en F4.
+        self.write("work-item.md", "- Pipeline: LAUNCH\n## PREGUNTAS PARA EL HUMANO\nNinguna\n")
+        self.type_gate("HU_APPROVED")
+        result = self.spawn("F4", "nexus-qa")
+        self.assertNotIn("ar-report", result.stderr)
+
     def test_f3_quality_exige_verificacion_del_sdd(self):
         self.write("work-item.md")
         self.type_gate("HU_APPROVED")
@@ -416,6 +423,14 @@ class Escritura(HookCase):
 
     def test_revisor_escribe_su_reporte(self):
         self.assertAllowed(self.write_as("nexus-adversary", self.hu / "ar-report-2.md"))
+
+    def test_dev_no_escribe_documentos_aprobados_ni_reportes(self):
+        # El dev no tenia regla de ruta: podia reescribir el SDD aprobado o el reporte del CR.
+        for name in ("sdd.md", "work-item.md", "story-file.md", "cr-report-2.md", "validation.md", "cierre.md", ".versions/sdd-abc.md"):
+            self.assertBlocked(self.write_as("nexus-dev", self.hu / name), "nexus-dev no puede escribir")
+        # Su codigo, sus notas y el contexto del proyecto, si
+        for path in (self.repo / "src/a.py", self.hu / "auto-blindaje.md", self.hu / "implementation-log.md", self.repo / "project-context.md"):
+            self.assertAllowed(self.write_as("nexus-dev", path))
 
     def test_qa_no_escribe_reporte_ajeno(self):
         self.assertBlocked(self.write_as("nexus-qa", self.hu / "ar-report.md"))
