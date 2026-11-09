@@ -48,7 +48,7 @@ Task tool:
           (a) texto, (b) link, (c) archivo ya subido a $NEXUS_ROOT/doc/prd/, (d) seguir sin contexto ([SIN PRODUCT CONTEXT] en el work-item)
         Con la respuesta: guardar el material en $NEXUS_ROOT/doc/prd/prd-raw.md si aplica, y generar product-context.md (~200 líneas) en NEXUS_ROOT, con $NEXUS_ROOT/doc/prd/ en su sección Fuentes.
         Usar $SKILL_DIR/references/product_context_template.md como estructura del documento generado.
-    2. Smart Sizing: clasificar como FAST/LAUNCH/QUALITY
+    2. Smart Sizing: clasificar como FAST/FAST+AR/LAUNCH/QUALITY
     3. Skills Router: declarar máximo 2 skills relevantes
     4. Generar work-item.md en $NEXUS_ROOT/doc/sdd/NNN-titulo/work-item.md con:
        - ACs en EARS (mínimo 3)

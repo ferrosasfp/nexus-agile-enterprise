@@ -2,6 +2,11 @@
 
 ## Sin publicar
 
+### Corregido (contradicciones entre archivos)
+- El dev ya no puede escribir los documentos aprobados (`work-item.md`, `sdd.md`, `story-file.md`) ni los reportes de otros roles: no tenia regla de ruta en el hook. Su codigo y sus notas, si.
+- F4 de LAUNCH no exige AR ni CR, como dice el skill.
+- Textos alineados con el codigo: `NEXUS_OVERRIDE` solo vale para los bloqueos al lanzar una fase; `setup.sh` no toca `settings.json`; los gates de proceso del sprint no los controla el hook; 8 agentes; las versiones van en `.versions/`; el sizing de F0/F1 incluye FAST+AR; AUTO describe el supervisor y da un ejemplo con `--supervisor`.
+
 ### Corregido (cuarta HU de Nexus Control)
 - El hook frena antes de correr un `sed -i`, `perl -i`, `tee`, `cp`, `mv` o `rm` sobre un artefacto de la HU, como ya hacia con las redirecciones. El dev corrio `sed -i` sobre su `auto-blindaje.md` y el `git commit` del mismo comando lo guardo antes de que el hook lo revirtiera. Rejugados 270 comandos reales que modifican archivos, con el HU_DIR de su corrida: el unico bloqueo nuevo es ese.
 - Cada veredicto del supervisor queda en `.gates.jsonl` (`gate: SUPERVISION`, con el veredicto y el punto de parada). Si la respuesta no empieza con `VEREDICTO:`, el hook se lo pide.

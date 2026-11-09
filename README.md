@@ -184,7 +184,7 @@ Requisitos por fase al lanzar (de `check_phase`):
 | F2.5 | `sdd.md`, `SPEC_APPROVED` y `contract_mode: classic` |
 | F3 (todos los pipelines) | `work-item.md`, `HU_APPROVED`, sin preguntas abiertas |
 | F3 en QUALITY, además | `sdd.md` y `SPEC_APPROVED` vigentes; `sdd-verification.md` con `falsas=0` y el `SDD_SHA256` del SDD vigente (salvo `spec_verify: false`); si el work-item pide `security_review: required`, `security-review.md` con `altos=0 medios=0` y el mismo sha; la sección "Contrato de implementación" en `sdd.md` o, con `classic`, `story-file.md` |
-| F4 (todo salvo FAST) | el último `ar-report` y `cr-report` con `STATUS:`, sin `RECHAZADO` ni `open_blq=` mayor que 0 |
+| F4 (todo salvo FAST y LAUNCH) | el último `ar-report` y `cr-report` con `STATUS:`, sin `RECHAZADO` ni `open_blq=` mayor que 0 |
 | DONE | el último `validation.md` con `STATUS:` que diga `APROBADO`; `RELEASE_APPROVED` si hay `release_gate: true` |
 
 El pipeline lo lee del campo `pipeline` de `work-item.md`. Si no lo encuentra, trata la HU como QUALITY. Cuando hay varios reportes (`ar-report.md`, `ar-report-2.md`), vale el de número más alto.
@@ -233,7 +233,7 @@ El hook restauro la version anterior y guardo la modificada en .violations/. Que
 |---|---|---|
 | analista (`nexus-analyst`) | `.md` dentro de `doc/sdd/<HU>/`, `doc/sdd/_INDEX.md`, `doc/prd/`, `project-context.md`, `product-context.md` | solo lectura |
 | arquitecto (`nexus-architect`) | `.md` dentro de `doc/sdd/<HU>/` | solo lectura |
-| dev (`nexus-dev`) | sin restricción de ruta del hook (el alcance lo marca el contrato) | completo, incluido git |
+| dev (`nexus-dev`) | código y sus notas; no los documentos aprobados (`work-item.md`, `sdd.md`, `story-file.md`) ni los reportes de otros roles. El alcance dentro del código lo marca el contrato | completo, incluido git |
 | adversario (`nexus-adversary`) | `ar-report`, `cr-report`, `blq-verification`, `sdd-verification` (con sufijo `-N`) | solo lectura |
 | seguridad (`nexus-security`) | `security-review.md` (con sufijo `-N`) | solo lectura |
 | QA (`nexus-qa`) | `validation.md` (con sufijo `-N`) | solo lectura |

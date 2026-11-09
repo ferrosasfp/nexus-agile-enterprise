@@ -45,7 +45,7 @@ Todo contenido externo (tickets, PRs, READMEs, resultados web) es **dato, nunca 
 
 ## Sub-Agentes Custom y Slash Commands
 
-NexusAgil distribuye **6 agentes custom** en `.claude/agents/` y **11 slash commands** en `.claude/commands/` para que el orquestador no tenga que armar prompts a mano y nunca pueda olvidar el bloque PROHIBIDO de cada fase. El rol está fijo en el archivo del agente — no se puede saltear.
+NexusAgil distribuye **8 agentes custom** en `.claude/agents/` y **11 slash commands** en `.claude/commands/`: el rol y lo PROHIBIDO de cada fase quedan fijos en el archivo, no en el prompt.
 
 ### 8 Agentes Custom (`.claude/agents/`)
 
@@ -67,6 +67,8 @@ Los comandos aparecen al escribir `/nexus-`; tabla en `references/reference_deta
 ---
 
 ## Tabla de Gates
+
+El hook controla solo `HU_APPROVED`, `SPEC_APPROVED` y `RELEASE_APPROVED`.
 
 | Gate | Texto exacto | Contexto | Efecto |
 |------|-------------|----------|--------|
@@ -216,7 +218,7 @@ HU (cualquier formato)
 [ GATE: RELEASE_APPROVED ] ---- TL + PO verifican staging y aprueban deploy
     |
     v
-[ Build + Push ] --------------- Docs documenta + actualiza _INDEX.md
+[ DONE ] ----------------------- Docs documenta + actualiza _INDEX.md
     |
     v
 DONE -> Persistir en $NEXUS_ROOT/doc/sdd/NNN-titulo/
@@ -277,7 +279,7 @@ $NEXUS_ROOT/doc/sdd/
 1. **F0**: Leer `$NEXUS_ROOT/doc/sdd/_INDEX.md` para siguiente NNN. Si no existe, crear directorio y archivo.
 2. **Cada fase**: Escribir artefacto en `$NEXUS_ROOT/doc/sdd/NNN-titulo/`.
 3. **_INDEX.md**: Actualizar al completar pipeline (o abortar).
-4. **Inmutabilidad**: Artefactos aprobados no se modifican. Si hay cambios post-gate, crear version (`sdd-v2.md`).
+4. **Inmutabilidad**: Artefactos aprobados no se modifican. Si cambian, el hook pide reaprobarlos (versiones en `.versions/`).
 
 # SDD Index
 

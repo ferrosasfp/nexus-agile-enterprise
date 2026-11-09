@@ -30,7 +30,7 @@ cp "${REPO_ROOT}/.claude/agents/nexus-"*.md      "${TARGET_DIR}/.claude/agents/"
 cp "${REPO_ROOT}/.claude/commands/nexus-"*.md    "${TARGET_DIR}/.claude/commands/"
 mkdir -p "${TARGET_DIR}/.claude/hooks"
 cp "${REPO_ROOT}/hooks/nexus_hook.py" "${TARGET_DIR}/.claude/hooks/"
-ok "Skill, 6 sub-agents, 11 commands and the hook script installed."
+ok "Skill, $(ls "${REPO_ROOT}/.claude/agents/nexus-"*.md | wc -l) sub-agents, $(ls "${REPO_ROOT}/.claude/commands/nexus-"*.md | wc -l) commands and the hook script installed."
 warn "To enforce gates, add the hooks block to .claude/settings.json: see references/enforcement.md"
 
 # ── 2. Ensure the Engram binary (the memory engine) ─────────────────────────

@@ -13,6 +13,8 @@ En lugar de esperar al humano en cada gate (HU_APPROVED, SPEC_APPROVED), Claude 
 **clinical reviews estructurados** — checklists con criterios objetivos — y self-aprueba
 si todos los criterios pasan. Si alguno falla, escala al humano con detalle.
 
+Con `--supervisor`, en cada punto de parada un agente aparte (`nexus-supervisor`) revisa la evidencia y decide si se sigue, pide más evidencia o escala a la persona (§4.3c). El push, el PR y el merge los autoriza siempre la persona.
+
 **Cuándo usar AUTO:**
 - Batch de HUs donde el humano confía en el proceso y quiere resultados end-to-end
 - Sesiones donde el humano no estará disponible para aprobar gates interactivamente
@@ -33,6 +35,7 @@ si todos los criterios pasan. Si alguno falla, escala al humano con detalle.
 /nexus-auto WKH-XX                          # 1 HU
 /nexus-auto WKH-XX WKH-YY WKH-ZZ           # Batch de N HUs
 /nexus-auto WKH-XX --user=Fernando          # Atribución explícita
+/nexus-auto WKH-XX --supervisor             # Con supervisor en cada punto de parada
 ```
 
 **Argumentos:**
