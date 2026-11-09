@@ -150,7 +150,7 @@ Notes: [observaciones si las hay]
 Estos gates ya son automáticos en el pipeline normal (tabla de decisión en `/nexus-p5-ar`
 y `/nexus-p7-f4`). No requieren clinical review adicional en AUTO mode.
 
-`RELEASE_APPROVED` nunca se autoaprueba: si `release_gate: true`, se detiene y escala al humano. Los gates delegados quedan en `.gates.jsonl` como `claude-delegated`, distinguibles de los humanos. Esta revisión la hace quien orquesta, con el sesgo de quien quiere terminar: no equivale a una aprobación humana.
+`RELEASE_APPROVED` nunca se autoaprueba: si `release_gate: true`, se detiene y escala al humano. Los gates delegados quedan en `.gates.jsonl` como `claude-delegated`, distinguibles de los humanos. Con `--supervisor`, el hook registra el gate delegado solo si hay un veredicto del supervisor sobre la versión actual del documento: `CONTINUAR`, o `ESCALAR` seguido de la respuesta de la persona (en la ventana de opciones o escrita en el chat, que el hook guarda como `DECISION`). Esta revisión la hace quien orquesta, con el sesgo de quien quiere terminar: no equivale a una aprobación humana.
 
 ### §4.3b Lo que AUTO nunca resuelve solo
 

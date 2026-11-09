@@ -2,6 +2,9 @@
 
 ## Sin publicar
 
+### Corregido (gate delegado sin revision)
+- Con `--supervisor`, el hook registra un gate delegado (`HU_APPROVED`, `SPEC_APPROVED`) solo si hay un veredicto del supervisor sobre la version actual del documento: `CONTINUAR`, o `ESCALAR` seguido de la respuesta de la persona. La respuesta, en la ventana de opciones o escrita en el chat, queda en `.gates.jsonl` como `DECISION`. Antes lo registraba al lanzar la fase siguiente sin mirar si hubo revision. El modo checklist queda igual.
+
 ### Corregido (contradicciones entre archivos)
 - El dev ya no puede escribir los documentos aprobados (`work-item.md`, `sdd.md`, `story-file.md`) ni los reportes de otros roles: no tenia regla de ruta en el hook. Su codigo y sus notas, si.
 - F4 de LAUNCH no exige AR ni CR, como dice el skill.

@@ -21,7 +21,7 @@
 
 | Archivo | Contenido |
 |---------|-----------|
-| `HU_DIR/.gates.jsonl` | Gate, quien lo dio (`human`, `claude-delegated`), hash y fecha. Tambien cada override |
+| `HU_DIR/.gates.jsonl` | Gate, quien lo dio (`human`, `claude-delegated`), hash y fecha. Tambien cada override, cada veredicto del supervisor (`SUPERVISION`) y, con `--supervisor`, la respuesta de la persona a un escalado (`DECISION`) |
 | `HU_DIR/.nexus-state.json` | Fase, agente y estado, para retomar |
 | `HU_DIR/.versions/` | Copia de cada documento en el momento en que se aprobo |
 | `HU_DIR/.violations/` | La version que un Bash dejo en un artefacto, antes de que el hook la restaurara |

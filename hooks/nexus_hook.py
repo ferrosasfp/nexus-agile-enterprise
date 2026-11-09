@@ -189,6 +189,10 @@ def release_required(data, code_root):
 def require_gate(hu_dir, gate, session, phase, consume_override):
     entries = [e for e in read_gates(hu_dir) if e["gate"] == gate]
     if not entries and session.get("delegated") and gate != "RELEASE_APPROVED":
+        problem = delegated_review_problem(hu_dir, gate) if session.get("supervised") else None
+        if problem:
+            consume_override(problem)
+            return
         record_gate(hu_dir, gate, "claude-delegated")
         entries = read_gates(hu_dir)
         entries = [e for e in entries if e["gate"] == gate]
@@ -200,6 +204,41 @@ def require_gate(hu_dir, gate, session, phase, consume_override):
     current = sha(hu_dir / doc) if doc else None
     if doc and entries[-1].get("sha256") != current:
         consume_override(f"{doc} cambio despues de {gate}. Pidele a la persona que lo revise y vuelva a escribir {gate}")
+
+
+def delegated_review_problem(hu_dir, gate):
+    """Con --supervisor, un gate delegado necesita un veredicto del supervisor sobre la version actual del documento:
+    CONTINUAR, o ESCALAR seguido de la respuesta de la persona. Antes, el hook lo registraba sin mirar si hubo revision."""
+    doc = hu_dir / GATE_DOC[gate]
+    changed = int(doc.stat().st_mtime) if doc.is_file() else 0
+    entries = read_gates(hu_dir)
+    reviews = [e for e in entries if e.get("gate") == "SUPERVISION" and e.get("ts", 0) >= changed]
+    if not reviews:
+        return (f"{gate} delegado necesita un veredicto del supervisor sobre la version actual de {doc.name}. "
+                f"Consultalo (FASE: SUPERVISION) antes de lanzar la fase")
+    last = reviews[-1]
+    if last.get("verdict") == "CONTINUAR":
+        return None
+    if last.get("verdict") == "ESCALAR":
+        if any(e.get("gate") == "DECISION" and e.get("ts", 0) >= last.get("ts", 0) for e in entries):
+            return None
+        return f"el supervisor escalo {gate} y falta la respuesta de la persona. Preguntale con lo que el supervisor dejo listo"
+    return f"el ultimo veredicto del supervisor es {last.get('verdict')}: reune lo que pide y consultalo de nuevo"
+
+
+def pending_escalation(hu_dir):
+    """True si el ultimo veredicto del supervisor es ESCALAR y la persona todavia no respondio."""
+    entries = read_gates(hu_dir)
+    reviews = [e for e in entries if e.get("gate") == "SUPERVISION"]
+    if not reviews or reviews[-1].get("verdict") != "ESCALAR":
+        return False
+    return not any(e.get("gate") == "DECISION" and e.get("ts", 0) >= reviews[-1].get("ts", 0) for e in entries)
+
+
+def record_decision(hu_dir, answer, via):
+    entry = {"gate": "DECISION", "by": "human", "via": via, "answer": answer[:300], "ts": int(time.time())}
+    with (hu_dir / ".gates.jsonl").open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
 def spec_verify_required(data, session):
@@ -762,6 +801,7 @@ def cmd_prompt(data):
     # y la sesion quedo sin delegar. Se confirma en voz alta para que la persona sepa que delego.
     if re.search(r"^\s*(?:[-*]\s*)?(?:(?:lanza|lanz[aá]|corre|corr[eé]|usa|us[aá]|run)\s+)?/(nexus-agile:)?nexus-auto\b", prompt, re.M | re.I):
         session["delegated"] = True
+        session["supervised"] = bool(re.search(r"--supervisor\b", prompt))
         save_session(data, session)
         print("NexusAgil: sesion delegada (AUTO). HU_APPROVED y SPEC_APPROVED los registra Claude tras la revision clinica; "
               "RELEASE_APPROVED sigue siendo humano.")
@@ -772,6 +812,10 @@ def cmd_prompt(data):
         save_session(data, session)
         print("NexusAgil: el proximo bloqueo se deja pasar y queda registrado con este motivo.")
         return
+    hu_dir = Path(session["hu_dir"]) if session.get("hu_dir") else None
+    if session.get("supervised") and hu_dir and hu_dir.is_dir() and pending_escalation(hu_dir):
+        # La respuesta a un escalado puede llegar escrita en el chat, no solo en la ventana de opciones.
+        record_decision(hu_dir, prompt, "texto")
     found = re.fullmatch(rf"({'|'.join(GATES)})(?:\s+(\S+))?", prompt)
     if found:
         apply_gate(data, session, found.group(1), found.group(2))
@@ -796,6 +840,9 @@ def cmd_answer(data):
     """Respuesta a AskUserQuestion: elegir la opcion con el nombre del gate tambien cuenta."""
     text = json.dumps(data.get("tool_response") or "")
     session = load_session(data)
+    hu_dir = Path(session["hu_dir"]) if session.get("hu_dir") else None
+    if session.get("supervised") and hu_dir and hu_dir.is_dir() and pending_escalation(hu_dir):
+        record_decision(hu_dir, json.dumps(data.get("tool_response") or "", ensure_ascii=False), "ventana")
     for gate in GATES:
         if re.search(rf'":\s*\\?"{gate}\\?"', text) or f'"{gate}"' in text:
             apply_gate(data, session, gate, None)

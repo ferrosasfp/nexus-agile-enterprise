@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Pruebas de los hooks con entradas como las de Claude Code. Sin modelo y sin red."""
 import json
+import time
 import os
 import shutil
 import subprocess
@@ -374,7 +375,8 @@ class Delegacion(HookCase):
         out = self.run_hook("prompt", prompt="Vamos a probar AUTO.\n\nCOMO CORRER\n- Lanza /nexus-agile:nexus-auto X-1 --supervisor.")
         self.assertIn("delegada", out.stdout)
         self.write("work-item.md")
-        self.assertAllowed(self.spawn("F2"))
+        # Con --supervisor, el gate delegado necesita su veredicto (clase GateDelegadoRevisado)
+        self.assertBlocked(self.spawn("F2"), "supervisor")
 
     def test_mencionar_auto_no_delega(self):
         self.run_hook("prompt", prompt="La HU anterior uso el comando nexus-auto, explicalo")
@@ -810,6 +812,55 @@ class Supervision(HookCase):
         self.assertIn("VEREDICTO", stop.stdout + stop.stderr)
         entry = [json.loads(l) for l in (self.hu / ".gates.jsonl").read_text().splitlines()][-1]
         self.assertIsNone(entry["verdict"])
+
+
+class GateDelegadoRevisado(HookCase):
+    """El hook registraba el gate delegado sin mirar si hubo revision. Con --supervisor, ahora la exige."""
+
+    def setUp(self):
+        super().setUp()
+        self.write("work-item.md")
+        self.run_hook("prompt", prompt="/nexus-agile:nexus-auto X-1 --supervisor")
+        self.assertAllowed(self.spawn("F1", "nexus-analyst"))  # deja la HU en la sesion
+
+    def review(self, verdict, ago=0):
+        with (self.hu / ".gates.jsonl").open("a") as handle:
+            handle.write(json.dumps({"gate": "SUPERVISION", "by": "nexus-supervisor", "verdict": verdict, "ts": int(time.time()) - ago}) + "\n")
+
+    def test_sin_revision_no_pasa(self):
+        self.assertBlocked(self.spawn("F2"), "veredicto del supervisor")
+
+    def test_continuar_registra_el_gate(self):
+        self.review("CONTINUAR")
+        self.assertAllowed(self.spawn("F2"))
+        self.assertIn("claude-delegated", (self.hu / ".gates.jsonl").read_text())
+
+    def test_escalar_espera_a_la_persona(self):
+        self.review("ESCALAR")
+        self.assertBlocked(self.spawn("F2"), "respuesta de la persona")
+        self.run_hook("prompt", prompt="Si, sigue con la opcion A")
+        decision = [json.loads(l) for l in (self.hu / ".gates.jsonl").read_text().splitlines()][-1]
+        self.assertEqual((decision["gate"], decision["via"]), ("DECISION", "texto"))
+        self.assertAllowed(self.spawn("F2"))
+
+    def test_respuesta_en_la_ventana_cuenta(self):
+        self.review("ESCALAR")
+        self.run_hook("answer", tool_name="AskUserQuestion", tool_response={"answers": {"Sigo?": "Si"}})
+        self.assertAllowed(self.spawn("F2"))
+
+    def test_revision_de_una_version_anterior_no_cuenta(self):
+        self.review("CONTINUAR", ago=100)
+        self.write("work-item.md", "cambiado\n")
+        self.assertBlocked(self.spawn("F2"), "version actual")
+
+    def test_pedir_evidencia_no_pasa(self):
+        self.review("PEDIR_EVIDENCIA")
+        self.assertBlocked(self.spawn("F2"), "PEDIR_EVIDENCIA")
+
+    def test_sin_escalado_pendiente_un_mensaje_no_es_decision(self):
+        self.review("CONTINUAR")
+        self.run_hook("prompt", prompt="como va?")
+        self.assertNotIn("DECISION", (self.hu / ".gates.jsonl").read_text())
 
 
 class Concurrencia(HookCase):

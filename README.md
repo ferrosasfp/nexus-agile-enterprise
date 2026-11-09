@@ -157,7 +157,7 @@ Cómo cuenta un gate:
 - El hook guarda en `.gates.jsonl` quién lo dio (`human` o `claude-delegated`), el sha256 del documento y la hora, y copia el documento a `.versions/`.
 - Si el documento cambia después del gate, la fase siguiente se bloquea hasta que una persona lo vuelva a escribir. En AUTO pasa lo mismo: el hook no vuelve a registrar solo un gate que ya existe.
 
-**Cómo registra el hook un gate delegado.** En una sesión delegada, cuando se lanza una fase que necesita `HU_APPROVED` o `SPEC_APPROVED` y el gate no está, el hook lo registra como `claude-delegated` en ese momento. El hook no comprueba que el checklist o el supervisor hayan pasado: eso lo hace el orquestador según `/nexus-auto`.
+**Cómo registra el hook un gate delegado.** En una sesión delegada, cuando se lanza una fase que necesita `HU_APPROVED` o `SPEC_APPROVED` y el gate no está, el hook lo registra como `claude-delegated` en ese momento. Con `--supervisor`, antes de registrarlo exige un veredicto del supervisor sobre la versión actual del documento: `CONTINUAR`, o `ESCALAR` seguido de la respuesta de la persona, que queda en `.gates.jsonl` como `DECISION`. En el modo checklist no lo comprueba, porque el checklist lo corre el propio orquestador.
 
 **Falsos positivos.** La persona escribe `NEXUS_OVERRIDE <motivo>`. Deja pasar el próximo bloqueo de lanzamiento de fase y lo registra como `OVERRIDE` en `.gates.jsonl`. No sirve para los bloqueos de Write, Edit o Bash, ni para la falta de `FASE:`, `HU_DIR:`, prefijo del plugin, `SKILL_DIR` o `CODE_ROOT`: esos bloquean siempre.
 
