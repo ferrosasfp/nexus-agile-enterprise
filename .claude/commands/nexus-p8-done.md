@@ -83,8 +83,8 @@ Task tool:
 
 - Presentá el resumen ejecutivo al humano
 - Si hay spinoffs (tickets nuevos como WKH-33): mencionalos
-- Con `entrega: persona` (default), el humano decide cuándo mergear el PR y cerrar el ticket. Con `entrega: supervisor`, en AUTO lo autoriza el supervisor (puntos 7 y 9 de su lista, `/nexus-auto` §4.3c)
-- **Antes de un push o de abrir el PR**, mostrale a la persona qué va a disparar, leyendo los workflows completos (no buscando palabras): cada job de CI que corre con ese push o PR y qué hace (por ejemplo, migraciones sobre una base desechable), y si hay deploy de preview. Pedí la autorización con esa lista (en AUTO con `entrega: supervisor`, la da el supervisor). En una corrida real, el push disparó un job de migraciones y un preview que nadie había anticipado
+- El humano decide el push, el PR y el merge, con un sí o un no. En AUTO, el supervisor prepara cada pregunta y el comando exacto (puntos 7 y 9 de su lista, `/nexus-auto` §4.3c), y el orquestador lo corre solo con ese SÍ
+- **Antes de un push o de abrir el PR**, mostrale a la persona qué va a disparar, leyendo los workflows completos (no buscando palabras): cada job de CI que corre con ese push o PR y qué hace (por ejemplo, migraciones sobre una base desechable), y si hay deploy de preview. Pedí la autorización con esa lista. En una corrida real, el push disparó un job de migraciones y un preview que nadie había anticipado
 - Si la base de la HU no existe en el remoto (HU apilada), la descripción del PR lo dice y trae el enlace de comparación contra `BASE_REF`
 - **HU apilada**: la descripción del PR y `cierre.md` nombran los PRs de los que depende, en el orden en que tienen que entrar, y el commit y el árbol (`git -C "$CODE_ROOT" rev-parse HEAD^{tree}`) que aprobó QA. Avisá a la persona que la guía de merges del sprint tiene que sumar este PR después de esas dependencias. Al mergearlas, este PR va a chocar en los archivos que comparten. Después del rebase, `git -C "$CODE_ROOT" range-diff <BASE_REF>..<commit aprobado> origin/main..HEAD` tiene que mostrar cada commit propio con `=`; un `!` se revisa antes de mergear, y un QA nuevo hace falta solo si el cambio no se explica por las dependencias. Comparar árboles no sirve si `main` trae otros merges
 
@@ -101,4 +101,4 @@ No cuenta como rodeo: el rechazo pide exactamente eso. Escribir el artefacto con
 
 ## Importante
 - Vos sos el ORQUESTADOR. NO escribas el cierre.md vos mismo, salvo en el caso de arriba, copiándolo tal cual.
-- DONE es solo cierre documental. No mergea, no pushea, no hace deploy. El push y el merge vienen después, con la autorización que diga `entrega`.
+- DONE es solo cierre documental. No mergea, no pushea, no hace deploy. El push y el merge vienen después, con el SÍ de la persona.
