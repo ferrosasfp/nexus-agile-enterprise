@@ -971,7 +971,7 @@ class TerceraHU(HookCase):
         self.assertAllowed(self.bash_as("nexus-adversary", "SP=/tmp/sp; R=/home/x/repo; cp $R/src/a.ts $SP/repo/src/a.ts; python3 - <<'EOF'\np='/tmp/sp/repo/src/a.ts'\nopen(p,'w').write('x')\nEOF\ncd $SP/repo && npx tsc --noEmit"))
 
     def test_carpeta_de_evidencia_declarada(self):
-        # En Limitless, los revisores dejaban evidencia en una carpeta de auditoria fuera del repo.
+        # En un proyecto real, los revisores dejaban evidencia en una carpeta de auditoria fuera del repo.
         (self.repo / "project-context.md").write_text("| **evidence_dir** | `/home/x/auditoria` |\n")
         repo = dict(agent_type="nexus-agile:nexus-qa", tool_name="Bash", cwd=str(self.repo))
         self.assertAllowed(self.run_hook("gate", tool_input={"command": "cp /tmp/sp/qa.md /home/x/auditoria/s1/qa.md"}, **repo))
