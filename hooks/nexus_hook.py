@@ -241,8 +241,11 @@ def pending_escalation(hu_dir):
     return not any(e.get("gate") == "DECISION" and e.get("ts", 0) >= reviews[-1].get("ts", 0) for e in entries)
 
 
-def record_decision(hu_dir, answer, via):
-    entry = {"gate": "DECISION", "by": "human", "via": via, "answer": answer[:300], "ts": int(time.time())}
+def record_decision(hu_dir, answer, via, question=None):
+    # La opcion elegida va entera: en la GH-12 de Nexus Control, cortar a 300 caracteres dejaba la pregunta y perdia la respuesta.
+    entry = {"gate": "DECISION", "by": "human", "via": via, "answer": answer[:2000], "ts": int(time.time())}
+    if question:
+        entry["question"] = question[:300]
     with (hu_dir / ".gates.jsonl").open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
@@ -924,9 +927,21 @@ def find_hu_dir(data, session, reference):
     return Path(session["hu_dir"]) if session.get("hu_dir") else None
 
 
+# Claude Code entrega por UserPromptSubmit el informe de un sub-agente en segundo plano y las notificaciones de tareas.
+# No los escribio la persona: en la GH-12 de Nexus Control, el informe del supervisor quedo como DECISION "humana".
+# En el hook llega como `<agent-message ...`; en el transcript, con "Another Claude session sent a message:" delante.
+NOT_HUMAN = re.compile(r"\s*(?:Another Claude session sent a message:\s*)?<(agent-message|task-notification)\b")
+HANDBACK = re.compile(r'\s*(?:Another Claude session sent a message:\s*)?<agent-message\s+from="([\w-]+)"')
+
+
 def cmd_prompt(data):
     prompt = (data.get("prompt") or "").strip()
     session = load_session(data)
+    if NOT_HUMAN.match(prompt):
+        handback = HANDBACK.match(prompt)
+        if handback:
+            supervisor_handback(session, handback.group(1), prompt)
+        return
     # El comando al inicio de cualquier linea: en la segunda HU real venia en medio de un bloque de instrucciones
     # y la sesion quedo sin delegar. Se confirma en voz alta para que la persona sepa que delego.
     if re.search(r"^\s*(?:[-*]\s*)?(?:(?:lanza|lanz[aá]|corre|corr[eé]|usa|us[aá]|run)\s+)?/(nexus-agile:)?nexus-auto\b", prompt, re.M | re.I):
@@ -972,7 +987,12 @@ def cmd_answer(data):
     session = load_session(data)
     hu_dir = Path(session["hu_dir"]) if session.get("hu_dir") else None
     if session.get("supervised") and hu_dir and hu_dir.is_dir() and pending_escalation(hu_dir):
-        record_decision(hu_dir, json.dumps(data.get("tool_response") or "", ensure_ascii=False), "ventana")
+        response = data.get("tool_response")
+        answers = response.get("answers") if isinstance(response, dict) else None
+        if isinstance(answers, dict) and answers:
+            record_decision(hu_dir, " | ".join(str(v) for v in answers.values()), "ventana", question=next(iter(answers)))
+        else:
+            record_decision(hu_dir, json.dumps(response or "", ensure_ascii=False), "ventana")
     for gate in GATES:
         if re.search(rf'":\s*\\?"{gate}\\?"', text) or f'"{gate}"' in text:
             apply_gate(data, session, gate, None)
@@ -1015,6 +1035,28 @@ def record_supervision(hu_dir, transcript, last_message=None):
             found = VERDICT.findall(json.dumps(message.get("content"), ensure_ascii=False))
             verdict = found[-1] if found else verdict
     return write_supervision(hu_dir, transcript, verdict)
+
+
+def supervisor_handback(session, agent_id, text):
+    """El supervisor en segundo plano entrega su respuesta con SubagentHandback, que no esta en el transcript ni en
+    last_assistant_message cuando corre SubagentStop: en la GH-12 quedaron null 5 de 7 veredictos y cada uno se repitio.
+    El informe llega despues a la sesion principal; si el ultimo veredicto de ese supervisor quedo null, se completa aca."""
+    spawn = next((s for s in reversed(session.get("finished", [])) if s.get("agent") == "nexus-supervisor"
+                  and f"agent-{agent_id}" in (s.get("transcript") or "")), None)
+    if spawn is None:
+        return
+    hu_dir = Path(spawn["hu_dir"])
+    reviews = [e for e in read_gates(hu_dir) if e.get("gate") == "SUPERVISION"]
+    if not reviews or reviews[-1].get("verdict") is not None:
+        return
+    found = VERDICT.findall(text)
+    if not found:
+        print("NexusAgil: el supervisor termino sin `VEREDICTO: CONTINUAR | PEDIR_EVIDENCIA | ESCALAR`. "
+              "Retomalo y pedile ese formato: sin veredicto no se registra el gate.")
+        return
+    entry = dict(reviews[-1], verdict=found[0], via="hand-back", ts=int(time.time()))
+    with (hu_dir / ".gates.jsonl").open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
 def write_supervision(hu_dir, transcript, verdict):
@@ -1075,8 +1117,9 @@ def cmd_stop(data):
         save_version(hu_dir, name)
     problems = []
     if agent == "nexus-supervisor" and hu_dir.is_dir():
-        if not record_supervision(hu_dir, transcript, data.get("last_assistant_message")):
-            problems.append("tu respuesta no empieza con VEREDICTO: CONTINUAR, PEDIR_EVIDENCIA o ESCALAR. Respondé con ese formato")
+        # Sin veredicto a la vista no se le pide repetir: si termina con SubagentHandback, llega despues a la sesion
+        # principal y supervisor_handback lo completa (o avisa que falta).
+        record_supervision(hu_dir, transcript, data.get("last_assistant_message"))
     if agent in READ_ONLY_BASH and previous_tree and spawn["tree"] != previous_tree:
         problems.append("el arbol de git cambio mientras corrias, y tu rol no modifica codigo. Restauralo y reporta por que")
     violations = [g for g in read_gates(hu_dir) if g.get("gate") == "VIOLATION" and g.get("by") == agent and g.get("ts", 0) >= previous_ts]

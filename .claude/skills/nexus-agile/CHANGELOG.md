@@ -1,8 +1,13 @@
 # Changelog — NexusAgil
 
-## Sin publicar
+## 2.0.1 — Correcciones de las primeras corridas con la 2.0.0
+
+Arreglos del hook que salieron de la GH-10 y la GH-12 de Nexus Control y de la configuracion del primer proyecto con la 2.0.0 (PRs #13, #14 y este). Se publica como version para que `claude plugin update` la instale: con la misma version, actualizar no baja nada y reinstalar borra el estado de las sesiones en curso.
 
 ### Corregido
+- **Un informe de sub-agente quedaba como decision de la persona.** Claude Code entrega el informe de un sub-agente en segundo plano como un mensaje (`<agent-message ...>`), y el hook lo tomaba por la respuesta de la persona a un escalado: en la GH-12 de Nexus Control, el informe del supervisor sobre el merge quedo en `.gates.jsonl` como `DECISION` humana. Por el mismo camino, un sub-agente podia marcar la sesion como delegada. Ahora esos mensajes y las notificaciones de tareas no cuentan como de la persona.
+- **Veredictos `null` de un supervisor en segundo plano.** Su respuesta viaja en `SubagentHandback`, que no esta en el transcript ni en `last_assistant_message` cuando corre SubagentStop: en la GH-12 quedaron `null` 5 de 7 veredictos, y el hook le pedia repetir cada uno. Ahora el hook completa el veredicto con el informe cuando llega a la sesion principal (`via: hand-back`), y avisa si no trae `VEREDICTO:`. Comprobado con la sesion real: los 5 informes traen el id de su transcript y su veredicto.
+- La `DECISION` de la ventana guarda la opcion elegida entera y la pregunta aparte. Antes se cortaba a 300 caracteres y se perdia la respuesta.
 - El veredicto del supervisor se lee del ultimo mensaje que Claude Code le pasa al hook (`last_assistant_message`). En la GH-10 de Nexus Control, el transcript todavia no tenia esa linea cuando corrio el hook: tres veredictos correctos quedaron como `null`, uno de ellos el `ESCALAR` del merge, y por eso el SI de la persona no quedo registrado como `DECISION`.
 - Un revisor no puede cambiar de rama ni restaurar archivos en el repo de la HU (`checkout`, `switch`, `reset`, `revert`, `cherry-pick`, `clean`, `restore`). En la GH-10, QA hizo `git checkout main` en el repo y hizo falta la persona para volver. En una copia aparte se permite, y `git worktree add` ya no se confunde con `git add`: la guia de QA pedia crear esa copia y el hook la bloqueaba. Rejugados 16.388 comandos de git de revisores de todas las corridas: 99 bloqueos nuevos, todos cambios de rama o `reset` en el repo de la HU (incluido el de la GH-10); 398 bloqueos menos, todos en copias; 0 caidas.
 - `forbidden_commands` con la barra escapada (`\|`), como lo muestra la plantilla dentro de la tabla, no bloqueaba nada: el hook la leia como una barra literal. Ahora la lee como alternativa. Lo encontro la sesion que configuraba el primer proyecto con la 2.0.0.
