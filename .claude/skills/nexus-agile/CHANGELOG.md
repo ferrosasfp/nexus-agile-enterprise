@@ -1,6 +1,8 @@
 # Changelog — NexusAgil
 
-## Sin publicar
+## 2.0.0 — Version estable
+
+Correcciones de la tercera y cuarta HU de Nexus Control y de la deuda del hook. Eval local del 11 de noviembre: 35 de 37 casos en 3/3 (ver `evals/RESULTADOS.md`).
 
 ### Corregido (deuda del hook)
 - Sin `cd`, cada archivo que tocan `rm`, `cp`, `mv`, `tee` o `sed -i` se juzga por su ruta. Antes alcanzaba con una palabra en `/tmp`: `rm src/a.py /tmp/x` pasaba. Rejugados 58.145 comandos unicos de agentes de solo lectura de todas las corridas: 130 bloqueos nuevos, todos esperados (93 escrituras en el repo revisado, 34 en una carpeta de evidencia que ahora se declara en `evidence_dir`, 3 en worktrees fuera de `/tmp`), y 186 falsos positivos menos, ninguno con escrituras fuera de `/tmp`.
@@ -31,7 +33,7 @@
 - El reporte de DONE se llama `cierre.md`. Claude Code no deja a un subagente escribir `report.md` ("Subagents should return findings as text"), y en las cuatro primeras HUs el orquestador tuvo que copiarlo a mano.
 - Un agente retomado con SendMessage deja su version en `.versions/` y pasa por los mismos controles al terminar. Antes, el hook ignoraba su segundo final: dos correcciones del SDD no quedaron guardadas.
 - Una asignacion dentro del cuerpo de un heredoc no cuenta como variable del shell. Un `S="$S/..."` en el script de QA anulaba el `S` del comando y el hook bloqueaba `$S/mk.py`.
-- `rm`, `mv`, `cp`, `tee`, `sed -i` y compania se juzgan por los archivos que tocan: con un `cd` al repo, borrar o copiar en `/tmp` pasa; tocar el repo no. Antes, con un `cd` al repo, no pasaba nada. Sin `cd` sigue alcanzando con una palabra en `/tmp`: endurecerlo frenaba `docker cp`, `docker rm` y carpetas de `mktemp` en las corridas reales, y queda pendiente.
+- `rm`, `mv`, `cp`, `tee`, `sed -i` y compania se juzgan por los archivos que tocan: con un `cd` al repo, borrar o copiar en `/tmp` pasa; tocar el repo no. Antes, con un `cd` al repo, no pasaba nada. El caso sin `cd` se resolvio despues, en la deuda del hook.
 - Las correcciones de SPEC_VERIFY no agregan afirmaciones nuevas sobre el codigo, y todo AC, tambien los que no son de codigo, aparece en el contrato.
 - Confirmacion de seguridad barata para un SDD que cambio solo de redaccion: el agente compara contra la version que aprobo.
 

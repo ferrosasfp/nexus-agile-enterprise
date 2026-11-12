@@ -4,7 +4,7 @@
 
 NexusAgil es una metodología de desarrollo con agentes para Claude Code. Procesa una Historia de Usuario (HU) por vez, por fases, con agentes especializados, gates que da una persona y un hook que hace cumplir las reglas que no deben depender de la memoria del modelo.
 
-Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.0.0-rc.5**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
+Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.0.0**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
 
 **Estado:** release candidate. El supervisor de AUTO es experimental. Las mediciones están en [Evaluación](#evaluación).
 
@@ -488,6 +488,7 @@ Los gates de sprint son convenciones de texto del skill (`references/sprint_cade
 
 **Lo medido (fotos de noviembre de 2026):**
 
+- **Eval, 2.0.0 (11 de noviembre):** 35 de 37 casos en 3/3, en local y sin Bash. Los dos que fallaron no muestran un defecto del plugin: a `qa-verde-falso` le falta Bash, y en `memoria-hecho-desactualizado` el analista descarta el hecho viejo en las 3 corridas, pero en una lo copia fuera de una tabla.
 - **Eval, rc.5 (5 de noviembre):** 32 de 34 casos en 3/3, US$18,50 por pasada. Los dos que fallaron se investigaron:
   - `spec-verify-afirmaciones-falsas` dio 10 de 12 en total, sin una falla reproducida;
   - en `security-diseno-limpio`, el agente tenía razón: el caso de control tenía huecos reales.
