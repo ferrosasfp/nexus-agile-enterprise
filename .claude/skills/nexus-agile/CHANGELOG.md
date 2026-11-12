@@ -3,6 +3,8 @@
 ## Sin publicar
 
 ### Corregido
+- El veredicto del supervisor se lee del ultimo mensaje que Claude Code le pasa al hook (`last_assistant_message`). En la GH-10 de Nexus Control, el transcript todavia no tenia esa linea cuando corrio el hook: tres veredictos correctos quedaron como `null`, uno de ellos el `ESCALAR` del merge, y por eso el SI de la persona no quedo registrado como `DECISION`.
+- Un revisor no puede cambiar de rama ni restaurar archivos en el repo de la HU (`checkout`, `switch`, `reset`, `revert`, `cherry-pick`, `clean`, `restore`). En la GH-10, QA hizo `git checkout main` en el repo y hizo falta la persona para volver. En una copia aparte se permite, y `git worktree add` ya no se confunde con `git add`: la guia de QA pedia crear esa copia y el hook la bloqueaba. Rejugados 16.388 comandos de git de revisores de todas las corridas: 99 bloqueos nuevos, todos cambios de rama o `reset` en el repo de la HU (incluido el de la GH-10); 398 bloqueos menos, todos en copias; 0 caidas.
 - `forbidden_commands` con la barra escapada (`\|`), como lo muestra la plantilla dentro de la tabla, no bloqueaba nada: el hook la leia como una barra literal. Ahora la lee como alternativa. Lo encontro la sesion que configuraba el primer proyecto con la 2.0.0.
 
 ## 2.0.0 — Version estable

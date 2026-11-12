@@ -243,7 +243,8 @@ El hook restauro la version anterior y guardo la modificada en .violations/. Que
 
 "Solo lectura" quiere decir, para el hook:
 
-- nada de git que escriba (`commit`, `push`, `merge`, `rebase`, `add`, `rm`, `mv`, `tag`, `apply`) ni destructivo (`reset --hard`, `checkout --`, `clean`, `restore`, `stash` salvo `list` y `show`, `pull`);
+- nada de git que escriba (`commit`, `push`, `merge`, `rebase`, `add`, `rm`, `mv`, `tag`, `apply`), ni `stash` (salvo `list` y `show`) ni `pull`;
+- en el repo de la HU, nada que mueva la rama o restaure archivos (`checkout`, `switch`, `reset`, `revert`, `cherry-pick`, `clean`, `restore`). En una copia aparte, como un `git worktree add` en `/tmp`, si se permite;
 - nada de redirecciones ni mutaciones de archivos fuera de `/tmp` o de una carpeta de evidencia declarada en `evidence_dir`. Cada archivo que tocan `rm`, `cp`, `mv`, `tee` o `sed -i` se juzga por su ruta;
 - nada de intérpretes en línea que escriban (`python -c`, `node -e` y similares);
 

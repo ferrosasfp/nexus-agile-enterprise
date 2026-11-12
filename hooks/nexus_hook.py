@@ -45,9 +45,14 @@ WRITE_RULES = {
     # El dev escribe codigo y sus notas; no los documentos aprobados ni los reportes de otros roles.
     "nexus-dev": r"^(?!.*/doc/sdd/[^/]+/(work-item|sdd|story-file|ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?|sdd-verification(-\d+)?|security-review(-\d+)?|validation(-\d+)?|cierre(-\d+)?)\.md$)(?!.*/doc/sdd/[^/]+/\.(versions|violations)/)",
 }
-GIT_DESTRUCTIVE = re.compile(r"\bgit\b[^|;&]*\s(reset\s+--hard|checkout\s+--|checkout\s+\.|clean\s|restore\s|stash\b(?!\s+(list|show)\b)|pull\b)")
+# reset, checkout, clean y restore los juzga GIT_MOVES_TREE segun donde corren: en una copia son normales.
+GIT_DESTRUCTIVE = re.compile(r"\bgit\b[^|;&]*\s(stash\b(?!\s+(list|show)\b)|pull\b)")
+GIT_DESTRUCTIVE_ANYWHERE = re.compile(r"\bgit\b[^|;&]*\s(reset\s+--hard|checkout\s+--|checkout\s+\.|clean\s|restore\s)")
 NO_VERIFY = re.compile(r"\bgit\b[^|;&]*\s(commit|push)\b[^|;&]*\s--no-verify\b")
-GIT_WRITE = re.compile(r"\bgit\b[^|;&]*\s(commit|push|merge(?!-base)|rebase|apply|add|rm|mv|tag)\b")
+# `git worktree add` crea una copia aparte, que es lo que se le pide a QA para probar un gate: no es `git add`.
+GIT_WRITE = re.compile(r"\bgit\b[^|;&]*\s(commit|push|merge(?!-base)|rebase|apply|(?<!worktree\s)add|rm|mv|tag)\b")
+# Mueven HEAD o cambian archivos del arbol. En una copia (worktree en /tmp) son normales; en el repo de la HU, no.
+GIT_MOVES_TREE = re.compile(r"\bgit\b(?P<opts>(?:\s+-[cC]\s+\S+|\s+--?[\w-]+(?:=\S+)?)*)\s+(?P<verb>checkout|switch|reset|revert|cherry-pick|clean|restore)\b")
 # (?<![\w-]): `--rm` de docker run no es rm. `tee` solo como comando, no dentro de una ruta (`~/.local/share/rtk/tee/`).
 FILE_MUTATION = re.compile(r"(?:^|(?<=[\s|;&(])|(?<=/bin/))tee\b|\b(sed|perl)\b[^|;&]*\s-[a-zA-Z]*i|(?<![\w-])(rm|mv|cp|chmod|chown|truncate|dd)\s")
 REDIRECT = re.compile(r"(?<![0-9&<>])>>?\s*([^\s&|;]+)")
@@ -705,6 +710,7 @@ def check_bash(agent, command, data):
         return
     if GIT_DESTRUCTIVE.search(visible) or GIT_WRITE.search(visible):
         deny(f"{agent} no modifica el repo con git: {command[:80]}")
+    check_git_moves_code_root(agent, command, data)
     command = expand_vars(command)
     visible = masked(command)
     # El interprete tiene que estar fuera de comillas (un grep que busca "python -c" no es un interprete); lo que escribe va adentro.
@@ -764,6 +770,40 @@ def cmd_gate(data):
             check_bash_into_hu_dir(agent, tool_input.get("command") or "", data)
         if agent.startswith("nexus-"):
             snapshot_artifacts(data)
+
+
+def git_dir_at(command, match, data):
+    """Directorio sobre el que trabaja un git: el de -C, o el ultimo cd antes del comando. None si no se sabe."""
+    base = cd_base_at(command, match.start(), str(data.get("cwd") or os.getcwd()))
+    option = re.search(r"\s-C\s+(\S+)", match.group("opts"))
+    if option:
+        target = option.group(1).strip("'\"")
+        if target.startswith("$"):
+            return None
+        return absolute(os.path.expanduser(target), base) if base or target.startswith(("/", "~")) else None
+    return base
+
+
+def check_git_moves_code_root(agent, command, data):
+    """Un revisor no cambia de rama ni restaura archivos en el repo de la HU. En la GH-10 de Nexus Control,
+    QA hizo git checkout main en el repo: el hook dejo los artefactos como archivos sin seguimiento y hizo falta la persona.
+    En copias (worktrees aparte) se permite: los revisores lo usan cientos de veces para mutantes y comparaciones."""
+    spawns = [s for s in load_session(data).get("spawns", []) if s.get("agent") == agent and s.get("code_root")]
+    if not spawns:
+        # Sin saber cual es el repo de la HU, lo destructivo se frena donde sea, como antes.
+        if GIT_DESTRUCTIVE_ANYWHERE.search(masked(command)):
+            deny(f"{agent} no modifica el repo con git: {command[:80]}")
+        return
+    root = os.path.realpath(spawns[-1]["code_root"])
+    expanded = expand_vars(command)
+    for match in GIT_MOVES_TREE.finditer(masked(expanded)):
+        where = git_dir_at(expanded, match, data)
+        if not where or where.startswith("$"):
+            continue  # no se sabe donde corre: lo cubre el control del arbol al terminar
+        where = os.path.realpath(where)
+        if where == root or where.startswith(root + os.sep):
+            deny(f"{agent} no cambia de rama ni restaura archivos en el repo de la HU (git {match.group('verb')}). "
+                 "Para comparar otra version, usa git worktree add en /tmp o git show <ref>:<archivo>")
 
 
 def check_bash_into_hu_dir(agent, command, data):
@@ -952,9 +992,15 @@ def tree_hash(code_root):
 VERDICT = re.compile(r"VEREDICTO:\s*(CONTINUAR|PEDIR_EVIDENCIA|ESCALAR)\b")
 
 
-def record_supervision(hu_dir, transcript):
+def record_supervision(hu_dir, transcript, last_message=None):
     """Cada veredicto del supervisor queda en .gates.jsonl, con el punto de parada, para medir AUTO sin leer transcripts.
-    En la HU-4 de Nexus Control, la herramienta que los cuenta tuvo que leerlos de los transcripts porque no estaban en ningun archivo."""
+    En la HU-4 de Nexus Control, la herramienta que los cuenta tuvo que leerlos de los transcripts porque no estaban en ningun archivo.
+    El veredicto sale primero del ultimo mensaje que Claude Code pasa al hook: en la GH-10, el transcript todavia no tenia
+    la ultima linea cuando corrio el hook, y tres veredictos correctos quedaron como null (uno era el ESCALAR del merge)."""
+    if last_message:
+        found = VERDICT.findall(last_message)
+        if found:
+            return write_supervision(hu_dir, transcript, found[-1])
     if not transcript or not Path(transcript).is_file():
         return True  # sin transcript no hay de donde leerlo; no es culpa del supervisor
     verdict = None
@@ -968,6 +1014,10 @@ def record_supervision(hu_dir, transcript):
                 continue
             found = VERDICT.findall(json.dumps(message.get("content"), ensure_ascii=False))
             verdict = found[-1] if found else verdict
+    return write_supervision(hu_dir, transcript, verdict)
+
+
+def write_supervision(hu_dir, transcript, verdict):
     point = re.search(r"Punto de parada:\s*([^\n]{1,160})", transcript_prompt(transcript))
     entry = {"gate": "SUPERVISION", "by": "nexus-supervisor", "verdict": verdict,
              "point": point.group(1).strip() if point else None, "ts": int(time.time())}
@@ -1025,7 +1075,7 @@ def cmd_stop(data):
         save_version(hu_dir, name)
     problems = []
     if agent == "nexus-supervisor" and hu_dir.is_dir():
-        if not record_supervision(hu_dir, transcript):
+        if not record_supervision(hu_dir, transcript, data.get("last_assistant_message")):
             problems.append("tu respuesta no empieza con VEREDICTO: CONTINUAR, PEDIR_EVIDENCIA o ESCALAR. Respondé con ese formato")
     if agent in READ_ONLY_BASH and previous_tree and spawn["tree"] != previous_tree:
         problems.append("el arbol de git cambio mientras corrias, y tu rol no modifica codigo. Restauralo y reporta por que")
