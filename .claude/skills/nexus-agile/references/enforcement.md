@@ -21,7 +21,7 @@
 
 | Archivo | Contenido |
 |---------|-----------|
-| `HU_DIR/.gates.jsonl` | Gate, quien lo dio (`human`, `claude-delegated`), hash y fecha. Tambien cada override, cada veredicto del supervisor (`SUPERVISION`) y, con `--supervisor`, la respuesta de la persona a un escalado (`DECISION`) |
+| `HU_DIR/.gates.jsonl` | Gate, quien lo dio (`human`, `claude-delegated`), hash y fecha. Tambien cada override, cada veredicto del supervisor (`SUPERVISION`) y, con `--supervisor`, la respuesta de la persona a un escalado (`DECISION`, con la opcion elegida entera). El veredicto de un supervisor en segundo plano se completa con su informe (`via: hand-back`). Los informes de sub-agentes y las notificaciones que Claude Code inyecta como mensaje no cuentan como de la persona: no registran `DECISION` ni delegan la sesion |
 | `HU_DIR/.nexus-state.json` | Fase, agente y estado, para retomar |
 | `HU_DIR/.versions/` | Copia de cada documento en el momento en que se aprobo |
 | `HU_DIR/.violations/` | La version que un Bash dejo en un artefacto, antes de que el hook la restaurara |

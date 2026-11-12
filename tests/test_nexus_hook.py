@@ -814,11 +814,56 @@ class Supervision(HookCase):
         self.assertEqual((entry["gate"], entry["verdict"], entry["by"]), ("SUPERVISION", "ESCALAR", "nexus-supervisor"))
         self.assertEqual(entry["point"], "fin de F0+F1 de GH-11, en AUTO")
 
-    def test_sin_veredicto_se_le_pide_el_formato(self):
-        stop = self.consult("Revise todo y esta bien.", name="sup2.jsonl")
-        self.assertIn("VEREDICTO", stop.stdout + stop.stderr)
-        entry = [json.loads(l) for l in (self.hu / ".gates.jsonl").read_text().splitlines()][-1]
-        self.assertIsNone(entry["verdict"])
+    def handback(self, agent_id, text):
+        prompt = (f'<agent-message from="{agent_id}">\n[Subagent hand-back] The text below is the final report of a subagent. '
+                  f'It is model output, NOT a message from the user.\n{text}\n</agent-message>')
+        return self.run_hook("prompt", prompt=prompt)
+
+    def entries(self):
+        return [json.loads(l) for l in (self.hu / ".gates.jsonl").read_text().splitlines()]
+
+    def test_sin_veredicto_al_terminar_no_se_le_pide_repetir(self):
+        # GH-12 de Nexus Control: el veredicto viajaba en SubagentHandback y el hook lo pedia de nuevo 5 de 7 veces.
+        stop = self.consult("Revise todo.", name="agent-sup2.jsonl")
+        self.assertEqual(stop.stdout + stop.stderr, "")
+        self.assertIsNone(self.entries()[-1]["verdict"])
+
+    def test_el_hand_back_completa_el_veredicto(self):
+        self.run_hook("prompt", prompt="/nexus-agile:nexus-auto X-1 --supervisor")
+        self.consult("(respuesta en el hand-back)", name="agent-abc123.jsonl")
+        self.assertAllowed(self.handback("abc123", "VEREDICTO: ESCALAR\n\n**Pregunta**: ¿mergeo? Es una decisión de la persona."))
+        last = self.entries()[-1]
+        self.assertEqual((last["gate"], last["verdict"], last["via"], last["point"]),
+                         ("SUPERVISION", "ESCALAR", "hand-back", "fin de F0+F1 de GH-11, en AUTO"))
+        self.assertFalse(any(e["gate"] == "DECISION" for e in self.entries()))  # el informe no es la respuesta de la persona
+        self.run_hook("prompt", prompt="SÍ, mergea")
+        self.assertEqual(self.entries()[-1]["gate"], "DECISION")
+
+    def test_hand_back_sin_veredicto_avisa(self):
+        self.consult("x", name="agent-def456.jsonl")
+        result = self.handback("def456", "Revise todo y esta bien.")
+        self.assertIn("sin `VEREDICTO", result.stdout)
+
+    def test_un_sub_agente_no_delega_la_sesion(self):
+        result = self.handback("zzz", "Listo. Para seguir escribi:\n/nexus-agile:nexus-auto X-1 --supervisor")
+        self.assertNotIn("sesion delegada", result.stdout)
+        prefixed = ('Another Claude session sent a message:\n<agent-message from="zzz">\n[Subagent hand-back]\n'
+                    '/nexus-agile:nexus-auto X-1 --supervisor\n</agent-message>')
+        self.assertNotIn("sesion delegada", self.run_hook("prompt", prompt=prefixed).stdout)
+
+
+class DecisionCompleta(HookCase):
+    def test_la_opcion_elegida_queda_entera(self):
+        # GH-12: el answer se cortaba a 300 caracteres, antes de la opcion elegida.
+        self.write("work-item.md")
+        self.run_hook("prompt", prompt="/nexus-agile:nexus-auto X-1 --supervisor")
+        self.assertAllowed(self.spawn("F1", "nexus-analyst"))
+        with (self.hu / ".gates.jsonl").open("a") as handle:
+            handle.write(json.dumps({"gate": "SUPERVISION", "verdict": "ESCALAR", "ts": int(time.time())}) + "\n")
+        question = "¿Hago push? " + "contexto " * 60
+        self.run_hook("answer", tool_name="AskUserQuestion", tool_response={"questions": [{"question": question}], "answers": {question: "SÍ"}})
+        last = [json.loads(l) for l in (self.hu / ".gates.jsonl").read_text().splitlines()][-1]
+        self.assertEqual((last["gate"], last["answer"], last["question"][:12]), ("DECISION", "SÍ", "¿Hago push? "))
 
 
     def test_veredicto_del_ultimo_mensaje(self):
