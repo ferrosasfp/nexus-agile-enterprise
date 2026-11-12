@@ -1,6 +1,8 @@
 # Changelog — NexusAgil
 
-## Sin publicar
+## 2.0.1 — Correcciones de las primeras corridas con la 2.0.0
+
+Arreglos del hook que salieron de la GH-10 y la GH-12 de Nexus Control y de la configuracion del primer proyecto con la 2.0.0 (PRs #13, #14 y este). Se publica como version para que `claude plugin update` la instale: con la misma version, actualizar no baja nada y reinstalar borra el estado de las sesiones en curso.
 
 ### Corregido
 - **Un informe de sub-agente quedaba como decision de la persona.** Claude Code entrega el informe de un sub-agente en segundo plano como un mensaje (`<agent-message ...>`), y el hook lo tomaba por la respuesta de la persona a un escalado: en la GH-12 de Nexus Control, el informe del supervisor sobre el merge quedo en `.gates.jsonl` como `DECISION` humana. Por el mismo camino, un sub-agente podia marcar la sesion como delegada. Ahora esos mensajes y las notificaciones de tareas no cuentan como de la persona.
