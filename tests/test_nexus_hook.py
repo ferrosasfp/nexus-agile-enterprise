@@ -594,6 +594,13 @@ class Escritura(HookCase):
                 self.assertBlocked(self.bash_as(agent, "supabase db push"), "prohibe")
         self.assertAllowed(self.bash_as("nexus-dev", "supabase status"))
 
+    def test_barra_escapada_de_la_tabla_es_alternativa(self):
+        # Como en la plantilla: dentro de una tabla Markdown la barra va escapada.
+        self._context("| **forbidden_commands** | `supabase db push\\|gh pr merge` |\n")
+        self.assertBlocked(self.bash_as("", "gh pr merge 3 --merge"), "prohibe")
+        self.assertBlocked(self.bash_as("nexus-dev", "supabase db push"), "prohibe")
+        self.assertAllowed(self.bash_as("", "gh pr create --draft"))
+
     def test_sin_lista_no_se_prohibe(self):
         self._context("| **gate_command** | `x` |\n")
         self.assertAllowed(self.bash_as("nexus-dev", "supabase db push"))

@@ -1,5 +1,10 @@
 # Changelog — NexusAgil
 
+## Sin publicar
+
+### Corregido
+- `forbidden_commands` con la barra escapada (`\|`), como lo muestra la plantilla dentro de la tabla, no bloqueaba nada: el hook la leia como una barra literal. Ahora la lee como alternativa. Lo encontro la sesion que configuraba el primer proyecto con la 2.0.0.
+
 ## 2.0.0 — Version estable
 
 Correcciones de la tercera y cuarta HU de Nexus Control y de la deuda del hook. Eval local del 11 de noviembre: 35 de 37 casos en 3/3 (ver `evals/RESULTADOS.md`).
