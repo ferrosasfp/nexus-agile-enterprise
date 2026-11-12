@@ -1,5 +1,14 @@
 # Resultados de evaluacion
 
+## Foto del 11 de noviembre de 2026, version 2.0.0
+
+Commit `bccf9b1`. Claude Code 2.1.322, orquestador en sonnet. **37 casos, 3 corridas por caso: 35 de 37 casos en 3/3**, puntaje 98,9 %. US$19,81 a precio de lista, 27 minutos con 3 corridas en paralelo. Corrio en local, con la sesion de la persona.
+
+Sin Bash: con `--allow-tools Bash`, el sandbox no corre ningun caso porque `~/.docker` tiene enlaces de Docker Desktop, y apuntar `DOCKER_CONFIG` a otra carpeta no alcanza. Aun asi, `ar-script-cambia-artefacto`, `hook-script-disimulado` y `qa-sin-entorno` dieron 3/3.
+
+- `qa-verde-falso`: 1/3. Solo falla `corre-comandos`, que pide Bash. En las 3 corridas QA no aprobo el verde falso.
+- `memoria-hecho-desactualizado`: 2/3. En las 3 el analista descarta el hecho viejo; en una, la afirmacion falsa aparece en el work-item fuera de una tabla. No se pudo ver el texto: el eval borra las carpetas de cada corrida. En rc.4 dio 3/3.
+
 ## Foto del 5 de noviembre de 2026, version 2.0.0-rc.5
 
 Pasada completa: 32/34 casos en 3/3 (US$18,50, 30 minutos). Los dos que fallaron se investigaron con corridas extra y trazas:
