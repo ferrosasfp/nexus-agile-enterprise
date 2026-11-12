@@ -821,6 +821,49 @@ class Supervision(HookCase):
         self.assertIsNone(entry["verdict"])
 
 
+    def test_veredicto_del_ultimo_mensaje(self):
+        # GH-10 de Nexus Control: el transcript no tenia la ultima linea cuando corrio el hook, y el ESCALAR del merge quedo null.
+        transcript = self.tmp / "sup3.jsonl"
+        prompt = f"FASE: SUPERVISION\nHU_DIR: {self.hu}\nPunto de parada: merge del PR (punto 9)\nRevisa."
+        transcript.write_text(json.dumps({"message": {"role": "user", "content": prompt}}) + "\n")
+        self.assertAllowed(self.spawn("SUPERVISION", "nexus-supervisor"))
+        stop = self.run_hook("stop", agent_type="nexus-agile:nexus-supervisor", agent_transcript_path=str(transcript),
+                             last_assistant_message="VEREDICTO: ESCALAR\n\n**Pregunta**: ¿mergeo?")
+        self.assertNotIn("VEREDICTO:", stop.stdout + stop.stderr)
+        entry = [json.loads(l) for l in (self.hu / ".gates.jsonl").read_text().splitlines()][-1]
+        self.assertEqual((entry["verdict"], entry["point"]), ("ESCALAR", "merge del PR (punto 9)"))
+
+
+class CheckoutDeRevisores(HookCase):
+    """GH-10 de Nexus Control: QA hizo git checkout main en el repo de la HU."""
+
+    def setUp(self):
+        super().setUp()
+        self.write("work-item.md")
+        self.assertAllowed(self.spawn("AR", "nexus-adversary"))
+
+    def bash(self, command, agent="nexus-adversary"):
+        return self.run_hook("gate", agent_type=agent, tool_name="Bash", tool_input={"command": command})
+
+    def test_en_el_repo_de_la_hu_no(self):
+        for command in ("git checkout main", f"cd {self.repo} && git switch main", f"git -C {self.repo} checkout HEAD~1",
+                        f"cd {self.repo}/doc && git checkout abc123 -- app.ts", "git reset HEAD~1", f"/usr/bin/git -C {self.repo} revert --no-commit HEAD"):
+            with self.subTest(command=command):
+                self.assertBlocked(self.bash(command), "no cambia de rama")
+
+    def test_en_una_copia_si(self):
+        copy = self.tmp / "copia"
+        for command in (f"git worktree add --detach {copy} HEAD && git -C {copy} checkout HEAD -- app.ts",
+                        f"cd {copy} && git checkout abc123 -- app.ts", f"S={copy}; git -C $S checkout -- .",
+                        "git show HEAD~1:app.ts", "git log --oneline main", "git diff main...HEAD"):
+            with self.subTest(command=command):
+                self.assertAllowed(self.bash(command))
+
+    def test_el_dev_si(self):
+        self.write("story-file.md")
+        self.assertAllowed(self.bash("git checkout -b feat/x", agent="nexus-dev"))
+
+
 class GateDelegadoRevisado(HookCase):
     """El hook registraba el gate delegado sin mirar si hubo revision. Con --supervisor, ahora la exige."""
 
