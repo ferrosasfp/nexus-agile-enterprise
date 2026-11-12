@@ -111,7 +111,7 @@
 | **memory_project** | nombre del proyecto en Engram; uno por cliente, nunca compartido entre clientes |
 | **security_cmd** | [opcional: controles de seguridad sin modelo, como busqueda de secretos, auditoria de dependencias o reglas estaticas (ej: `gitleaks detect --no-git && pnpm audit --prod && semgrep --config auto --error`). QA lo corre una vez en F4, junto al gate] |
 | **evidence_dir** | [opcional: carpetas absolutas, entre comillas invertidas, fuera del repo, donde AR, CR, QA y seguridad pueden dejar evidencia por Bash; ej: `/home/ana/auditoria`. Nunca el repo ni una carpeta que lo contenga] |
-| **forbidden_commands** | [opcional: expresion regular entre comillas invertidas, que el hook bloquea para todos, incluida la sesion principal; ej: `supabase db push\|prisma migrate deploy\|vercel .*--prod`] |
+| **forbidden_commands** | [opcional: expresion regular entre comillas invertidas, que el hook bloquea para todos, incluida la sesion principal. Dentro de la tabla, la barra va escapada (`\|`) y el hook la lee como alternativa; ej: `supabase db push\|prisma migrate deploy\|vercel .*--prod`] |
 
 ---
 

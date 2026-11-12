@@ -670,7 +670,8 @@ def forbidden_pattern(data, session):
             path = Path(base) / sub / "project-context.md"
             if path.is_file():
                 found = re.search(r"forbidden_commands\W+`([^`]+)`", path.read_text(encoding="utf-8"))
-                return found.group(1) if found else None
+                # En una tabla Markdown la barra va escapada (\|): se lee como alternativa, no como barra literal.
+                return found.group(1).replace("\\|", "|") if found else None
     return None
 
 
