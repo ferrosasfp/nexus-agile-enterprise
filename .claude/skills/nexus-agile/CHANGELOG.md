@@ -1,5 +1,10 @@
 # Changelog — NexusAgil
 
+## 2.0.2 — Veredicto de la vuelta actual
+
+### Corregido
+- Un supervisor retomado con SendMessage quedaba registrado con el veredicto de su vuelta anterior: en una corrida real, el `ESCALAR` del push quedo como el `PEDIR_EVIDENCIA` previo, y como no era `null`, el hand-back no lo corregia. Ahora un pedido nuevo abre otra vuelta, se ignoran las lineas `api-request-blob` (repiten la conversacion entera) y solo cuenta lo que el supervisor dice, en texto o en su hand-back: un Bash que busca "VEREDICTO: ESCALAR" no es su veredicto. Simulado sobre los 87 veredictos reales de todas las corridas: antes de escribirse la linea final, ninguno toma el de otra vuelta; con la linea final, los 87 se leen bien.
+
 ## 2.0.1 — Correcciones de las primeras corridas con la 2.0.0
 
 Arreglos del hook que salieron de la GH-10 y la GH-12 de Nexus Control y de la configuracion del primer proyecto con la 2.0.0 (PRs #13, #14 y este). Se publica como version para que `claude plugin update` la instale: con la misma version, actualizar no baja nada y reinstalar borra el estado de las sesiones en curso.

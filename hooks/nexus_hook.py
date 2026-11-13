@@ -1027,12 +1027,26 @@ def record_supervision(hu_dir, transcript, last_message=None):
     with open(transcript, encoding="utf-8", errors="replace") as handle:
         for raw in handle:
             try:
-                message = json.loads(raw).get("message") or {}
+                line = json.loads(raw)
             except ValueError:
+                continue
+            if line.get("type") not in ("user", "assistant"):
+                continue  # api-request-blob repite la conversacion entera, con los veredictos de vueltas anteriores
+            message = line.get("message") or {}
+            content = message.get("content")
+            if message.get("role") == "user":
+                # Un pedido nuevo (supervisor retomado con SendMessage) abre otra vuelta: el veredicto de la anterior no vale.
+                # En una corrida real, el ESCALAR del push quedo registrado como el PEDIR_EVIDENCIA de la vuelta previa.
+                if isinstance(content, str) or any(isinstance(c, dict) and c.get("type") == "text" for c in content or []):
+                    verdict = None
                 continue
             if message.get("role") != "assistant":
                 continue
-            found = VERDICT.findall(json.dumps(message.get("content"), ensure_ascii=False))
+            # Solo lo que el supervisor dice: texto y hand-back. Un Bash que busca "VEREDICTO: ESCALAR" no es su veredicto.
+            said = [c.get("text") or "" if c.get("type") == "text" else str((c.get("input") or {}).get("message") or "")
+                    for c in content if isinstance(c, dict) and (c.get("type") == "text" or c.get("name") == "SubagentHandback")] \
+                if isinstance(content, list) else [str(content or "")]
+            found = VERDICT.findall("\n".join(said))
             verdict = found[-1] if found else verdict
     return write_supervision(hu_dir, transcript, verdict)
 

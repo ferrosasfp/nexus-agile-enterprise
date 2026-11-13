@@ -801,8 +801,8 @@ class Supervision(HookCase):
     def consult(self, answer, name="sup.jsonl"):
         transcript = self.tmp / name
         prompt = f"FASE: SUPERVISION\nHU_DIR: {self.hu}\nPunto de parada: fin de F0+F1 de GH-11, en AUTO\nRevisa."
-        lines = [{"message": {"role": "user", "content": prompt}},
-                 {"message": {"role": "assistant", "content": [{"type": "tool_use", "name": "SubagentHandback", "input": {"message": answer}}]}}]
+        lines = [{"type": "user", "message": {"role": "user", "content": prompt}},
+                 {"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "name": "SubagentHandback", "input": {"message": answer}}]}}]
         transcript.write_text("".join(json.dumps(l) + "\n" for l in lines))
         self.assertAllowed(self.spawn("SUPERVISION", "nexus-supervisor"))
         return self.run_hook("stop", agent_type="nexus-agile:nexus-supervisor", agent_transcript_path=str(transcript))
@@ -850,6 +850,23 @@ class Supervision(HookCase):
         prefixed = ('Another Claude session sent a message:\n<agent-message from="zzz">\n[Subagent hand-back]\n'
                     '/nexus-agile:nexus-auto X-1 --supervisor\n</agent-message>')
         self.assertNotIn("sesion delegada", self.run_hook("prompt", prompt=prefixed).stdout)
+
+
+    def test_retomado_no_hereda_el_veredicto_anterior(self):
+        # Corrida real: el supervisor retomado dio ESCALAR, pero el hook registro el PEDIR_EVIDENCIA de la vuelta anterior,
+        # que el transcript repetia en una linea api-request-blob.
+        transcript = self.tmp / "agent-ret1.jsonl"
+        prompt = f"FASE: SUPERVISION\nHU_DIR: {self.hu}\nPunto de parada: push (punto 7)\nRevisa."
+        old = {"role": "assistant", "content": [{"type": "text", "text": "VEREDICTO: PEDIR_EVIDENCIA"}]}
+        lines = [{"type": "user", "message": {"role": "user", "content": prompt}}, {"type": "assistant", "message": old},
+                 {"type": "user", "message": {"role": "user", "content": [{"type": "text", "text": "Aca esta la evidencia."}]}},
+                 {"type": "api-request-blob", "message": old}]
+        transcript.write_text("".join(json.dumps(l) + "\n" for l in lines))
+        self.assertAllowed(self.spawn("SUPERVISION", "nexus-supervisor"))
+        self.run_hook("stop", agent_type="nexus-agile:nexus-supervisor", agent_transcript_path=str(transcript))
+        self.assertIsNone(self.entries()[-1]["verdict"])  # lo completa el hand-back, no la vuelta anterior
+        self.handback("ret1", "VEREDICTO: ESCALAR\n¿Push?")
+        self.assertEqual(self.entries()[-1]["verdict"], "ESCALAR")
 
 
 class DecisionCompleta(HookCase):
