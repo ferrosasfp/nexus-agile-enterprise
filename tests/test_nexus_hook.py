@@ -869,6 +869,55 @@ class Supervision(HookCase):
         self.assertEqual(self.entries()[-1]["verdict"], "ESCALAR")
 
 
+    def test_hand_back_antes_del_final(self):
+        # GH-9 de Nexus Control: el informe llego a la sesion principal un segundo antes que SubagentStop.
+        self.run_hook("prompt", prompt="/nexus-agile:nexus-auto X-1 --supervisor")
+        transcript = self.tmp / "agent-early1.jsonl"
+        prompt = f"FASE: SUPERVISION\nHU_DIR: {self.hu}\nPunto de parada: push (punto 7)\nRevisa."
+        transcript.write_text(json.dumps({"type": "user", "message": {"role": "user", "content": prompt}}) + "\n")
+        self.assertAllowed(self.spawn("SUPERVISION", "nexus-supervisor"))
+        self.handback("early1", "VEREDICTO: ESCALAR\n¿Push?")
+        self.run_hook("stop", agent_type="nexus-agile:nexus-supervisor", agent_transcript_path=str(transcript))
+        self.assertEqual(self.entries()[-1]["verdict"], "ESCALAR")
+        self.run_hook("answer", tool_name="AskUserQuestion", tool_response={"answers": {"¿Push?": "SÍ"}})
+        self.assertEqual((self.entries()[-1]["gate"], self.entries()[-1]["answer"]), ("DECISION", "SÍ"))
+
+    def test_null_se_completa_cuando_el_transcript_termina(self):
+        self.run_hook("prompt", prompt="/nexus-agile:nexus-auto X-1 --supervisor")
+        transcript = self.tmp / "agent-late1.jsonl"
+        prompt = f"FASE: SUPERVISION\nHU_DIR: {self.hu}\nPunto de parada: merge (punto 9)\nRevisa."
+        transcript.write_text(json.dumps({"type": "user", "message": {"role": "user", "content": prompt}}) + "\n")
+        self.assertAllowed(self.spawn("SUPERVISION", "nexus-supervisor"))
+        self.run_hook("stop", agent_type="nexus-agile:nexus-supervisor", agent_transcript_path=str(transcript))
+        self.assertIsNone(self.entries()[-1]["verdict"])
+        with transcript.open("a") as handle:  # la linea final llega despues
+            handle.write(json.dumps({"type": "assistant", "message": {"role": "assistant", "content": [
+                {"type": "tool_use", "name": "SubagentHandback", "input": {"message": "VEREDICTO: ESCALAR\n¿Mergeo?"}}]}}) + "\n")
+        self.run_hook("answer", tool_name="AskUserQuestion", tool_response={"answers": {"¿Mergeo?": "SÍ"}})
+        gates = [(e["gate"], e.get("verdict") or e.get("answer"), e.get("via")) for e in self.entries()[-2:]]
+        self.assertEqual(gates, [("SUPERVISION", "ESCALAR", "transcript"), ("DECISION", "SÍ", "ventana")])
+
+
+class OtrasHUs(HookCase):
+    def test_dev_no_escribe_el_sdd_de_otra_hu_por_bash(self):
+        # GH-9 de Nexus Control: el dev corrigio por Bash el sdd.md de la GH-7.
+        other = self.repo / "doc/sdd/007-otra"
+        other.mkdir(parents=True)
+        (other / "sdd.md").write_text("x\n")
+        self.write("work-item.md", "- Pipeline: FAST\n")
+        self.type_gate("HU_APPROVED")
+        self.assertAllowed(self.spawn("F3", "nexus-dev"))
+        bash = lambda c: self.run_hook("gate", agent_type="nexus-dev", tool_name="Bash", tool_input={"command": c})
+        for command in (f"sed -i s/a/b/ {other}/sdd.md", f"cat >> {other}/sdd.md <<'E'\nx\nE", f"cd {self.repo} && echo x > doc/sdd/007-otra/sdd.md"):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command), "doc/sdd/007-otra/sdd.md")
+        script = "python3 - <<'EOF'\np='doc/sdd/007-otra/sdd.md'\ns=open(p).read()\nopen(p,'w').write(s.replace('a','b'))\nEOF"
+        self.assertBlocked(bash(f"cd {self.repo} && {script}"), "con un script")
+        self.assertAllowed(bash(f"cd {self.repo} && python3 - <<'EOF'\nprint(open('doc/sdd/007-otra/sdd.md').read())\nEOF"))
+        self.assertAllowed(bash(f"echo x >> {other}/auto-blindaje.md"))  # sus notas, si
+        self.assertAllowed(bash(f"echo x > {self.repo}/app.ts"))
+
+
 class DecisionCompleta(HookCase):
     def test_la_opcion_elegida_queda_entera(self):
         # GH-12: el answer se cortaba a 300 caracteres, antes de la opcion elegida.
