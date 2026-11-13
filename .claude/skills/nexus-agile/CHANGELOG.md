@@ -1,5 +1,11 @@
 # Changelog — NexusAgil
 
+## 2.0.3 — Veredictos sin carrera y documentos de otras HUs
+
+### Corregido
+- **El informe del supervisor podia llegar antes que su final.** En la GH-9 de Nexus Control, 4 veredictos quedaron `null`: el hand-back llego a la sesion principal un segundo antes que SubagentStop, no habia un `null` que completar y se descartaba. Ahora se guarda hasta que el supervisor termina. Ademas, en cada evento de la sesion principal (respuesta de la persona, lanzamiento de una fase) un veredicto `null` se vuelve a leer del transcript, que para entonces esta completo (`via: transcript`): asi el escalado esta registrado cuando llega la respuesta de la persona, y su SI queda como `DECISION`.
+- **El dev escribia documentos de otra HU.** En la GH-9, el dev corrigio el `sdd.md` de la GH-7 con un script de Python en linea; el hook solo vigilaba la HU actual. Ahora la regla de rol de Write vale por Bash para los documentos de cualquier HU (redirecciones, `sed -i`, `tee` y compania) y, para el dev, tambien para un script en linea que escribe y nombra un documento existente. Las rutas desechables (fixtures en `/tmp`) quedan afuera. Rejugados 961 comandos reales que nombran `doc/sdd`: un solo bloqueo nuevo, el de la GH-9.
+
 ## 2.0.2 — Veredicto de la vuelta actual
 
 ### Corregido

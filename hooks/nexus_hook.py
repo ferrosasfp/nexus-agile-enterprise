@@ -26,6 +26,9 @@ GATES = ("HU_APPROVED", "SPEC_APPROVED", "RELEASE_APPROVED")
 GATE_DOC = {"HU_APPROVED": "work-item.md", "SPEC_APPROVED": "sdd.md"}
 READ_ONLY_BASH = {"nexus-adversary", "nexus-qa", "nexus-analyst", "nexus-architect", "nexus-docs", "nexus-supervisor", "nexus-security"}
 INLINE_CMD = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b")
+# Interprete con el programa en la linea o por stdin (heredoc), y algo que escribe archivos.
+SCRIPT_WRITES = re.compile(r"\b(python[0-9.]*(\s+-[A-Za-z]+)*\s+(-c\b|-\s*<<)|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)"
+                           r".*(open\([^)]*['\"][wax]|write_text|write_bytes|os\.replace|shutil\.)", re.S)
 INLINE_WRITE = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b.*(open\(|write|unlink|rename|remove|rmtree|copy|move|mkdir)", re.S)
 PHASES = ("F0F1", "F1", "F2", "SPEC_VERIFY", "SECURITY", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE", "SUPERVISION")
 VERSIONED = {"F0F1": ("work-item.md",), "F1": ("work-item.md",), "F2": ("sdd.md",), "F2.5": ("story-file.md",)}
@@ -755,7 +758,9 @@ def cmd_gate(data):
     if tool in ("Agent", "Task"):
         target = (tool_input.get("subagent_type") or "").split(":")[-1]
         if target.startswith("nexus-"):
-            check_phase(data, load_session(data))
+            session = load_session(data)
+            backfill_verdicts(session)  # el gate delegado mira el ultimo veredicto
+            check_phase(data, session)
         return
     if tool in ("Write", "Edit"):
         path = str(abs_path(tool_input.get("file_path") or "", data))
@@ -831,6 +836,25 @@ def check_bash_into_hu_dir(agent, command, data):
             continue
         if os.path.realpath(target).startswith(root):
             deny(f"{agent} no modifica artefactos de la HU por Bash ({os.path.basename(target)}). Usa Edit o Write, y el commit en otro comando")
+    # Los documentos de otras HUs siguen la misma regla de rol que Write: en la GH-9 de Nexus Control, el dev
+    # corrigio por Bash el sdd.md de la GH-7, que su rol no puede escribir, y el hook solo miraba la HU actual.
+    rule = WRITE_RULES.get(agent)
+    if rule:
+        targets = [os.path.realpath(os.path.join(base, os.path.expanduser(t))) for t in redirect_targets(expanded)
+                   if t != "/dev/null" and not t.startswith("$")]
+        targets += [os.path.realpath(t) for t in mutation_targets(expanded, masked(expanded), data) if not t.startswith("$")]
+        for path in targets:
+            if "/doc/sdd/" in path and not re.search(rule, path) and not writable(path, data):  # fixtures en /tmp, si
+                deny(f"{agent} no puede escribir doc/sdd/{path.split('/doc/sdd/', 1)[1]}, ni por Bash ni con Write. "
+                     "Reporta el cambio al orquestador")
+        # Un script en linea que escribe y nombra el documento. En la GH-9 fue `python3 - <<EOF` con open(p, 'w').
+        # Solo un documento que existe: una ruta inventada dentro de un test (fixture) no se escribe. Los revisores
+        # ya tienen la regla de interpretes en linea, mas estricta.
+        if agent not in READ_ONLY_BASH and SCRIPT_WRITES.search(command):
+            for mention in re.findall(r"[\w./~-]*doc/sdd/[\w./-]+\.md", command):
+                path = os.path.realpath(os.path.join(base, os.path.expanduser(mention)))
+                if os.path.isfile(path) and not re.search(rule, path) and not writable(path, data):
+                    deny(f"{agent} no puede escribir doc/sdd/{path.split('/doc/sdd/', 1)[1]} con un script. Reporta el cambio al orquestador")
 
 
 def artifact_hashes(hu_dir):
@@ -937,10 +961,11 @@ HANDBACK = re.compile(r'\s*(?:Another Claude session sent a message:\s*)?<agent-
 def cmd_prompt(data):
     prompt = (data.get("prompt") or "").strip()
     session = load_session(data)
+    backfill_verdicts(session)
     if NOT_HUMAN.match(prompt):
         handback = HANDBACK.match(prompt)
         if handback:
-            supervisor_handback(session, handback.group(1), prompt)
+            supervisor_handback(data, session, handback.group(1), prompt)
         return
     # El comando al inicio de cualquier linea: en la segunda HU real venia en medio de un bloque de instrucciones
     # y la sesion quedo sin delegar. Se confirma en voz alta para que la persona sepa que delego.
@@ -985,6 +1010,7 @@ def cmd_answer(data):
     """Respuesta a AskUserQuestion: elegir la opcion con el nombre del gate tambien cuenta."""
     text = json.dumps(data.get("tool_response") or "")
     session = load_session(data)
+    backfill_verdicts(session)
     hu_dir = Path(session["hu_dir"]) if session.get("hu_dir") else None
     if session.get("supervised") and hu_dir and hu_dir.is_dir() and pending_escalation(hu_dir):
         response = data.get("tool_response")
@@ -1012,17 +1038,26 @@ def tree_hash(code_root):
 VERDICT = re.compile(r"VEREDICTO:\s*(CONTINUAR|PEDIR_EVIDENCIA|ESCALAR)\b")
 
 
-def record_supervision(hu_dir, transcript, last_message=None):
+def record_supervision(hu_dir, transcript, last_message=None, stashed=None):
     """Cada veredicto del supervisor queda en .gates.jsonl, con el punto de parada, para medir AUTO sin leer transcripts.
     En la HU-4 de Nexus Control, la herramienta que los cuenta tuvo que leerlos de los transcripts porque no estaban en ningun archivo.
-    El veredicto sale primero del ultimo mensaje que Claude Code pasa al hook: en la GH-10, el transcript todavia no tenia
-    la ultima linea cuando corrio el hook, y tres veredictos correctos quedaron como null (uno era el ESCALAR del merge)."""
+    Orden: el ultimo mensaje que Claude Code pasa al hook, el hand-back que llego antes que este final (GH-9: el informe
+    puede llegar a la sesion principal antes que SubagentStop), y el transcript, que puede no tener todavia la ultima linea."""
     if last_message:
         found = VERDICT.findall(last_message)
         if found:
             return write_supervision(hu_dir, transcript, found[-1])
+    if stashed:
+        return write_supervision(hu_dir, transcript, stashed)
     if not transcript or not Path(transcript).is_file():
         return True  # sin transcript no hay de donde leerlo; no es culpa del supervisor
+    return write_supervision(hu_dir, transcript, transcript_verdict(transcript))
+
+
+def transcript_verdict(transcript):
+    """El veredicto de la vuelta actual, segun lo escrito hasta ahora en el transcript del supervisor."""
+    if not transcript or not Path(transcript).is_file():
+        return None
     verdict = None
     with open(transcript, encoding="utf-8", errors="replace") as handle:
         for raw in handle:
@@ -1048,16 +1083,46 @@ def record_supervision(hu_dir, transcript, last_message=None):
                 if isinstance(content, list) else [str(content or "")]
             found = VERDICT.findall("\n".join(said))
             verdict = found[-1] if found else verdict
-    return write_supervision(hu_dir, transcript, verdict)
+    return verdict
 
 
-def supervisor_handback(session, agent_id, text):
+def agent_id_of(transcript):
+    found = re.search(r"agent-([\w-]+)\.jsonl$", transcript or "")
+    return found.group(1) if found else None
+
+
+def backfill_verdicts(session):
+    """Si el ultimo veredicto quedo null, se vuelve a leer el transcript del supervisor, que ya esta completo.
+    Corre en cada evento de la sesion principal: asi la respuesta de la persona encuentra el escalado registrado."""
+    spawn = next((s for s in reversed(session.get("finished", [])) if s.get("agent") == "nexus-supervisor"), None)
+    if not spawn or not Path(spawn.get("hu_dir") or "").is_dir():
+        return
+    hu_dir = Path(spawn["hu_dir"])
+    reviews = [e for e in read_gates(hu_dir) if e.get("gate") == "SUPERVISION"]
+    if not reviews or reviews[-1].get("verdict") is not None:
+        return
+    verdict = transcript_verdict(spawn.get("transcript"))
+    if verdict:
+        entry = dict(reviews[-1], verdict=verdict, via="transcript", ts=int(time.time()))
+        with (hu_dir / ".gates.jsonl").open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
+def supervisor_handback(data, session, agent_id, text):
     """El supervisor en segundo plano entrega su respuesta con SubagentHandback, que no esta en el transcript ni en
     last_assistant_message cuando corre SubagentStop: en la GH-12 quedaron null 5 de 7 veredictos y cada uno se repitio.
     El informe llega despues a la sesion principal; si el ultimo veredicto de ese supervisor quedo null, se completa aca."""
     spawn = next((s for s in reversed(session.get("finished", [])) if s.get("agent") == "nexus-supervisor"
                   and f"agent-{agent_id}" in (s.get("transcript") or "")), None)
     if spawn is None:
+        # Llego antes que SubagentStop (GH-9 de Nexus Control, 4 veredictos null): se guarda para ese momento.
+        found = VERDICT.findall(text)
+        if found and any(s.get("agent") == "nexus-supervisor" for s in session.get("spawns", [])):
+            stash = session.setdefault("handbacks", {})
+            stash[agent_id] = found[0]
+            for old in list(stash)[:-20]:
+                del stash[old]
+            save_session(data, session)
         return
     hu_dir = Path(spawn["hu_dir"])
     reviews = [e for e in read_gates(hu_dir) if e.get("gate") == "SUPERVISION"]
@@ -1133,7 +1198,10 @@ def cmd_stop(data):
     if agent == "nexus-supervisor" and hu_dir.is_dir():
         # Sin veredicto a la vista no se le pide repetir: si termina con SubagentHandback, llega despues a la sesion
         # principal y supervisor_handback lo completa (o avisa que falta).
-        record_supervision(hu_dir, transcript, data.get("last_assistant_message"))
+        stashed = session.get("handbacks", {}).pop(agent_id_of(transcript), None)
+        if stashed:
+            save_session(data, session)
+        record_supervision(hu_dir, transcript, data.get("last_assistant_message"), stashed)
     if agent in READ_ONLY_BASH and previous_tree and spawn["tree"] != previous_tree:
         problems.append("el arbol de git cambio mientras corrias, y tu rol no modifica codigo. Restauralo y reporta por que")
     violations = [g for g in read_gates(hu_dir) if g.get("gate") == "VIOLATION" and g.get("by") == agent and g.get("ts", 0) >= previous_ts]
