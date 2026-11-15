@@ -460,6 +460,13 @@ class Escritura(HookCase):
         self.assertBlocked(self.write_as("nexus-dev", self.hu / ".gates.jsonl"), "gates")
         self.assertBlocked(self.bash_as("nexus-dev", f"echo x >> {self.hu}/.gates.jsonl"), "gates")
 
+    def test_leer_gates_con_un_script_esta_permitido(self):
+        read = f"cd {self.hu} && python3 -c \"\nimport json\nfor l in open('.gates.jsonl'):\n  print(json.loads(l)['gate'])\n\""
+        self.assertAllowed(self.bash_as("", read))  # la sesion principal; los revisores siguen con su regla de interpretes
+        for write in (f"cd {self.hu} && python3 -c \"open('.gates.jsonl','a').write('x')\"",):
+            with self.subTest(write=write):
+                self.assertBlocked(self.bash_as("", write), "gates")
+
     def test_leer_gates_esta_permitido(self):
         for command in (f"cat {self.hu}/.gates.jsonl", f"sha256sum {self.hu}/*.md {self.hu}/.gates.jsonl", f"grep SPEC {self.hu}/.gates.jsonl"):
             with self.subTest(command=command):
