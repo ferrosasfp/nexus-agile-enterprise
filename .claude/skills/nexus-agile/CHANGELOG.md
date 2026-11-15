@@ -1,5 +1,10 @@
 # Changelog — NexusAgil
 
+## 2.0.4 — Leer los gates no es escribirlos
+
+### Corregido
+- Un `python3 -c` que solo leia `.gates.jsonl` (`for l in open('.gates.jsonl')`) se frenaba como si lo escribiera: el hook tomaba cualquier `open(` como escritura. Ahora cuenta solo un `open` en modo escritura o una llamada que escribe. Rejugados 294 comandos reales que nombran `.gates.jsonl`: 2 falsos bloqueos menos (uno de una corrida real) y ninguno nuevo. Extender la regla a los heredocs daba 28 falsos bloqueos (scripts que editan otros archivos nombran `.gates.jsonl` en su texto) y se descarto.
+
 ## 2.0.3 — Veredictos sin carrera y documentos de otras HUs
 
 ### Corregido

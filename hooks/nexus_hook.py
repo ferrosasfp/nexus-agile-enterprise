@@ -29,6 +29,8 @@ INLINE_CMD = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA
 # Interprete con el programa en la linea o por stdin (heredoc), y algo que escribe archivos.
 SCRIPT_WRITES = re.compile(r"\b(python[0-9.]*(\s+-[A-Za-z]+)*\s+(-c\b|-\s*<<)|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)"
                            r".*(open\([^)]*['\"][wax]|write_text|write_bytes|os\.replace|shutil\.)", re.S)
+INLINE_REAL_WRITE = re.compile(r"\b(python[0-9.]*(\s+-[A-Za-z]+)*\s+-c\b|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)"
+                               r".*(open\([^)]*['\"][wax]|write_text|write_bytes|os\.replace|shutil\.)", re.S)
 INLINE_WRITE = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b.*(open\(|write|unlink|rename|remove|rmtree|copy|move|mkdir)", re.S)
 PHASES = ("F0F1", "F1", "F2", "SPEC_VERIFY", "SECURITY", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE", "SUPERVISION")
 VERSIONED = {"F0F1": ("work-item.md",), "F1": ("work-item.md",), "F2": ("sdd.md",), "F2.5": ("story-file.md",)}
@@ -707,7 +709,10 @@ def check_bash(agent, command, data):
     mentions = [(m.group(0).strip("'\"();"), m.start()) for m in re.finditer(r"[^\s'\"=]*\.gates\.jsonl", expanded)]
     outside = [t for t, pos in mentions if not disposable(resolve_at(expanded, t, pos, data), data)]
     if outside and (any(t.endswith(".gates.jsonl") for t in redirect_targets(expanded))
-                    or FILE_MUTATION.search(masked(expanded)) or INLINE_WRITE.search(command)):
+                    or FILE_MUTATION.search(masked(expanded)) or INLINE_REAL_WRITE.search(command)):
+        # Leer con open() no es escribir: en una corrida real, un python3 -c que solo listaba los gates se freno.
+        # Los heredocs no se miran: un script que edita otro archivo puede nombrar .gates.jsonl en su texto (28 falsos
+        # bloqueos al rejugar); si alguno escribiera los gates, lo ve la comparacion posterior.
         deny("los gates solo los registra el hook")
     check_forbidden(command, data)
     if NO_VERIFY.search(command):
