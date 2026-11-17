@@ -38,8 +38,9 @@ PHASES = ("F0F1", "F1", "F2", "SPEC_VERIFY", "SECURITY", "F2.5", "F3", "AR", "CR
 PR_PHASES = ("PR_CONTEXT", "PR_REVIEW", "PR_SECURITY", "PR_VERIFY", "PR_DONE", "PR_CHECK")
 VERSIONED = {"F0F1": ("work-item.md",), "F1": ("work-item.md",), "F2": ("sdd.md",), "F2.5": ("story-file.md",), "PR_CONTEXT": ("pr-context.md",)}
 # Un hallazgo de la revision de un PR: "### PR-529-1 · MAYOR · ruta:linea". La verificacion: "### PR-529-1 · CONFIRMADO".
-PR_FINDING = re.compile(r"^#{2,4}\s*(PR-[\w.-]+-\d+)\s*·\s*(BLOQUEANTE|MAYOR|MENOR)\b", re.M)
-PR_VERDICT = re.compile(r"^#{2,4}\s*(PR-[\w.-]+-\d+)\s*·\s*(CONFIRMADO|REFUTADO|NO VERIFICABLE)\b", re.M)
+# Los de seguridad llevan S: "### PR-551-S1 · MAYOR · ruta:linea".
+PR_FINDING = re.compile(r"^#{2,4}\s*(PR-[\w.-]+-S?\d+)\s*·\s*(BLOQUEANTE|MAYOR|MENOR)\b", re.M)
+PR_VERDICT = re.compile(r"^#{2,4}\s*(PR-[\w.-]+-S?\d+)\s*·\s*(CONFIRMADO|REFUTADO|NO VERIFICABLE)\b", re.M)
 PHASE_OUTPUT = {
     "F0F1": "work-item.md", "F1": "work-item.md", "F2": "sdd.md", "F2.5": "story-file.md",
     "AR": "ar-report.md", "CR": "cr-report.md", "VERIFY": "blq-verification.md", "SPEC_VERIFY": "sdd-verification.md", "SECURITY": "security-review.md",
