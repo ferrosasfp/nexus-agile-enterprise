@@ -1,5 +1,10 @@
 # Changelog — NexusAgil
 
+## 2.1.2 — Una edicion de la sesion principal no es una violacion del revisor
+
+### Corregido
+- El hook anotaba en `writes.log` solo los Write y Edit de los sub-agentes. Si la sesion principal editaba un artefacto de la HU mientras un revisor corria un Bash, el cambio se le atribuia a ese Bash: VIOLATION falsa, aviso al revisor y **restauracion del artefacto**, que deshacia la edicion legitima (quedaba solo en `.violations/`). En la primera revision real con `/nexus-review-pr`, el orquestador escribio la bitacora mientras los revisores corrian `git show`, y paso cinco veces. Ahora se anotan tambien los de la sesion principal. Un Bash que cambia un artefacto sigue frenado y restaurado.
+
 ## 2.1.1 — Entradas en formato local
 
 ### Corregido
