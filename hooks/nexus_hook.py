@@ -838,7 +838,9 @@ def cmd_gate(data):
         rule = WRITE_RULES.get(agent)
         if rule and not disposable(path, data) and not re.search(rule, path):
             deny(f"{agent} no puede escribir {path}. Reporta el hallazgo en lugar de modificarlo")
-    if tool in ("Write", "Edit") and agent:
+    if tool in ("Write", "Edit"):
+        # Tambien los de la sesion principal: en una revision real, el orquestador edito la bitacora mientras un revisor
+        # corria git show, y el hook le atribuyo el cambio al Bash del revisor y restauro la bitacora.
         with (state_dir() / "writes.log").open("a", encoding="utf-8") as handle:
             handle.write(json.dumps({"path": path, "ts": time.time()}) + "\n")
     elif tool == "Bash":

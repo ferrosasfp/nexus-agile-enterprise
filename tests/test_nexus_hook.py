@@ -952,6 +952,33 @@ class DecisionCompleta(HookCase):
         self.assertEqual((entry["verdict"], entry["point"]), ("ESCALAR", "merge del PR (punto 9)"))
 
 
+class EdicionAjenaDuranteUnBash(HookCase):
+    def test_la_sesion_principal_edita_mientras_un_revisor_corre_bash(self):
+        # Revision real: el orquestador edito bitacora.md con Edit mientras un revisor corria git show.
+        self.write("work-item.md")
+        self.write("bitacora.md", "v1\n")
+        self.assertAllowed(self.spawn("AR", "nexus-adversary"))
+        bash = {"tool_name": "Bash", "tool_input": {"command": "git show --stat HEAD"}, "tool_use_id": "t1"}
+        self.assertAllowed(self.run_hook("gate", agent_type="nexus-adversary", **bash))
+        self.assertAllowed(self.run_hook("gate", tool_name="Edit", tool_input={"file_path": str(self.hu / "bitacora.md")}))
+        self.write("bitacora.md", "v1\nv2 del orquestador\n")
+        after = self.run_hook("after-bash", agent_type="nexus-adversary", **bash)
+        self.assertAllowed(after)
+        self.assertEqual((self.hu / "bitacora.md").read_text(), "v1\nv2 del orquestador\n")
+        gates = self.hu / ".gates.jsonl"
+        self.assertFalse(gates.exists() and any(json.loads(l)["gate"] == "VIOLATION" for l in gates.read_text().splitlines()))
+
+    def test_un_bash_que_cambia_el_artefacto_sigue_frenado(self):
+        self.write("work-item.md")
+        self.write("bitacora.md", "v1\n")
+        self.assertAllowed(self.spawn("AR", "nexus-adversary"))
+        bash = {"tool_name": "Bash", "tool_input": {"command": "true"}, "tool_use_id": "t2"}
+        self.assertAllowed(self.run_hook("gate", agent_type="nexus-adversary", **bash))
+        self.write("bitacora.md", "cambiado por el bash\n")
+        self.assertBlocked(self.run_hook("after-bash", agent_type="nexus-adversary", **bash), "cambio bitacora.md")
+        self.assertEqual((self.hu / "bitacora.md").read_text(), "v1\n")
+
+
 class CheckoutDeRevisores(HookCase):
     """GH-10 de Nexus Control: QA hizo git checkout main en el repo de la HU."""
 
