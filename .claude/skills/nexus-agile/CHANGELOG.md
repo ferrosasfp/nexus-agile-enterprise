@@ -1,5 +1,11 @@
 # Changelog — NexusAgil
 
+## 2.1.4 — El supervisor de una revision de PR
+
+### Corregido
+- `/nexus-review-pr` trae el prompt del supervisor: siempre `FASE: SUPERVISION`, con el gate que se decide en `Punto de parada:`. En la primera revision real, el orquestador lo lanzo con `FASE: SCOPE_APPROVED` y el hook lo freno.
+- Si una fase es el nombre de un gate, el hook explica que va en `FASE: SUPERVISION` con su punto de parada, en vez de solo listar las fases validas.
+
 ## 2.1.3 — Segunda vuelta de una revision de PR
 
 ### Cambiado
