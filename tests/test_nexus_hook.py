@@ -1348,6 +1348,19 @@ class RevisionDePR(HookCase):
         self.write("pr-verification.md", "STATUS: confirmados=1 refutados=1\n### PR-529-1 · CONFIRMADO\nok\n### PR-544-1 · REFUTADO\nno\n")
         self.assertAllowed(self.launch("PR_DONE", "nexus-docs"))
 
+    def test_hallazgos_de_seguridad_cuentan_y_se_verifican(self):
+        # Seguridad numera sus hallazgos con S (PR-551-S1); el hook no los reconocia.
+        self.context()
+        self.type_gate("SCOPE_APPROVED")
+        self.write("pr-security-551.md", "STATUS: CAMBIOS PEDIDOS blq=0 mayor=1 menor=0\n### PR-551-S1 · MAYOR · app.ts:1\nataque\n")
+        self.assertAllowed(self.launch("PR_SECURITY", "nexus-security", unit="551"))
+        self.assertEqual(self.run_hook("stop", agent_type="nexus-security").stdout, "")
+        self.review("529", ["MENOR"])
+        self.write("pr-verification.md", "STATUS: confirmados=0 refutados=0 no_verificables=0\n")
+        self.assertBlocked(self.launch("PR_DONE", "nexus-docs"), "PR-551-S1")
+        self.write("pr-verification.md", "STATUS: confirmados=1 refutados=0 no_verificables=0\n### PR-551-S1 · CONFIRMADO\nok\n")
+        self.assertAllowed(self.launch("PR_DONE", "nexus-docs"))
+
     def test_el_comentario_no_lleva_lo_refutado(self):
         self.context()
         self.type_gate("SCOPE_APPROVED")

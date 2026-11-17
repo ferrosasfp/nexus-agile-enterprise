@@ -1,5 +1,10 @@
 # Changelog — NexusAgil
 
+## 2.2.1 — Hallazgos de seguridad en una revision de PR
+
+### Corregido
+- El hook no reconocia los IDs de seguridad (`### PR-551-S1 · MAYOR`, como los numera nexus-security): con un hallazgo de seguridad, frenaba el reporte por conteos que no cuadran y, peor, un BLOQUEANTE o MAYOR de seguridad no se exigia en la verificacion. En las revisiones reales seguridad no encontro nada y no se noto; lo encontro la HU de Nexus Control que lee esos reportes. Ahora se reconocen en los conteos, en la verificacion y en el control del comentario.
+
 ## 2.2.0 — El comentario de una revision se verifica antes de publicarlo
 
 ### Agregado
