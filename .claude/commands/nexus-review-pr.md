@@ -120,6 +120,17 @@ El hook no deja lanzar PR_DONE con un BLOQUEANTE o MAYOR sin veredicto, ni cerra
 3. Una sola pregunta de sí o no, con el comando exacto: `gh pr review <n> --comment --body-file <HU_DIR>/pr-comment.md`. Aprobar (`--approve`) o pedir cambios (`--request-changes`) solo si la persona lo pide con esas palabras.
 4. Con el SÍ, publicalo y dejá el link en `pr-report.md`. Actualizá la fila de `_INDEX.md`.
 
+## Segunda vuelta: comprobar las correcciones
+
+Cuando el autor responde a una revisión anterior con commits nuevos, no se vuelve a revisar el PR: se comprueban las correcciones. En la primera segunda vuelta real, un solo commit de correcciones se revisó con 6 unidades, cada una con el contexto completo del repo: 42 M de tokens procesados, 10 M en la unidad de "menores".
+
+- **Alcance:** solo los commits nuevos desde el head de la revisión anterior (`git -C "$CODE_ROOT" log <head anterior>..<head nuevo>`). Lo anterior ya está revisado.
+- **Contexto:** el analista reutiliza el `pr-context.md` de la revisión anterior (contrato por unidad) y agrega `## REVISIÓN ANTERIOR`: la carpeta, el head revisado y la lista de BLOQUEANTE y MAYOR con su ID y su texto.
+- **Unidades:** una por cada BLOQUEANTE y MAYOR anterior, y **una sola** para el resto (los menores que el autor dice haber corregido y el código nuevo que no responde a ningún hallazgo). Nunca una unidad por archivo. Seguridad, solo si los commits nuevos tocan algo sensible.
+- **Cada revisor** recibe el hallazgo anterior y lee solo el diff de los commits nuevos en los archivos que tocan (`git -C "$CODE_ROOT" show <sha> -- <rutas>`), más lo que necesite para probarlo. Responde tres cosas: ¿quedó resuelto? (con evidencia ejecutada), ¿el arreglo rompió algo en las líneas que cambió?, y ¿tomó una decisión de producto? Las decisiones van aparte, para la persona.
+- **Entradas en formato local**: obligatoria en toda función de entrada que el arreglo haya tocado. Un arreglo rápido de un parser es el lugar más probable de un error nuevo: en la primera segunda vuelta real, el arreglo del precio metió cuatro MAYOR nuevos de formato y de hora.
+- **Costo:** con más de 6 unidades, se le consulta a la persona antes de lanzar.
+
 ## Puntos de parada con `--supervisor`
 
 Después del Paso 1 (alcance), después del Paso 4 (verificación) y antes del Paso 6 (publicar). El supervisor sigue su punto 10. Publicar siempre es `ESCALAR`: lo decide la persona.
