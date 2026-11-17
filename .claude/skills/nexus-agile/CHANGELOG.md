@@ -1,5 +1,11 @@
 # Changelog — NexusAgil
 
+## 2.1.1 — Entradas en formato local
+
+### Corregido
+- El adversario prueba cada funcion que convierte lo que escribe una persona en un dato (numero, plata, fecha, hora) con los valores que esa persona escribiria de verdad, en el idioma y el pais del producto: en es-AR, `1.000`, `1.500`, `1.000,50`, fechas inexistentes, una hora guardada y vuelta a abrir. Ejecuta la logica y pega la salida. Un valor distinto guardado sin error es MAYOR como minimo. Vale para AR y para la revision de un PR ajeno. En la primera revision cruzada real con `/nexus-review-pr`, el revisor reporto solo el rechazo de `1.000,50` (MENOR) y se le paso que `1.000` se guardaba como `1`; la revision generica previa si lo habia visto.
+- Eval nuevo `pr-review-precio-sin-pista`: el mismo error, sin pistas en el contrato. Con la 2.1.0, 1/3; con esta regla, 3/3.
+
 ## 2.1.0 — Revision de un PR ajeno
 
 ### Agregado

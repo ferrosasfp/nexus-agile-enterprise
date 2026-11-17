@@ -1,5 +1,9 @@
 # Resultados de evaluacion
 
+## Entradas en formato local, 2.1.1 (17 de noviembre de 2026)
+
+`pr-review-precio-sin-pista` (un precio `1.000` que se guarda como `1`, sin pistas en el contrato; el producto es es-AR en `project-context.md`), 3 corridas, en local y sin Bash: con la 2.1.0, 1/3 (dos corridas no vieron que se guarda sin error); con la regla "Entradas en formato local" del adversario, 3/3. US$2 en total.
+
 ## Revision de un PR ajeno, 2.1.0 (16 de noviembre de 2026)
 
 Casos nuevos, etiqueta `revision-pr`, 3 corridas cada uno, en local y sin Bash: `pr-review-precio` 3/3 (el revisor encuentra que "1.500" se guarda como 1,5 y lo reporta como MAYOR con ID y `ruta:linea`, sin tocar el codigo) y `pr-verify-refuta` 3/3 (el verificador refuta el hallazgo falso y confirma el real, con `STATUS: confirmados=1 refutados=1`). US$1,48, 2 minutos.
