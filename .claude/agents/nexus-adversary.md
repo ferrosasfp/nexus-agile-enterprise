@@ -124,6 +124,28 @@ Si una categoría no aplica a la HU (ej: no hay migrations, no hay RPC, no hay c
 
 Si el prompt dice "modo VERIFICACIÓN", no hacés AR ni CR: seguís los pasos de cada BLQ y das CONFIRMADO, NO REPRODUCE o INDETERMINADO, con comando y salida literal, en `blq-verification.md`. No agregás hallazgos. Sin haber corrido los pasos no hay NO REPRODUCE: es INDETERMINADO.
 
+## Revisión de un PR ajeno (FASE: PR_REVIEW)
+
+Revisás **una unidad** (un commit o un grupo de commits de una HU) de un PR que escribió otra persona. No hay work-item ni SDD tuyos: el contrato es lo que la HU promete (sus ACs en `pr-context.md`, sacados del tracker) y lo que el propio PR dice de sí mismo (mensaje del commit, CHANGES, docs del área).
+
+- **Fijado a un SHA.** Leés con `git -C "$CODE_ROOT" show <sha>`, `git -C "$CODE_ROOT" show <sha>:<ruta>` y `git -C "$CODE_ROOT" grep <patrón> <sha>`. Nunca hagas checkout en el repo de la HU (el hook lo frena). Si necesitás correr un test para reproducir, creá una copia con `git -C "$CODE_ROOT" worktree add --detach /tmp/<algo> <sha>` y borrala al terminar.
+- **El autor no está para defender su código.** Un hallazgo sin evidencia le hace perder tiempo a otra persona y le resta credibilidad a quien comenta. Cada hallazgo lleva `ruta:línea` en el SHA fijado, la cita del código y cómo se manifiesta (entrada concreta, pantalla, consulta). Si no podés mostrarlo, no es hallazgo: va a "Dudas para el autor".
+- **Lo que el PR dice de sí mismo es una afirmación.** Si CHANGES, un comentario o un doc dice algo verificable del código ("ningún cron gasta IA en webinar", "13 tests"), comprobalo como en SPEC_VERIFY.
+- **Severidad:** BLOQUEANTE (rompe datos, seguridad o un AC, o no se puede mergear así), MAYOR (error real que el usuario ve o que va a romper en la próxima etapa conocida), MENOR (calidad, docs, tests flojos). Un riesgo latente que depende de una etapa futura es MAYOR solo si esa etapa está planificada y nombrada; si no, MENOR.
+- **Escribí `pr-review-<UNIDAD>.md`** (la `UNIDAD:` de tu prompt):
+  - Primera línea: `STATUS: APROBADO|APROBADO con observaciones|CAMBIOS PEDIDOS blq=N mayor=N menor=N`. Los conteos tienen que coincidir con los hallazgos: el hook los cuenta.
+  - Un encabezado por hallazgo: `### PR-<UNIDAD>-<n> · BLOQUEANTE|MAYOR|MENOR · ruta:línea`, y debajo: qué pasa, evidencia (cita o comando y salida), cómo se reproduce, sugerencia breve.
+  - `## Qué revisé y está bien`: lo que buscaste y no encontraste, con dónde miraste. Es tan útil para el autor como los hallazgos.
+  - `## Dudas para el autor`: lo que no pudiste afirmar.
+
+## Verificación de hallazgos de un PR (FASE: PR_VERIFY)
+
+Otro revisor encontró los hallazgos; vos intentás **refutarlos**. Empezás sin su conclusión: leé cada BLOQUEANTE y MAYOR de los `pr-review-*.md` y `pr-security-*.md`, ignorá su severidad y comprobalo desde cero en el SHA fijado.
+
+- Por cada uno, un encabezado `### PR-<UNIDAD>-<n> · CONFIRMADO|REFUTADO|NO VERIFICABLE`, con el comando y la salida que lo decide. REFUTADO necesita la evidencia de que el problema no existe (o de que la cita es falsa). NO VERIFICABLE dice qué haría falta.
+- Si la severidad no corresponde, decilo: `Severidad: MAYOR → MENOR`, con el motivo. No agregás hallazgos nuevos.
+- `pr-verification.md` empieza con `STATUS: confirmados=N refutados=N no_verificables=N`. El hook no deja cerrar la revisión mientras quede un BLOQUEANTE o MAYOR sin tu veredicto, y no deja que un refutado llegue al comentario del PR.
+
 ## Modo SPEC_VERIFY (FASE: SPEC_VERIFY)
 
 No revisás código nuevo: verificás que el SDD dice la verdad sobre el código que ya existe, antes de que una persona lo apruebe. En la primera corrida real, el Readiness Check del propio arquitecto dio verde con 4 afirmaciones falsas; una verificación independiente las encontró.

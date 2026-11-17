@@ -22,8 +22,8 @@ import sys
 import time
 from pathlib import Path
 
-GATES = ("HU_APPROVED", "SPEC_APPROVED", "RELEASE_APPROVED")
-GATE_DOC = {"HU_APPROVED": "work-item.md", "SPEC_APPROVED": "sdd.md"}
+GATES = ("HU_APPROVED", "SPEC_APPROVED", "RELEASE_APPROVED", "SCOPE_APPROVED")
+GATE_DOC = {"HU_APPROVED": "work-item.md", "SPEC_APPROVED": "sdd.md", "SCOPE_APPROVED": "pr-context.md"}
 READ_ONLY_BASH = {"nexus-adversary", "nexus-qa", "nexus-analyst", "nexus-architect", "nexus-docs", "nexus-supervisor", "nexus-security"}
 INLINE_CMD = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b")
 # Interprete con el programa en la linea o por stdin (heredoc), y algo que escribe archivos.
@@ -32,23 +32,30 @@ SCRIPT_WRITES = re.compile(r"\b(python[0-9.]*(\s+-[A-Za-z]+)*\s+(-c\b|-\s*<<)|no
 INLINE_REAL_WRITE = re.compile(r"\b(python[0-9.]*(\s+-[A-Za-z]+)*\s+-c\b|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)"
                                r".*(open\([^)]*['\"][wax]|write_text|write_bytes|os\.replace|shutil\.)", re.S)
 INLINE_WRITE = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b.*(open\(|write|unlink|rename|remove|rmtree|copy|move|mkdir)", re.S)
-PHASES = ("F0F1", "F1", "F2", "SPEC_VERIFY", "SECURITY", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE", "SUPERVISION")
-VERSIONED = {"F0F1": ("work-item.md",), "F1": ("work-item.md",), "F2": ("sdd.md",), "F2.5": ("story-file.md",)}
+PHASES = ("F0F1", "F1", "F2", "SPEC_VERIFY", "SECURITY", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE", "SUPERVISION",
+          "PR_CONTEXT", "PR_REVIEW", "PR_SECURITY", "PR_VERIFY", "PR_DONE")
+# Revision de un PR ajeno (/nexus-review-pr): una carpeta en doc/sdd como cualquier HU, con sus propias fases.
+PR_PHASES = ("PR_CONTEXT", "PR_REVIEW", "PR_SECURITY", "PR_VERIFY", "PR_DONE")
+VERSIONED = {"F0F1": ("work-item.md",), "F1": ("work-item.md",), "F2": ("sdd.md",), "F2.5": ("story-file.md",), "PR_CONTEXT": ("pr-context.md",)}
+# Un hallazgo de la revision de un PR: "### PR-529-1 · MAYOR · ruta:linea". La verificacion: "### PR-529-1 · CONFIRMADO".
+PR_FINDING = re.compile(r"^#{2,4}\s*(PR-[\w.-]+-\d+)\s*·\s*(BLOQUEANTE|MAYOR|MENOR)\b", re.M)
+PR_VERDICT = re.compile(r"^#{2,4}\s*(PR-[\w.-]+-\d+)\s*·\s*(CONFIRMADO|REFUTADO|NO VERIFICABLE)\b", re.M)
 PHASE_OUTPUT = {
     "F0F1": "work-item.md", "F1": "work-item.md", "F2": "sdd.md", "F2.5": "story-file.md",
     "AR": "ar-report.md", "CR": "cr-report.md", "VERIFY": "blq-verification.md", "SPEC_VERIFY": "sdd-verification.md", "SECURITY": "security-review.md",
     "F4": "validation.md", "DONE": "cierre.md",
+    "PR_CONTEXT": "pr-context.md", "PR_VERIFY": "pr-verification.md", "PR_DONE": "pr-report.md",
 }
 WRITE_RULES = {
     "nexus-supervisor": r"(?!)",
-    "nexus-security": r"/security-review(-\d+)?\.md$",
-    "nexus-adversary": r"/(ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?|sdd-verification(-\d+)?)\.md$",
+    "nexus-security": r"/(security-review(-\d+)?|pr-security-[\w.-]+)\.md$",
+    "nexus-adversary": r"/(ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?|sdd-verification(-\d+)?|pr-review-[\w.-]+|pr-verification(-\d+)?)\.md$",
     "nexus-qa": r"/validation(-\d+)?\.md$",
-    "nexus-docs": r"/(cierre\.md|_INDEX\.md|lecciones\.md|_LECCIONES\.md)$",
+    "nexus-docs": r"/(cierre\.md|_INDEX\.md|lecciones\.md|_LECCIONES\.md|pr-report\.md|pr-comment\.md)$",
     "nexus-architect": r"/doc/sdd/[^/]+/[^/]+\.md$",
     "nexus-analyst": r"(/doc/sdd/[^/]+/[^/]+\.md|/doc/sdd/_INDEX\.md|/doc/prd/.+|/(project|product)-context\.md)$",
     # El dev escribe codigo y sus notas; no los documentos aprobados ni los reportes de otros roles.
-    "nexus-dev": r"^(?!.*/doc/sdd/[^/]+/(work-item|sdd|story-file|ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?|sdd-verification(-\d+)?|security-review(-\d+)?|validation(-\d+)?|cierre(-\d+)?)\.md$)(?!.*/doc/sdd/[^/]+/\.(versions|violations)/)",
+    "nexus-dev": r"^(?!.*/doc/sdd/[^/]+/(work-item|sdd|story-file|ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?|sdd-verification(-\d+)?|security-review(-\d+)?|validation(-\d+)?|cierre(-\d+)?|pr-[\w.-]+)\.md$)(?!.*/doc/sdd/[^/]+/\.(versions|violations)/)",
 }
 # reset, checkout, clean y restore los juzga GIT_MOVES_TREE segun donde corren: en una copia son normales.
 GIT_DESTRUCTIVE = re.compile(r"\bgit\b[^|;&]*\s(stash\b(?!\s+(list|show)\b)|pull\b)")
@@ -359,7 +366,7 @@ def check_phase(data, session):
         if not (hu_dir / name).is_file() or not (hu_dir / name).stat().st_size:
             blocked(f"{phase} requiere {hu_dir / name}")
 
-    if phase not in ("F0F1", "F1") and not hu_dir.is_dir():
+    if phase not in ("F0F1", "F1", "PR_CONTEXT") and not hu_dir.is_dir():
         blocked(f"no existe HU_DIR {hu_dir}")
     if phase in ("F0F1", "F1") and not (hu_dir / "work-item.md").is_file():
         # Gate de propiedad: antes del primer analista, alguien miro en el tracker quien tiene la HU.
@@ -424,6 +431,22 @@ def check_phase(data, session):
                 blocked(f"{report.name} no tiene la linea STATUS:")
             elif "RECHAZADO" in status.group(1) or re.search(r"open_blq=[1-9]", status.group(1)):
                 blocked(f"{report.name} tiene BLOQUEANTEs abiertos: {status.group(1)}")
+    elif phase in ("PR_REVIEW", "PR_SECURITY", "PR_VERIFY", "PR_DONE"):
+        need("pr-context.md")
+        require_gate(hu_dir, "SCOPE_APPROVED", session, phase, blocked)
+        if phase in ("PR_REVIEW", "PR_SECURITY"):
+            unit = prompt_field(prompt, "UNIDAD")
+            if not unit or not re.fullmatch(r"[\w.-]+", unit):
+                blocked(f"{phase} necesita la linea UNIDAD: con el id de la unidad de pr-context.md (letras, numeros, punto o guion)")
+        elif phase == "PR_VERIFY":
+            if not list(hu_dir.glob("pr-review-*.md")):
+                blocked("PR_VERIFY requiere al menos un pr-review-<unidad>.md")
+            for problem in pr_report_problems(hu_dir):
+                blocked(problem)
+        else:
+            problem = pr_verification_problem(hu_dir)
+            if problem:
+                blocked(problem)
     elif phase == "DONE":
         report = latest(hu_dir, "validation")
         if report is None:
@@ -437,10 +460,51 @@ def check_phase(data, session):
 
     session["hu_dir"] = str(hu_dir)
     session["spawns"].append({"agent": agent, "phase": phase, "hu_dir": str(hu_dir), "code_root": code_root, "tree": tree_hash(code_root),
-                              "ts": int(time.time())})
+                              "ts": int(time.time()), "unit": prompt_field(prompt, "UNIDAD")})
     save_session(data, session)
     if hu_dir.is_dir():
         write_state(hu_dir, phase=phase, agent=agent, pipeline=pipeline, status="running")
+
+
+def pr_report_problems(hu_dir, only=None):
+    """Cada reporte de unidad trae STATUS con los conteos, y los conteos coinciden con los hallazgos que tienen ID."""
+    problems = []
+    for path in sorted(hu_dir.glob("pr-review-*.md")) + sorted(hu_dir.glob("pr-security-*.md")):
+        if only and path.name != only:
+            continue
+        text = path.read_text(encoding="utf-8")
+        status = re.search(r"^STATUS:\s*(.+)$", text, re.M)
+        if status is None:
+            problems.append(f"{path.name} no tiene la linea STATUS:")
+            continue
+        counts = dict(re.findall(r"\b(blq|mayor|menor)=(\d+)", status.group(1)))
+        if set(counts) != {"blq", "mayor", "menor"}:
+            problems.append(f"{path.name}: la linea STATUS: lleva blq=N mayor=N menor=N")
+            continue
+        found = [s for _, s in PR_FINDING.findall(text)]
+        real = {"blq": found.count("BLOQUEANTE"), "mayor": found.count("MAYOR"), "menor": found.count("MENOR")}
+        if {k: int(v) for k, v in counts.items()} != real:
+            problems.append(f"{path.name}: STATUS dice {counts} y los hallazgos con ID (### PR-<unidad>-<n> · SEVERIDAD) son {real}")
+    return problems
+
+
+def pr_open_findings(hu_dir):
+    """IDs BLOQUEANTE y MAYOR de los reportes de unidad que la verificacion todavia no cubre."""
+    serious = []
+    for path in sorted(hu_dir.glob("pr-review-*.md")) + sorted(hu_dir.glob("pr-security-*.md")):
+        serious += [i for i, s in PR_FINDING.findall(path.read_text(encoding="utf-8")) if s in ("BLOQUEANTE", "MAYOR")]
+    report = latest(hu_dir, "pr-verification")
+    covered = {i for i, _ in PR_VERDICT.findall(report.read_text(encoding="utf-8"))} if report else set()
+    return [i for i in serious if i not in covered]
+
+
+def pr_verification_problem(hu_dir):
+    if latest(hu_dir, "pr-verification") is None:
+        return "PR_DONE requiere pr-verification.md: cada BLOQUEANTE y MAYOR se verifica antes del informe"
+    missing = pr_open_findings(hu_dir)
+    if missing:
+        return f"pr-verification.md no cubre {', '.join(missing)}: cada BLOQUEANTE y MAYOR lleva CONFIRMADO, REFUTADO o NO VERIFICABLE"
+    return None
 
 
 def record_override(hu_dir, session, message):
@@ -974,11 +1038,11 @@ def cmd_prompt(data):
         return
     # El comando al inicio de cualquier linea: en la segunda HU real venia en medio de un bloque de instrucciones
     # y la sesion quedo sin delegar. Se confirma en voz alta para que la persona sepa que delego.
-    if re.search(r"^\s*(?:[-*]\s*)?(?:(?:lanza|lanz[aá]|corre|corr[eé]|usa|us[aá]|run)\s+)?/(nexus-agile:)?nexus-auto\b", prompt, re.M | re.I):
+    if re.search(r"^\s*(?:[-*]\s*)?(?:(?:lanza|lanz[aá]|corre|corr[eé]|usa|us[aá]|run)\s+)?/(nexus-agile:)?nexus-(auto|review-pr)\b", prompt, re.M | re.I):
         session["delegated"] = True
         session["supervised"] = bool(re.search(r"--supervisor\b", prompt))
         save_session(data, session)
-        print("NexusAgil: sesion delegada (AUTO). HU_APPROVED y SPEC_APPROVED los registra Claude tras la revision clinica; "
+        print("NexusAgil: sesion delegada (AUTO). HU_APPROVED, SPEC_APPROVED y SCOPE_APPROVED los registra Claude tras la revision clinica; "
               "RELEASE_APPROVED sigue siendo humano.")
         return
     override = re.match(r"NEXUS_OVERRIDE\s+(\S.*)$", prompt, re.S)
@@ -1218,12 +1282,36 @@ def cmd_stop(data):
         problems.append("hay caracteres invisibles de formato en " + ", ".join(hidden) +
                         ". Quitalos con Edit: invierten o esconden texto y nadie los ve al revisar")
     expected = PHASE_OUTPUT.get(spawn["phase"])
+    if spawn["phase"] in ("PR_REVIEW", "PR_SECURITY") and spawn.get("unit"):
+        name = f"pr-{'review' if spawn['phase'] == 'PR_REVIEW' else 'security'}-{spawn['unit']}.md"
+        if not (hu_dir / name).is_file():
+            problems.append(f"falta {hu_dir / name}")
+        else:
+            problems += pr_report_problems(hu_dir, only=name)
+    if spawn["phase"] == "PR_CONTEXT" and (hu_dir / "pr-context.md").is_file():
+        text = (hu_dir / "pr-context.md").read_text(encoding="utf-8")
+        for section in ("UNIDADES", "PREGUNTAS PARA EL HUMANO"):
+            if not re.search(rf"^#+ *{section}", text, re.M | re.I):
+                problems.append(f"pr-context.md no tiene la seccion {section}")
+    if spawn["phase"] == "PR_VERIFY":
+        missing = pr_open_findings(hu_dir)
+        if missing:
+            problems.append(f"pr-verification.md no cubre {', '.join(missing)}")
+    if spawn["phase"] == "PR_DONE":
+        if not (hu_dir / "pr-comment.md").is_file():
+            problems.append(f"falta {hu_dir / 'pr-comment.md'} (el borrador del comentario)")
+        else:
+            report = latest(hu_dir, "pr-verification")
+            refuted = {i for i, v in PR_VERDICT.findall(report.read_text(encoding="utf-8")) if v == "REFUTADO"} if report else set()
+            leaked = sorted(i for i in refuted if re.search(rf"\b{re.escape(i)}\b", (hu_dir / "pr-comment.md").read_text(encoding="utf-8")))
+            if leaked:
+                problems.append(f"pr-comment.md incluye hallazgos refutados: {', '.join(leaked)}")
     if expected and spawn["phase"] != "F2.5":
         stem = expected[:-3]
         report = latest(hu_dir, stem)
         if report is None:
             problems.append(f"falta {hu_dir / expected}")
-        elif spawn["phase"] in ("AR", "CR", "F4", "SPEC_VERIFY", "SECURITY") and not re.search(r"^STATUS:", report.read_text(encoding="utf-8"), re.M):
+        elif spawn["phase"] in ("AR", "CR", "F4", "SPEC_VERIFY", "SECURITY", "PR_VERIFY") and not re.search(r"^STATUS:", report.read_text(encoding="utf-8"), re.M):
             problems.append(f"{report.name} no tiene la linea STATUS:")
     if spawn["phase"] in ("F0F1", "F1") and (hu_dir / "work-item.md").is_file() and questions_section(hu_dir) is None:
         problems.append("work-item.md no tiene la seccion PREGUNTAS PARA EL HUMANO. Agregala, aunque diga Ninguna")

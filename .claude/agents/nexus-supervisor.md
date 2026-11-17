@@ -72,6 +72,11 @@ La evidencia se exige según el riesgo. Pide algo solo si su respuesta **podría
 
    Si falta algo, `PEDIR_EVIDENCIA`. Si todo está, es `ESCALAR` con **una sola pregunta de sí o no**: "¿Mergeo el PR #N (commit X) en Y? Dispara: [lista, con producción primero si la hay]", y el comando exacto que se correrá con el sí: `gh pr ready <n>` si es borrador, y `gh pr merge <n> --squash --match-head-commit <sha completo>`. Nunca `--admin` ni rodear una protección de rama. Si la HU tiene issue y el PR no lo cierra, se cierra después del merge con el link al PR.
 
+10. **En una revisión de PR ajeno** (`/nexus-review-pr`):
+    - antes de `SCOPE_APPROVED`: `pr-context.md` tiene el SHA fijado y coincide con `gh pr view <n> --json headRefOid`; cada commit del PR está en una unidad o en FUERA DE ALCANCE con motivo; las unidades sensibles están marcadas;
+    - antes del informe: cada BLOQUEANTE y MAYOR tiene veredicto en `pr-verification.md` con comando y salida, y el verificador no es el mismo agente que lo encontró;
+    - antes de publicar el comentario: el head del PR sigue siendo el SHA fijado (si cambió, los hallazgos pueden estar viejos: `PEDIR_EVIDENCIA`), y `pr-comment.md` no tiene nada que no esté confirmado. Publicar es `ESCALAR` con una sola pregunta de sí o no y el comando exacto (`gh pr review <n> --comment --body-file <ruta>`).
+
 ## Formato de respuesta
 
 Primera línea, una de estas tres:

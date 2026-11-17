@@ -1,5 +1,15 @@
 # Changelog — NexusAgil
 
+## 2.1.0 — Revision de un PR ajeno
+
+### Agregado
+- **`/nexus-review-pr <PR> [--supervisor]`**: la revision cruzada del PR de otra persona pasa por el arnes, con el mismo rigor que una HU propia. Fases nuevas en el hook: PR_CONTEXT (analista: PR fijado a un SHA, unidades, alcance, contrato de cada unidad desde el tracker), gate `SCOPE_APPROVED` sobre `pr-context.md`, PR_REVIEW (un adversario por unidad, en paralelo), PR_SECURITY (unidades sensibles), PR_VERIFY (un adversario nuevo intenta refutar cada BLOQUEANTE y MAYOR) y PR_DONE (informe y borrador del comentario).
+- El hook exige: `UNIDAD:` en cada revision; `STATUS:` con `blq=N mayor=N menor=N` que cuadre con los hallazgos con ID (`### PR-<unidad>-<n> · SEVERIDAD · ruta:linea`); veredicto para cada BLOQUEANTE y MAYOR antes del informe; y que el comentario no lleve un hallazgo refutado. Reglas de escritura por rol para los artefactos nuevos.
+- El supervisor revisa la revision (punto 10): SHA fijado, cobertura del alcance, verificacion independiente, y que el head del PR no haya cambiado antes de publicar. Publicar es siempre `ESCALAR`.
+- Evals nuevos (etiqueta `revision-pr`): `pr-review-precio` (un error real en un PR ajeno) y `pr-verify-refuta` (un hallazgo falso y uno real).
+
+Por que: en una revision cruzada real, ocho revisores genericos encontraron cuatro MAYOR en un PR ajeno, pero nada impedia que un revisor escribiera en el repo, y los MAYOR los tuvo que verificar alguien a mano antes de comentarle al autor.
+
 ## 2.0.4 — Leer los gates no es escribirlos
 
 ### Corregido

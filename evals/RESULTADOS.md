@@ -1,5 +1,9 @@
 # Resultados de evaluacion
 
+## Revision de un PR ajeno, 2.1.0 (16 de noviembre de 2026)
+
+Casos nuevos, etiqueta `revision-pr`, 3 corridas cada uno, en local y sin Bash: `pr-review-precio` 3/3 (el revisor encuentra que "1.500" se guarda como 1,5 y lo reporta como MAYOR con ID y `ruta:linea`, sin tocar el codigo) y `pr-verify-refuta` 3/3 (el verificador refuta el hallazgo falso y confirma el real, con `STATUS: confirmados=1 refutados=1`). US$1,48, 2 minutos.
+
 ## Foto del 11 de noviembre de 2026, version 2.0.0
 
 Commit `bccf9b1`. Claude Code 2.1.322, orquestador en sonnet. **37 casos, 3 corridas por caso: 35 de 37 casos en 3/3**, puntaje 98,9 %. US$19,81 a precio de lista, 27 minutos con 3 corridas en paralelo. Corrio en local, con la sesion de la persona.
