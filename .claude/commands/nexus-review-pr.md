@@ -134,3 +134,17 @@ Cuando el autor responde a una revisión anterior con commits nuevos, no se vuel
 ## Puntos de parada con `--supervisor`
 
 Después del Paso 1 (alcance), después del Paso 4 (verificación) y antes del Paso 6 (publicar). El supervisor sigue su punto 10. Publicar siempre es `ESCALAR`: lo decide la persona.
+
+La fase del supervisor es siempre `SUPERVISION`. `SCOPE_APPROVED` es el gate que se decide, no una fase: va en la línea `Punto de parada:`. En la primera revisión real, el orquestador lanzó al supervisor con `FASE: SCOPE_APPROVED` y el hook lo frenó.
+
+```
+Task:
+  subagent_type: nexus-supervisor
+  description: Supervisor: <punto> PR #<n>
+  prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
+    FASE: SUPERVISION
+    HU_DIR: [ruta absoluta de HU_DIR]
+    Punto de parada: <SCOPE_APPROVED de la revisión del PR #<n> | verificación de hallazgos | publicar el comentario>
+    Revisión de PR ajeno (/nexus-review-pr), punto 10 de tu definición. Mi reporte de este punto: [...]. Transcripts: [rutas].
+```

@@ -341,6 +341,9 @@ def check_phase(data, session):
     if not phase or not hu_value:
         deny(f"el prompt de {agent} debe traer las lineas FASE: y HU_DIR:")
     if phase not in PHASES:
+        if phase in GATES:
+            deny(f"{phase} es un gate, no una fase. Para consultar al supervisor sobre ese gate: FASE: SUPERVISION "
+                 f"y la linea 'Punto de parada: {phase} ...'")
         deny(f"fase desconocida {phase}. Validas: {', '.join(PHASES)}")
     hu_dir = abs_path(hu_value, data)
     if os.environ.get("CLAUDE_PLUGIN_ROOT") and ":" not in (tool_input.get("subagent_type") or ""):

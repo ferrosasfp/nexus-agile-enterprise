@@ -952,6 +952,14 @@ class DecisionCompleta(HookCase):
         self.assertEqual((entry["verdict"], entry["point"]), ("ESCALAR", "merge del PR (punto 9)"))
 
 
+class GateComoFase(HookCase):
+    def test_un_gate_en_fase_explica_que_va_en_supervision(self):
+        # Primera revision real con /nexus-review-pr: el supervisor se lanzo con FASE: SCOPE_APPROVED.
+        prompt = f"RUTAS: CODE_ROOT={self.repo}\nFASE: SCOPE_APPROVED\nHU_DIR: {self.hu}\nrevisa"
+        result = self.run_hook("gate", tool_name="Agent", tool_input={"subagent_type": "nexus-supervisor", "prompt": prompt})
+        self.assertBlocked(result, "FASE: SUPERVISION")
+
+
 class EdicionAjenaDuranteUnBash(HookCase):
     def test_la_sesion_principal_edita_mientras_un_revisor_corre_bash(self):
         # Revision real: el orquestador edito bitacora.md con Edit mientras un revisor corria git show.
