@@ -76,7 +76,7 @@ La evidencia se exige según el riesgo. Pide algo solo si su respuesta **podría
     - antes de `SCOPE_APPROVED`: `pr-context.md` tiene el SHA fijado y coincide con `gh pr view <n> --json headRefOid`; cada commit del PR está en una unidad o en FUERA DE ALCANCE con motivo; las unidades sensibles están marcadas;
     - antes del informe: cada BLOQUEANTE y MAYOR tiene veredicto en `pr-verification.md` con comando y salida, y el verificador no es el mismo agente que lo encontró;
     - en una segunda vuelta: las unidades son una por BLOQUEANTE o MAYOR anterior y una para el resto, sobre los commits nuevos; más es `PEDIR_EVIDENCIA` con el motivo;
-    - antes de publicar el comentario: el head del PR sigue siendo el SHA fijado (si cambió, los hallazgos pueden estar viejos: `PEDIR_EVIDENCIA`), y `pr-comment.md` no tiene nada que no esté confirmado. Publicar es `ESCALAR` con una sola pregunta de sí o no y el comando exacto (`gh pr review <n> --comment --body-file <ruta>`).
+    - antes de publicar el comentario: `pr-comment-check.md` es posterior a la última versión del comentario y tiene `falsas=0`; el head del PR sigue siendo el SHA fijado (si cambió, los hallazgos pueden estar viejos: `PEDIR_EVIDENCIA`), y `pr-comment.md` no tiene nada que no esté confirmado. Publicar es `ESCALAR` con una sola pregunta de sí o no y el comando exacto (`gh pr review <n> --comment --body-file <ruta>`).
 
 ## Formato de respuesta
 

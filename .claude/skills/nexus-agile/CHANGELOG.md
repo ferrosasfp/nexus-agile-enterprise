@@ -1,5 +1,13 @@
 # Changelog — NexusAgil
 
+## 2.2.0 — El comentario de una revision se verifica antes de publicarlo
+
+### Agregado
+- Fase PR_CHECK en `/nexus-review-pr`: un adversario nuevo verifica **cada afirmacion sobre el codigo** de `pr-comment.md`, no solo los hallazgos, y escribe `pr-comment-check.md` (`STATUS: afirmaciones=N falsas=M no_verificables=K`). El hook no deja correr `gh pr review|comment --body-file .../pr-comment.md` si ese archivo no existe, es mas viejo que el comentario o tiene `falsas` mayor que cero. nexus-docs solo pone como hecho lo que sale de un hallazgo confirmado o de la verificacion; lo interno va como pregunta. El supervisor lo comprueba antes de publicar.
+
+Por que: en la tercera vuelta de la primera revision real, el comentario publicado decia "con coma el mismo cero se rechaza", una frase de la seccion interna del informe que nadie verifico. Era falsa, el autor del PR la siguio, y el error quedo vivo una vuelta mas.
+- Eval nuevo `pr-check-comentario`: un borrador con una afirmacion falsa entre tres verdaderas; 3/3.
+
 ## 2.1.4 — El supervisor de una revision de PR
 
 ### Corregido

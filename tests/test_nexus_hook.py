@@ -952,6 +952,38 @@ class DecisionCompleta(HookCase):
         self.assertEqual((entry["verdict"], entry["point"]), ("ESCALAR", "merge del PR (punto 9)"))
 
 
+class PublicarComentarioVerificado(HookCase):
+    """Primera revision real: el comentario afirmo algo falso sobre el codigo, que no venia de un hallazgo verificado."""
+
+    def setUp(self):
+        super().setUp()
+        self.hu = self.repo / "doc/sdd/016-review-pr153"
+        self.hu.mkdir(parents=True)
+        (self.hu / "pr-comment.md").write_text("Con coma el cero se rechaza.\n")
+        self.publish = f"gh pr review 153 --comment --body-file {self.hu}/pr-comment.md"
+
+    def bash(self, command):
+        return self.run_hook("gate", tool_name="Bash", tool_input={"command": command})
+
+    def test_sin_verificar_no_se_publica(self):
+        self.assertBlocked(self.bash(self.publish), "PR_CHECK")
+
+    def test_con_falsas_no_se_publica(self):
+        (self.hu / "pr-comment-check.md").write_text("STATUS: afirmaciones=3 falsas=1 no_verificables=0\n")
+        self.assertBlocked(self.bash(self.publish), "falsas")
+
+    def test_verificado_se_publica_y_un_cambio_posterior_lo_invalida(self):
+        check = self.hu / "pr-comment-check.md"
+        check.write_text("STATUS: afirmaciones=3 falsas=0 no_verificables=0\n")
+        os.utime(check, (time.time() + 5, time.time() + 5))
+        self.assertAllowed(self.bash(self.publish))
+        os.utime(self.hu / "pr-comment.md", (time.time() + 10, time.time() + 10))
+        self.assertBlocked(self.bash(self.publish), "PR_CHECK")
+
+    def test_otros_comentarios_no_se_tocan(self):
+        self.assertAllowed(self.bash("gh pr comment 151 --body 'Nota para el merge'"))
+
+
 class GateComoFase(HookCase):
     def test_un_gate_en_fase_explica_que_va_en_supervision(self):
         # Primera revision real con /nexus-review-pr: el supervisor se lanzo con FASE: SCOPE_APPROVED.

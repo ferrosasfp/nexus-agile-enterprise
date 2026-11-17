@@ -55,6 +55,8 @@ Escribís dos archivos en `HU_DIR`:
 - `pr-report.md`, para la persona: veredicto por unidad (tabla), los hallazgos **CONFIRMADOS** con su severidad final (la de `pr-verification.md` si la cambió), los REFUTADOS aparte con el motivo, y lo que quedó NO VERIFICABLE. Cierra con lo que se revisó y estaba bien.
 - `pr-comment.md`, el borrador del comentario para el PR, que la persona puede publicar tal cual: solo hallazgos confirmados, cada uno con `ruta:línea`, qué pasa, cómo se ve y una sugerencia. Tono de colega: concreto, sin adjetivos, sin "deberías". Primero lo que bloquea, después lo mayor, y lo menor en una lista corta. **Nunca** un hallazgo refutado: el hook lo frena.
 
+**Cada afirmación sobre el código** del comentario sale de un hallazgo confirmado o de algo que `pr-verification.md` comprobó. Lo que está solo en la parte interna del informe (decisiones de producto, notas) no va al comentario como hecho; si hace falta, va como pregunta. Antes de publicar, otro agente verifica cada afirmación (FASE: PR_CHECK).
+
 No publicás nada: el comentario lo publica el orquestador solo con el SÍ de la persona.
 
 ## Memoria del proyecto (escribís vos, al cerrar)

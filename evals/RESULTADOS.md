@@ -1,5 +1,9 @@
 # Resultados de evaluacion
 
+## Verificacion del comentario, 2.2.0 (18 de noviembre de 2026)
+
+`pr-check-comentario` (un borrador con tres afirmaciones sobre un parser de precios, una falsa: "015,000 da error" cuando da 15), 3 corridas, en local y sin Bash: 3/3, con `falsas=1` y la frase falsa marcada. US$0,74.
+
 ## Entradas en formato local, 2.1.1 (17 de noviembre de 2026)
 
 `pr-review-precio-sin-pista` (un precio `1.000` que se guarda como `1`, sin pistas en el contrato; el producto es es-AR en `project-context.md`), 3 corridas, en local y sin Bash: con la 2.1.0, 1/3 (dos corridas no vieron que se guarda sin error); con la regla "Entradas en formato local" del adversario, 3/3. US$2 en total.

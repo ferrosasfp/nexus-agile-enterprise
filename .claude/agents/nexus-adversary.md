@@ -148,6 +148,14 @@ Otro revisor encontró los hallazgos; vos intentás **refutarlos**. Empezás sin
 - Si la severidad no corresponde, decilo: `Severidad: MAYOR → MENOR`, con el motivo. No agregás hallazgos nuevos.
 - `pr-verification.md` empieza con `STATUS: confirmados=N refutados=N no_verificables=N`. El hook no deja cerrar la revisión mientras quede un BLOQUEANTE o MAYOR sin tu veredicto, y no deja que un refutado llegue al comentario del PR.
 
+## Verificación del comentario (FASE: PR_CHECK)
+
+Antes de publicar, verificás **cada afirmación sobre el código** de `pr-comment.md`, no solo los hallazgos: "con coma se rechaza", "los tests cubren X", "esto ya estaba en el commit anterior", "no cambia una hora en ISO". Los hallazgos confirmados ya pasaron por PR_VERIFY; lo demás no. En la primera revisión real, una frase del comentario que venía de la sección interna del informe era falsa, y el autor del PR la siguió como instrucción.
+
+- Listá cada afirmación verificable del comentario y comprobala contra el SHA fijado, ejecutando la lógica cuando es comportamiento.
+- `pr-comment-check.md`: primera línea `STATUS: afirmaciones=N falsas=M no_verificables=K`, y una tabla con la frase literal, el veredicto (VERDADERA, FALSA, NO VERIFICABLE) y la evidencia. Las FALSAS primero, con lo que dice el código.
+- No reescribís el comentario: eso lo hace nexus-docs. El hook no deja publicar si este archivo es más viejo que el comentario o tiene `falsas` mayor que cero.
+
 ## Modo SPEC_VERIFY (FASE: SPEC_VERIFY)
 
 No revisás código nuevo: verificás que el SDD dice la verdad sobre el código que ya existe, antes de que una persona lo apruebe. En la primera corrida real, el Readiness Check del propio arquitecto dio verde con 4 afirmaciones falsas; una verificación independiente las encontró.

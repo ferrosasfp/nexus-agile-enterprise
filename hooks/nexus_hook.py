@@ -33,9 +33,9 @@ INLINE_REAL_WRITE = re.compile(r"\b(python[0-9.]*(\s+-[A-Za-z]+)*\s+-c\b|node\s+
                                r".*(open\([^)]*['\"][wax]|write_text|write_bytes|os\.replace|shutil\.)", re.S)
 INLINE_WRITE = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b.*(open\(|write|unlink|rename|remove|rmtree|copy|move|mkdir)", re.S)
 PHASES = ("F0F1", "F1", "F2", "SPEC_VERIFY", "SECURITY", "F2.5", "F3", "AR", "CR", "VERIFY", "F4", "DONE", "SUPERVISION",
-          "PR_CONTEXT", "PR_REVIEW", "PR_SECURITY", "PR_VERIFY", "PR_DONE")
+          "PR_CONTEXT", "PR_REVIEW", "PR_SECURITY", "PR_VERIFY", "PR_DONE", "PR_CHECK")
 # Revision de un PR ajeno (/nexus-review-pr): una carpeta en doc/sdd como cualquier HU, con sus propias fases.
-PR_PHASES = ("PR_CONTEXT", "PR_REVIEW", "PR_SECURITY", "PR_VERIFY", "PR_DONE")
+PR_PHASES = ("PR_CONTEXT", "PR_REVIEW", "PR_SECURITY", "PR_VERIFY", "PR_DONE", "PR_CHECK")
 VERSIONED = {"F0F1": ("work-item.md",), "F1": ("work-item.md",), "F2": ("sdd.md",), "F2.5": ("story-file.md",), "PR_CONTEXT": ("pr-context.md",)}
 # Un hallazgo de la revision de un PR: "### PR-529-1 · MAYOR · ruta:linea". La verificacion: "### PR-529-1 · CONFIRMADO".
 PR_FINDING = re.compile(r"^#{2,4}\s*(PR-[\w.-]+-\d+)\s*·\s*(BLOQUEANTE|MAYOR|MENOR)\b", re.M)
@@ -44,12 +44,12 @@ PHASE_OUTPUT = {
     "F0F1": "work-item.md", "F1": "work-item.md", "F2": "sdd.md", "F2.5": "story-file.md",
     "AR": "ar-report.md", "CR": "cr-report.md", "VERIFY": "blq-verification.md", "SPEC_VERIFY": "sdd-verification.md", "SECURITY": "security-review.md",
     "F4": "validation.md", "DONE": "cierre.md",
-    "PR_CONTEXT": "pr-context.md", "PR_VERIFY": "pr-verification.md", "PR_DONE": "pr-report.md",
+    "PR_CONTEXT": "pr-context.md", "PR_VERIFY": "pr-verification.md", "PR_DONE": "pr-report.md", "PR_CHECK": "pr-comment-check.md",
 }
 WRITE_RULES = {
     "nexus-supervisor": r"(?!)",
     "nexus-security": r"/(security-review(-\d+)?|pr-security-[\w.-]+)\.md$",
-    "nexus-adversary": r"/(ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?|sdd-verification(-\d+)?|pr-review-[\w.-]+|pr-verification(-\d+)?)\.md$",
+    "nexus-adversary": r"/(ar-report(-\d+)?|cr-report(-\d+)?|blq-verification(-\d+)?|sdd-verification(-\d+)?|pr-review-[\w.-]+|pr-verification(-\d+)?|pr-comment-check)\.md$",
     "nexus-qa": r"/validation(-\d+)?\.md$",
     "nexus-docs": r"/(cierre\.md|_INDEX\.md|lecciones\.md|_LECCIONES\.md|pr-report\.md|pr-comment\.md)$",
     "nexus-architect": r"/doc/sdd/[^/]+/[^/]+\.md$",
@@ -434,6 +434,9 @@ def check_phase(data, session):
                 blocked(f"{report.name} no tiene la linea STATUS:")
             elif "RECHAZADO" in status.group(1) or re.search(r"open_blq=[1-9]", status.group(1)):
                 blocked(f"{report.name} tiene BLOQUEANTEs abiertos: {status.group(1)}")
+    elif phase == "PR_CHECK":
+        need("pr-comment.md")
+        require_gate(hu_dir, "SCOPE_APPROVED", session, phase, blocked)
     elif phase in ("PR_REVIEW", "PR_SECURITY", "PR_VERIFY", "PR_DONE"):
         need("pr-context.md")
         require_gate(hu_dir, "SCOPE_APPROVED", session, phase, blocked)
@@ -767,6 +770,26 @@ def check_forbidden(command, data):
         deny(f"el proyecto prohibe este comando ({matched.group(0)}). Detente y preguntale a la persona")
 
 
+PR_PUBLISH = re.compile(r"\bgh\s+pr\s+(?:review|comment)\b.*?--body-file[ =]\s*['\"]?(?P<path>[^\s'\"]*pr-comment\.md)")
+
+
+def check_pr_publish(command, data):
+    """El comentario de una revision de PR ajeno se publica solo si cada afirmacion suya se verifico despues de su
+    ultima version. En la primera revision real, el comentario afirmo algo falso sobre el codigo que no venia de un
+    hallazgo verificado, y el autor lo siguio."""
+    found = PR_PUBLISH.search(command)
+    if not found:
+        return
+    comment = Path(abs_path(os.path.expanduser(found.group("path")), data))
+    check = comment.with_name("pr-comment-check.md")
+    stale = not comment.is_file() or not check.is_file() or check.stat().st_mtime < comment.stat().st_mtime
+    if stale:
+        deny("antes de publicar, cada afirmacion de pr-comment.md se verifica (FASE: PR_CHECK) despues de su ultima version")
+    status = re.search(r"^STATUS:.*\bfalsas=(\d+)", check.read_text(encoding="utf-8"), re.M)
+    if status is None or int(status.group(1)):
+        deny(f"pr-comment-check.md tiene afirmaciones falsas o no tiene STATUS con falsas=N: corregi el comentario y verificalo de nuevo")
+
+
 def check_bash(agent, command, data):
     # Solo si el comando escribe en .gates.jsonl. Nombrarlo dentro de comillas o de un heredoc (una nota en la bitacora) no cuenta.
     visible = masked(command)
@@ -782,6 +805,7 @@ def check_bash(agent, command, data):
         # bloqueos al rejugar); si alguno escribiera los gates, lo ve la comparacion posterior.
         deny("los gates solo los registra el hook")
     check_forbidden(command, data)
+    check_pr_publish(command, data)
     if NO_VERIFY.search(command):
         deny("no se usa --no-verify: arregla lo que el hook del repo rechaza")
     if agent not in READ_ONLY_BASH:
@@ -1316,7 +1340,7 @@ def cmd_stop(data):
         report = latest(hu_dir, stem)
         if report is None:
             problems.append(f"falta {hu_dir / expected}")
-        elif spawn["phase"] in ("AR", "CR", "F4", "SPEC_VERIFY", "SECURITY", "PR_VERIFY") and not re.search(r"^STATUS:", report.read_text(encoding="utf-8"), re.M):
+        elif spawn["phase"] in ("AR", "CR", "F4", "SPEC_VERIFY", "SECURITY", "PR_VERIFY", "PR_CHECK") and not re.search(r"^STATUS:", report.read_text(encoding="utf-8"), re.M):
             problems.append(f"{report.name} no tiene la linea STATUS:")
     if spawn["phase"] in ("F0F1", "F1") and (hu_dir / "work-item.md").is_file() and questions_section(hu_dir) is None:
         problems.append("work-item.md no tiene la seccion PREGUNTAS PARA EL HUMANO. Agregala, aunque diga Ninguna")
