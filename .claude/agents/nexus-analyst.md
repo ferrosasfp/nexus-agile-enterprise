@@ -54,7 +54,7 @@ En `/nexus-review-pr` no escribís un work-item: preparás la revisión de un PR
 
 - `## PR`: número, autor, base y head, y el **SHA fijado** del head (`gh pr view <n> --json number,title,author,baseRefName,headRefName,headRefOid,commits`). Todo lo demás se revisa contra ese SHA.
 - `## UNIDADES`: la tabla de lo que se revisa. Una unidad es un commit, o varios commits de la misma HU. Columnas: `id` (el número de la HU o el SHA corto; solo letras, números, punto o guion), commits, autor, HU, archivos (`git -C "$CODE_ROOT" show --stat`), sensible (sí si toca auth, permisos, RLS, service role, migraciones, pagos o entradas públicas).
-- `## FUERA DE ALCANCE`: commits que no se revisan y por qué: los de la propia persona que pide la revisión (se revisan en su propio PR), merges de integración (se verifican aparte con `git range-diff`), reverts.
+- `## FUERA DE ALCANCE`: commits que no se revisan y por qué: los de la propia persona que pide la revisión (se revisan en su propio PR), reverts. Un merge de integración no queda fuera: es una unidad propia, que se revisa con `git -C "$CODE_ROOT" show --remerge-diff <sha>` (lo que el merge cambió por su cuenta al resolver conflictos; un `range-diff` no sirve con merges).
 - `## CONTRATO POR UNIDAD`: para cada unidad, qué promete: los ACs del tracker (leelos; no los inventes) y lo que el PR dice en su descripción, CHANGES y docs del área. Sin ACs en el tracker, decilo.
 - `## PREGUNTAS PARA EL HUMANO`, aunque diga Ninguna: lo que cambia el alcance (por ejemplo, si una unidad sensible se revisa también en seguridad).
 
