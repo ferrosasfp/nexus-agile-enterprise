@@ -4,7 +4,7 @@
 
 NexusAgil es una metodología de desarrollo con agentes para Claude Code. Procesa una Historia de Usuario (HU) por vez, por fases, con agentes especializados, gates que da una persona y un hook que hace cumplir las reglas que no deben depender de la memoria del modelo.
 
-Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.0.4**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
+Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.1.0**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
 
 **Estado:** release candidate. El supervisor de AUTO es experimental. Las mediciones están en [Evaluación](#evaluación).
 
@@ -453,6 +453,21 @@ El CI (`.github/workflows/ci.yml`) corre en cada PR y en cada push a `main`, `fe
 - **Corridas desatendidas.** Un sub-agente en segundo plano pide permisos en la sesión principal y, sin nadie mirando, queda esperando. Hay que configurar permisos granulares en `.claude/settings.json` antes de F3, F4 o DONE (`references/subagent_protocol.md`).
 
 
+### Revisión de un PR ajeno
+
+En una revisión cruzada, el PR de otra persona pasa por el mismo arnés que una HU propia, con su carpeta en `doc/sdd/NNN-review-pr<n>/`:
+
+| Paso | Agente | Artefacto | Qué exige el hook |
+|---|---|---|---|
+| PR_CONTEXT | `nexus-analyst` | `pr-context.md`: PR fijado a un SHA, unidades (commits por HU), lo que queda fuera de alcance, el contrato de cada unidad desde el tracker | secciones UNIDADES y PREGUNTAS PARA EL HUMANO |
+| `SCOPE_APPROVED` | la persona (o delegado con `--supervisor`) | gate con el hash de `pr-context.md` | sin gate no corre ninguna revisión; si el contexto cambia, se vuelve a aprobar |
+| PR_REVIEW | `nexus-adversary`, una por unidad, en paralelo | `pr-review-<unidad>.md`, hallazgos `### PR-<unidad>-<n> · SEVERIDAD · ruta:línea` | `STATUS:` con conteos que cuadran con los hallazgos; solo lectura y sin checkout en el repo |
+| PR_SECURITY | `nexus-security`, en las unidades sensibles | `pr-security-<unidad>.md` | lo mismo |
+| PR_VERIFY | un `nexus-adversary` nuevo | `pr-verification.md`: CONFIRMADO, REFUTADO o NO VERIFICABLE para cada BLOQUEANTE y MAYOR | no se cierra con uno sin veredicto |
+| PR_DONE | `nexus-docs` | `pr-report.md` y `pr-comment.md` (borrador) | el comentario no puede llevar un hallazgo refutado |
+
+El comentario se publica con `gh pr review <n> --comment` y solo con el SÍ de la persona.
+
 ## Cómo funciona un sprint
 
 ```
@@ -569,6 +584,7 @@ Once comandos. Cada uno lanza una fase (o dos fases contiguas sin gate en el med
 | `/nexus-fast-pipeline <HU>` | FAST completo | analyst → dev → qa → docs | gate de propiedad |
 | `/nexus-fast-plus-ar <HU>` | FAST+AR completo | analyst → dev → adversary → qa → docs | gate de propiedad |
 | `/nexus-auto <HU> [HU ...]` | AUTO | el orquestador | la persona escribe el comando al inicio de una línea |
+| `/nexus-review-pr <PR> [--supervisor]` | Revisión de un PR ajeno | analyst → adversary por unidad (+ security) → adversary que verifica → docs | `SCOPE_APPROVED` sobre `pr-context.md` |
 
 > **Prefijo `pN`**: marca el orden en QUALITY. Los gates de la persona van después de `p1` (`HU_APPROVED`) y de `p2` (`SPEC_APPROVED`). Con `contract_mode: unified` (el default), `p3` se salta. De `p4` a `p8` el pipeline corre solo.
 
@@ -802,11 +818,12 @@ docs/                                    # planes de diseño (plan-2.0.md, plan-
 │   ├── nexus-security.md                #     SECURITY, HUs con riesgo — opus
 │   └── nexus-supervisor.md              #     AUTO, experimental — opus
 │
-├── commands/                            # 11 comandos
+├── commands/                            # 12 comandos
 │   ├── nexus-p1-f0-f1.md … nexus-p8-done.md
 │   ├── nexus-fast-pipeline.md
 │   ├── nexus-fast-plus-ar.md
-│   └── nexus-auto.md
+│   ├── nexus-auto.md
+│   └── nexus-review-pr.md               # revisión de un PR ajeno
 │
 └── skills/nexus-agile/
     ├── SKILL.md                         # pipeline, modos, reglas globales

@@ -48,6 +48,15 @@ Y el índice histórico: `$NEXUS_ROOT/doc/sdd/_INDEX.md`.
 2. `$NEXUS_ROOT/doc/sdd/_INDEX.md` actualizado con status DONE / ABORTED
 3. Resumen ejecutivo al orquestador (5-10 líneas) para que lo presente al humano
 
+## PR_DONE — Informe y comentario de una revisión de PR ajeno
+
+Escribís dos archivos en `HU_DIR`:
+
+- `pr-report.md`, para la persona: veredicto por unidad (tabla), los hallazgos **CONFIRMADOS** con su severidad final (la de `pr-verification.md` si la cambió), los REFUTADOS aparte con el motivo, y lo que quedó NO VERIFICABLE. Cierra con lo que se revisó y estaba bien.
+- `pr-comment.md`, el borrador del comentario para el PR, que la persona puede publicar tal cual: solo hallazgos confirmados, cada uno con `ruta:línea`, qué pasa, cómo se ve y una sugerencia. Tono de colega: concreto, sin adjetivos, sin "deberías". Primero lo que bloquea, después lo mayor, y lo menor en una lista corta. **Nunca** un hallazgo refutado: el hook lo frena.
+
+No publicás nada: el comentario lo publica el orquestador solo con el SÍ de la persona.
+
 ## Memoria del proyecto (escribís vos, al cerrar)
 
 Si tenés `mem_save`, guardá con `topic_key`, siguiendo `$SKILL_DIR/references/engram_protocol.md`:

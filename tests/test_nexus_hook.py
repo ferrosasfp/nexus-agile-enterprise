@@ -1222,5 +1222,92 @@ class ProyectoNuevo(HookCase):
         self.assertIn("U+202E", out.stdout)
 
 
+class RevisionDePR(HookCase):
+    """/nexus-review-pr: revision de un PR ajeno con fases, gate de alcance y verificacion de hallazgos."""
+
+    def setUp(self):
+        super().setUp()
+        self.hu = self.repo / "doc/sdd/012-review-pr153"
+
+    def launch(self, phase, agent="nexus-adversary", unit=None):
+        lines = [f"RUTAS: CODE_ROOT={self.repo} · SKILL_DIR=[usa la que exista]", f"FASE: {phase}", f"HU_DIR: {self.hu}"]
+        if unit:
+            lines.append(f"UNIDAD: {unit}")
+        return self.run_hook("gate", tool_name="Agent", tool_input={"subagent_type": agent, "prompt": "\n".join(lines + ["revisa"])})
+
+    def context(self):
+        self.hu.mkdir(parents=True, exist_ok=True)
+        self.write("pr-context.md", "## UNIDADES\n- 529\n## PREGUNTAS PARA EL HUMANO\nNinguna\n")
+
+    def review(self, unit, findings, status=None):
+        body = "".join(f"### PR-{unit}-{i} · {sev} · app.ts:1\nevidencia\n" for i, sev in enumerate(findings, 1))
+        counts = status or f"blq={findings.count('BLOQUEANTE')} mayor={findings.count('MAYOR')} menor={findings.count('MENOR')}"
+        self.write(f"pr-review-{unit}.md", f"STATUS: APROBADO con observaciones {counts}\n{body}")
+
+    def test_contexto_sin_carpeta_y_revision_sin_gate(self):
+        self.assertAllowed(self.launch("PR_CONTEXT", "nexus-analyst"))
+        self.context()
+        self.assertBlocked(self.launch("PR_REVIEW", unit="529"), "SCOPE_APPROVED")
+        self.type_gate("SCOPE_APPROVED")
+        self.assertBlocked(self.launch("PR_REVIEW"), "UNIDAD")
+        self.assertAllowed(self.launch("PR_REVIEW", unit="529"))
+
+    def test_alcance_cambiado_despues_del_gate(self):
+        self.context()
+        self.type_gate("SCOPE_APPROVED")
+        self.write("pr-context.md", "## UNIDADES\n- 529\n- 551\n## PREGUNTAS PARA EL HUMANO\nNinguna\n")
+        self.assertBlocked(self.launch("PR_REVIEW", unit="529"), "cambio despues de SCOPE_APPROVED")
+
+    def test_el_reporte_de_unidad_cuadra_sus_conteos(self):
+        self.context()
+        self.type_gate("SCOPE_APPROVED")
+        self.assertAllowed(self.launch("PR_REVIEW", unit="529"))
+        self.review("529", ["MAYOR", "MENOR"], status="blq=0 mayor=0 menor=2")
+        stop = self.run_hook("stop", agent_type="nexus-adversary")
+        self.assertIn("los hallazgos con ID", stop.stdout)
+        self.review("529", ["MAYOR", "MENOR"])
+        self.assertAllowed(self.launch("PR_REVIEW", unit="529"))
+        self.assertEqual(self.run_hook("stop", agent_type="nexus-adversary").stdout, "")
+
+    def test_cada_mayor_se_verifica_antes_del_informe(self):
+        self.context()
+        self.type_gate("SCOPE_APPROVED")
+        self.review("529", ["MAYOR", "MENOR"])
+        self.review("544", ["BLOQUEANTE"])
+        self.assertAllowed(self.launch("PR_VERIFY"))
+        self.assertBlocked(self.launch("PR_DONE", "nexus-docs"), "pr-verification.md")
+        self.write("pr-verification.md", "STATUS: confirmados=1\n### PR-529-1 · CONFIRMADO\nok\n")
+        self.assertBlocked(self.launch("PR_DONE", "nexus-docs"), "PR-544-1")
+        self.write("pr-verification.md", "STATUS: confirmados=1 refutados=1\n### PR-529-1 · CONFIRMADO\nok\n### PR-544-1 · REFUTADO\nno\n")
+        self.assertAllowed(self.launch("PR_DONE", "nexus-docs"))
+
+    def test_el_comentario_no_lleva_lo_refutado(self):
+        self.context()
+        self.type_gate("SCOPE_APPROVED")
+        self.review("544", ["MAYOR"])
+        self.write("pr-verification.md", "STATUS: refutados=1\n### PR-544-1 · REFUTADO\nno\n")
+        self.assertAllowed(self.launch("PR_DONE", "nexus-docs"))
+        self.write("pr-report.md", "informe\n")
+        self.write("pr-comment.md", "Encontre PR-544-1: el boton.\n")
+        self.assertIn("refutados: PR-544-1", self.run_hook("stop", agent_type="nexus-docs").stdout)
+
+    def test_cada_rol_escribe_lo_suyo(self):
+        self.context()
+        write = lambda agent, name: self.run_hook("gate", agent_type=agent, tool_name="Write", tool_input={"file_path": str(self.hu / name)})
+        self.assertAllowed(write("nexus-adversary", "pr-review-529.md"))
+        self.assertAllowed(write("nexus-adversary", "pr-verification.md"))
+        self.assertAllowed(write("nexus-security", "pr-security-551.md"))
+        self.assertAllowed(write("nexus-docs", "pr-comment.md"))
+        self.assertBlocked(write("nexus-adversary", "pr-comment.md"), "no puede escribir")
+        self.assertBlocked(write("nexus-docs", "pr-review-529.md"), "no puede escribir")
+        self.assertBlocked(write("nexus-dev", "pr-review-529.md"), "no puede escribir")
+
+    def test_delegada_con_supervisor_desde_el_comando(self):
+        out = self.run_hook("prompt", prompt="/nexus-agile:nexus-review-pr 153 --supervisor").stdout
+        self.assertIn("SCOPE_APPROVED", out)
+        self.context()
+        self.assertBlocked(self.launch("PR_REVIEW", unit="529"), "veredicto del supervisor")
+
+
 if __name__ == "__main__":
     unittest.main()

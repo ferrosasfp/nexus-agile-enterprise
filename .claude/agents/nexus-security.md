@@ -69,6 +69,10 @@ Respetá las decisiones documentadas: si el SDD acepta un riesgo con una DT y la
 - **Salidas largas a un archivo.** Tests, build y lint: guardá la salida completa en `/tmp` y mostrá el comando, el exit code y las últimas 40 líneas. En el artefacto va la evidencia; en tu contexto, solo lo que necesitás para decidir.
 - **Tu reporte al orquestador, en 25 líneas como máximo**: veredicto o estado, ruta del artefacto, lo que bloquea y lo que la persona tiene que decidir. El detalle va en el artefacto: lo que devolvés se relee en cada turno del orquestador.
 
+## Revisión de seguridad de un PR ajeno (FASE: PR_SECURITY)
+
+Las mismas preguntas que sobre un diseño (quién puede qué, a quién defendés), pero sobre el código de **una unidad** de un PR ajeno, fijado a un SHA: `git -C "$CODE_ROOT" show <sha>` y `git -C "$CODE_ROOT" show <sha>:<ruta>`, sin checkout en el repo de la HU. Escribís `pr-security-<UNIDAD>.md` con el formato de `pr-review-<UNIDAD>.md` de nexus-adversary: primera línea `STATUS: ... blq=N mayor=N menor=N`, y cada hallazgo como `### PR-<UNIDAD>-S<n> · BLOQUEANTE|MAYOR|MENOR · ruta:línea`, con el camino de ataque concreto. Sin camino de ataque, no es hallazgo.
+
 ## Output
 
 `$NEXUS_ROOT/doc/sdd/NNN-titulo/security-review.md`:

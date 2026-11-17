@@ -38,7 +38,7 @@ field() { sed -n "s/^$2: //p" "$A/nexus-$1.md" | head -1; }
 
 # --- Inventario y nombres que no pueden cambiar
 check_count "agentes" 8 "$(ls $A/nexus-*.md | wc -l)"
-check_count "comandos" 11 "$(ls $C/nexus-*.md | wc -l)"
+check_count "comandos" 12 "$(ls $C/nexus-*.md | wc -l)"
 for art in work-item.md sdd.md story-file.md ar-report.md cr-report.md validation.md cierre.md; do
   grep -rq -- "$art" $A $C || fail "artefacto sin mencionar: $art"
 done
@@ -127,7 +127,7 @@ check_absent "sin IDs de proyecto real" 'LUM-[0-9]|Luma' .claude README.md
 pass "fase 2 revisada"
 
 # --- Fase 3: coherencia y poda
-grep -q '\*\*11 slash commands\*\*' $S/SKILL.md || fail "SKILL no dice 11 comandos"
+grep -q '\*\*12 slash commands\*\*' $S/SKILL.md || fail "SKILL no dice 12 comandos"
 check_count "comandos en la tabla de consulta" 11 "$(grep -cE '^\| `/nexus-' $R/reference_detail.md)"
 check_absent "sin conteos viejos" '8 slash|10 commands|Los 3 Modos|Los 4 Modos|The 9 Agents' .claude README.md
 check_absent "sin roles inexistentes" 'Spec Writer|Party Mode|Personalidad|Architect\+Adversary|Architect \+ Adversary|Adversary\+QA|Adversary \+ QA' $A $C $S/SKILL.md $R README.md
