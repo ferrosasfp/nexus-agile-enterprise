@@ -4,7 +4,7 @@
 
 NexusAgil es una metodología de desarrollo con agentes para Claude Code. Procesa una Historia de Usuario (HU) por vez, por fases, con agentes especializados, gates que da una persona y un hook que hace cumplir las reglas que no deben depender de la memoria del modelo.
 
-Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.1.2**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
+Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.1.3**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
 
 **Estado:** release candidate. El supervisor de AUTO es experimental. Las mediciones están en [Evaluación](#evaluación).
 
@@ -467,6 +467,8 @@ En una revisión cruzada, el PR de otra persona pasa por el mismo arnés que una
 | PR_DONE | `nexus-docs` | `pr-report.md` y `pr-comment.md` (borrador) | el comentario no puede llevar un hallazgo refutado |
 
 El comentario se publica con `gh pr review <n> --comment` y solo con el SÍ de la persona.
+
+**Segunda vuelta.** Cuando el autor corrige, se revisan solo los commits nuevos: una unidad por cada BLOQUEANTE o MAYOR anterior y una para el resto, reutilizando el contexto de la primera revisión.
 
 ## Cómo funciona un sprint
 

@@ -1,5 +1,10 @@
 # Changelog — NexusAgil
 
+## 2.1.3 — Segunda vuelta de una revision de PR
+
+### Cambiado
+- `/nexus-review-pr` tiene una seccion "Segunda vuelta" para comprobar las correcciones del autor: solo los commits nuevos desde el head revisado; el analista reutiliza el contrato de la revision anterior y agrega `## REVISION ANTERIOR`; una unidad por cada BLOQUEANTE y MAYOR anterior y una sola para el resto; cada revisor lee solo el diff de los commits nuevos y responde si quedo resuelto, si el arreglo rompio algo y si tomo una decision de producto; "Entradas en formato local" obligatoria en las funciones de entrada tocadas; consulta a la persona con mas de 6 unidades. El supervisor lo controla (punto 10). En la primera segunda vuelta real, un solo commit de correcciones se reviso con 6 unidades de contexto completo: 42 M de tokens procesados. El resultado valio la pena (cuatro MAYOR nuevos que el arreglo habia metido), pero el costo no.
+
 ## 2.1.2 — Una edicion de la sesion principal no es una violacion del revisor
 
 ### Corregido
