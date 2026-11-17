@@ -67,7 +67,7 @@ Sigue `$SKILL_DIR/references/adversarial_review_checklist.md` del skill NexusAgi
 
 1. **Security** — injection, XSS, SQLi, secrets en código, auth bypass, RBAC, validación de input
 2. **Error Handling** — try/catch incompleto, errores silenciados, fallbacks peligrosos, log de errores
-3. **Data Integrity** — race conditions, idempotencia, transacciones, consistency, concurrent writes
+3. **Data Integrity** — race conditions, idempotencia, transacciones, consistency, concurrent writes, y lo que escribe el usuario guardado con otro valor (ver "Entradas en formato local")
 4. **Performance** — N+1 queries, loops innecesarios, falta de índices, memory leaks, blocking operations
 5. **Integration** — backwards compatibility, breaking changes, contratos rotos, dependencias externas
 6. **Type Safety** — `any` injustificado, casting peligroso, NaN propagation, null/undefined handling
@@ -130,6 +130,7 @@ Revisás **una unidad** (un commit o un grupo de commits de una HU) de un PR que
 
 - **Fijado a un SHA.** Leés con `git -C "$CODE_ROOT" show <sha>`, `git -C "$CODE_ROOT" show <sha>:<ruta>` y `git -C "$CODE_ROOT" grep <patrón> <sha>`. Nunca hagas checkout en el repo de la HU (el hook lo frena). Si necesitás correr un test para reproducir, creá una copia con `git -C "$CODE_ROOT" worktree add --detach /tmp/<algo> <sha>` y borrala al terminar.
 - **El autor no está para defender su código.** Un hallazgo sin evidencia le hace perder tiempo a otra persona y le resta credibilidad a quien comenta. Cada hallazgo lleva `ruta:línea` en el SHA fijado, la cita del código y cómo se manifiesta (entrada concreta, pantalla, consulta). Si no podés mostrarlo, no es hallazgo: va a "Dudas para el autor".
+- **Entradas en formato local**: aplicá la regla "Entradas en formato local" (más abajo) a cada función de la unidad que interpreta texto del usuario.
 - **Lo que el PR dice de sí mismo es una afirmación.** Si CHANGES, un comentario o un doc dice algo verificable del código ("ningún cron gasta IA en webinar", "13 tests"), comprobalo como en SPEC_VERIFY.
 - **Severidad:** BLOQUEANTE (rompe datos, seguridad o un AC, o no se puede mergear así), MAYOR (error real que el usuario ve o que va a romper en la próxima etapa conocida), MENOR (calidad, docs, tests flojos). Un riesgo latente que depende de una etapa futura es MAYOR solo si esa etapa está planificada y nombrada; si no, MENOR.
 - **Escribí `pr-review-<UNIDAD>.md`** (la `UNIDAD:` de tu prompt):
@@ -160,6 +161,15 @@ No revisás código nuevo: verificás que el SDD dice la verdad sobre el código
    - Los CONTROLES DÉBILES en una tabla aparte: control, `sdd.md:línea`, la forma que lo evade.
 
 No corregís el SDD ni proponés diseño: solo decís qué es falso y qué dice el código. Una afirmación que no podés comprobar es NO VERIFICABLE, no VERDADERA.
+
+## Entradas en formato local
+
+Vale para AR y para la revisión de un PR ajeno. Por cada función que convierte lo que escribe una persona en un dato (número, plata, porcentaje, fecha, hora, duración, teléfono), **probala con los valores que esa persona escribiría de verdad**, no solo con los del test del autor. Usá el idioma y el país del producto (`project-context.md`); en es-AR, como mínimo:
+
+- números y plata: `1.000`, `1.500`, `1.000,50`, `997,50`, `1,5`, `-0`, ` 1 000`, vacío, texto;
+- fechas y horas: `31/12/2026`, `2026-02-31`, una hora de una sesión guardada y vuelta a abrir (que no se corra por la zona horaria del navegador frente a la de la organización), el cambio de día en UTC.
+
+Ejecutá la función o su lógica copiada en un intérprete (`node -e`, `python3 -c`, en `/tmp`) y pegá la salida. **El peor caso es el silencioso**: un valor distinto guardado sin error (`Number("1.000")` da `1`, no rechaza) es más grave que un rechazo con un mensaje feo. Se clasifica por el daño: un monto, un precio o una fecha guardados con otro valor es MAYOR como mínimo. En una revisión cruzada real, el revisor reportó solo el rechazo de `1.000,50` (MENOR) y se le pasó que `1.000` se guardaba como `1`.
 
 ## La suite completa no es tuya
 
