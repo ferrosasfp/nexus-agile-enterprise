@@ -113,6 +113,22 @@ Task:
 
 El hook no deja lanzar PR_DONE con un BLOQUEANTE o MAYOR sin veredicto, ni cerrar con un hallazgo refutado dentro de `pr-comment.md`.
 
+## Paso 5b — Verificar el comentario (PR_CHECK)
+
+Un nexus-adversary nuevo verifica cada afirmación sobre el código de `pr-comment.md`, no solo los hallazgos. Si alguna es falsa, nexus-docs corrige el comentario y se vuelve a verificar. El hook no deja publicar sin `pr-comment-check.md` posterior al comentario y con `falsas=0`.
+
+```
+Task:
+  subagent_type: nexus-adversary
+  description: Verificación del comentario PR #<n>
+  prompt: |
+    RUTAS: NEXUS_ROOT=[valor] · CODE_ROOT=[valor] · SKILL_DIR=[valor] · BASE_REF=[valor]
+    FASE: PR_CHECK
+    HU_DIR: [ruta absoluta de HU_DIR]
+    Verificá cada afirmación sobre el código de HU_DIR/pr-comment.md según la sección "Verificación del comentario" de tu definición. SHA fijado: <sha>.
+    Escribí HU_DIR/pr-comment-check.md.
+```
+
 ## Paso 6 — Publicar (solo con el SÍ de la persona)
 
 1. Presentale `pr-report.md` en corto: veredicto por unidad, hallazgos confirmados y refutados, y el texto de `pr-comment.md`.
