@@ -1,6 +1,6 @@
 # Resultados de evaluacion
 
-## Verificacion del comentario, 2.2.0 (18 de noviembre de 2026)
+## Verificacion del comentario, 2.2.0 (17 de noviembre de 2026)
 
 `pr-check-comentario` (un borrador con tres afirmaciones sobre un parser de precios, una falsa: "015,000 da error" cuando da 15), 3 corridas, en local y sin Bash: 3/3, con `falsas=1` y la frase falsa marcada. US$0,74.
 

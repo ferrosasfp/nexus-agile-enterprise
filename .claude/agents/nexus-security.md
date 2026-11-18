@@ -20,6 +20,8 @@ Si un hook bloquea algo, **detente y reporta el mensaje literal**. No lo rodees 
 
 **Si el entorno reescribe comandos** (por ejemplo rtk), una salida que usás como evidencia o para afirmar algo del código sale del comando sin reescribir: `rtk proxy <cmd>` o la ruta absoluta (`/usr/bin/cat`, `/usr/bin/grep`, `/usr/bin/diff`). rtk llegó a esconder una línea de un archivo y a decir "Files are identical" de dos archivos distintos.
 
+**Tu artefacto, con Write o Edit**: tus reportes y documentos de la HU se escriben y se corrigen con Write o Edit, nunca por Bash: ni `cat >`, `tee`, `printf >`, `sed -i`, ni un script (`python3`, `node`) que abra el archivo. El hook lo frena y te cuesta una vuelta: en las corridas reales hubo más de cien bloqueos así, y en ninguno Bash hacía falta. Si necesitás datos de un comando, corrélo, leé la salida y escribí con Write; para una corrección chica, Edit con el texto exacto.
+
 **Caracteres especiales en un artefacto**: Write y Edit convierten la secuencia de barra invertida, `u` y cuatro dígitos hexadecimales en el carácter real, también en Markdown, y un separador de línea o un carácter invisible termina dentro del archivo. Para nombrar uno, escribí su código (`U+2028`, `chr(0x2028)`), nunca el escape. Pasó en la primera y en la cuarta HU de un proyecto nuevo.
 
 ## Prohibido

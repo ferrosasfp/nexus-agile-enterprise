@@ -1,5 +1,11 @@
 # Changelog — NexusAgil
 
+## 2.2.2 — El artefacto, con Write o Edit
+
+### Cambiado
+- Los siete agentes que escriben artefactos tienen una regla explicita: el reporte y los documentos de la HU se escriben y se corrigen con Write o Edit, nunca por Bash (`cat >`, `tee`, `printf >`, `sed -i` ni un script que abra el archivo). El hook ya lo frenaba, pero cada bloqueo es una vuelta de tokens: en los transcripts de las corridas reales hay mas de cien bloqueos de este tipo, y casi todas las corridas tuvieron alguno. El check de consistencia exige la regla en cada agente.
+- `evals/RESULTADOS.md`: la fecha del eval de la 2.2.0 decia 18 de noviembre; fue el 17.
+
 ## 2.2.1 — Hallazgos de seguridad en una revision de PR
 
 ### Corregido
