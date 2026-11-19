@@ -171,6 +171,8 @@ Antes de cualquier push o PR, el punto de parada es del supervisor (punto 7 de s
 1. Push y PR: con el SÍ de la persona, hacés el push y abrís el PR en borrador.
 2. Merge: cuando el CI termina, consultás al supervisor otra vez (punto 9). Revisa el CI sobre el último commit, que sea el aprobado por QA y qué dispara el merge, y te deja la pregunta y el comando exacto. Con el SÍ de la persona, corrés ese comando y cerrás el issue de la HU si el PR no lo cerró. Con un NO, o sin respuesta, no se mergea.
 
+**Gates posteriores al cierre.** Las líneas que el hook agrega a `.gates.jsonl` después del último commit de la HU (la consulta del supervisor sobre el push y el merge, y las respuestas de la persona) no van en un push directo a `main`: quedan en el disco y entran en el primer commit de la próxima HU de ese repo (`docs(NNN): gates posteriores al cierre`), en su rama y con su PR. Volver a `main` y crear la rama nueva las lleva consigo sin conflicto, porque el archivo de `main` es el mismo que el de la rama mergeada. Si NEXUS_ROOT está fuera del repo, no hay nada que commitear. En Nexus Control, cada HU terminaba con una pregunta más y un push directo a `main` solo para esas líneas.
+
 El push y el merge los corrés vos, en la sesión principal, nunca un subagente. Un SÍ vale para lo que se preguntó: un push nuevo o un commit distinto del que se nombró es otra pregunta. Al terminar, el reporte a la persona dice qué se mergeó, con qué commit y qué disparó.
 
 Diseño y criterio de adopción: `$SKILL_DIR/references/supervisor.md`. Hasta que la evaluación lo justifique, el modo por defecto sigue siendo el checklist.
