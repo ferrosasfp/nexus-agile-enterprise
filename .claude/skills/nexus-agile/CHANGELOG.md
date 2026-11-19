@@ -1,5 +1,10 @@
 # Changelog — NexusAgil
 
+## 2.2.3 — Los gates posteriores al cierre van con la proxima HU
+
+### Cambiado
+- Las lineas que el hook agrega a `.gates.jsonl` despues del ultimo commit de la HU (supervisor y respuestas de la persona sobre el push y el merge) ya no se suben con un push directo a `main`: quedan en el disco y entran en el primer commit de la proxima HU del repo, en su rama y su PR. Esta en AUTO, FAST, FAST+AR y DONE. En Nexus Control, cada HU terminaba con una pregunta mas y un push a `main` solo para esas lineas (GH-10, 12, 21 y 23).
+
 ## 2.2.2 — El artefacto, con Write o Edit
 
 ### Cambiado

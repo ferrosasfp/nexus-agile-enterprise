@@ -266,6 +266,7 @@ Idéntico a `/nexus-fast-pipeline` Fase 4: mini-report + `_INDEX.md` update.
 ### Después de DONE (orquestador)
 
 - **Si Claude Code rechaza el Write de `cierre.md`** ("Subagents should return findings as text"): el agente devuelve el contenido entre `<<<ARTEFACTO cierre.md` y `ARTEFACTO>>>`, y vos lo escribís **tal cual** con Write, anotando el mensaje del rechazo y el sha256. No es rodear nada: es el procedimiento de `/nexus-p8-done`, y pasa con cualquier modelo.
+- **Gates posteriores al cierre.** Las líneas que el hook agrega a `.gates.jsonl` después del último commit de la HU (la consulta del supervisor sobre el push y el merge, y las respuestas de la persona) no van en un push directo a `main`: quedan en el disco y entran en el primer commit de la próxima HU de ese repo (`docs(NNN): gates posteriores al cierre`), en su rama y con su PR. Volver a `main` y crear la rama nueva las lleva consigo sin conflicto, porque el archivo de `main` es el mismo que el de la rama mergeada. Si NEXUS_ROOT está fuera del repo, no hay nada que commitear. En Nexus Control, cada HU terminaba con una pregunta más y un push directo a `main` solo para esas líneas.
 - **Push, PR y seguimiento del CI** son tuyos, no de un agente. Antes del push, el supervisor (en AUTO) o la persona revisa qué dispara; el push lo autoriza la persona.
 
 ## Reglas críticas del FAST+AR
