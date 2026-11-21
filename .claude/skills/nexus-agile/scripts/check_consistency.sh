@@ -193,6 +193,22 @@ grep -q 'Entorno de validacion' $R/project_context_template.md || fail "plantill
 grep -q 'Paso 0 — Leé el entorno de validación' $A/nexus-qa.md || fail "nexus-qa no lee el entorno"
 check_absent "QA no depende de gates del CR" 'CR ya corrió|confirmed from CR' $A/nexus-qa.md
 
+# --- Memoria en todos los proyectos (2.3.0)
+for f in $R/engram_protocol.md $A/nexus-analyst.md; do
+  grep -q 'match_mode: "any"' "$f" || fail "$(basename "$f") sin la receta de busqueda corta"
+  grep -q 'all_projects: true, scope: "global"' "$f" || fail "$(basename "$f") sin la consulta de trampas globales"
+  grep -q 'Busquedas:' "$f" || fail "$(basename "$f") sin la linea Busquedas:"
+done
+grep -q 'all_projects: true, scope: "global"' $A/nexus-architect.md || fail "nexus-architect sin la consulta de trampas globales"
+for f in nexus-fast-pipeline nexus-fast-plus-ar; do grep -q 'receta de búsqueda' "$C/$f.md" || fail "$f: el analista FAST no consulta la memoria"; done
+grep -q 'scope: global' $A/nexus-docs.md || fail "nexus-docs no propone el alcance de las lecciones"
+grep -q 'engram init' $C/nexus-p1-f0-f1.md || fail "F0 no fija el proyecto de Engram"
+grep -q 'engram sync --project' $C/nexus-p8-done.md || fail "DONE no comparte la memoria con memory_share: git"
+grep -q 'memory_share' $R/project_context_template.md || fail "plantilla sin memory_share"
+grep -q 'engram init' "$ROOT/setup.sh" || fail "setup.sh no fija el proyecto de Engram"
+check_absent "sin MEMORY.md manual como respaldo" 'manual MEMORY\.md' "$ROOT/setup.sh"
+pass "memoria en todos los proyectos revisada"
+
 echo
 if [ "$fails" -eq 0 ]; then echo "RESULTADO: sin fallas"; exit 0; fi
 echo "RESULTADO: $fails falla(s)"; exit 1

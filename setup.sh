@@ -3,8 +3,10 @@
 # NexusAgile — setup
 #
 # Installs NexusAgile into a target project AND wires up persistent memory (Engram).
-# Memory is what lets NexusAgile learn from its own errors across sessions
-# (Auto-Blindaje + mem_save/mem_search at each pipeline phase).
+# Memory keeps the project's experience across HUs: lessons approved by a person,
+# environment traps (project or global scope), facts tied to git blob hashes and
+# work claims. The analyst and the architect read it; Docs and the orchestrator
+# write it at DONE. See .claude/skills/nexus-agile/references/engram_protocol.md.
 #
 # Engram is a separate, open-source project by Gentleman Programming
 # (https://github.com/Gentleman-Programming/engram, MIT). NexusAgile integrates it
@@ -49,7 +51,26 @@ else
     warn "  brew install gentleman-programming/tap/engram"
     warn "  # or:  go install github.com/Gentleman-Programming/engram/cmd/engram@latest"
     warn "Docs: https://github.com/Gentleman-Programming/engram"
-    warn "→ NexusAgile still works without it, falling back to a manual MEMORY.md."
+    warn "→ NexusAgile still works without it, falling back to doc/sdd/_LECCIONES.md."
+  fi
+fi
+
+# ── 2b. Pin the Engram project for this repo ────────────────────────────────
+# Without it, Engram guesses the project from the folder and memories land in
+# the wrong place (a home folder, system32...). Use the same name as
+# memory_project in project-context.md.
+if command -v engram >/dev/null 2>&1; then
+  if [ -f "${TARGET_DIR}/.engram/config.json" ]; then
+    ok "Engram project already pinned: $(cat "${TARGET_DIR}/.engram/config.json" | tr -d '\n ')"
+  else
+    # Lowercase, and anything that is not a letter, digit, dot or dash becomes a dash: "Mi Proyecto_X" -> "mi-proyecto-x".
+    PROJECT_NAME="${NEXUS_MEMORY_PROJECT:-$(basename "$(cd "${TARGET_DIR}" && pwd)" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9.-]+/-/g; s/^-+|-+$//g')}"
+    if (cd "${TARGET_DIR}" && engram init "${PROJECT_NAME}") >/dev/null 2>&1; then
+      ok "Engram project pinned as '${PROJECT_NAME}' (.engram/config.json, commit it). Use it as memory_project in project-context.md."
+      [ -n "${NEXUS_MEMORY_PROJECT:-}" ] || warn "Set NEXUS_MEMORY_PROJECT=<name> before running this script to choose another name."
+    else
+      warn "engram init failed: run 'engram init ${PROJECT_NAME}' in ${TARGET_DIR} by hand. The rest of the setup continues."
+    fi
   fi
 fi
 

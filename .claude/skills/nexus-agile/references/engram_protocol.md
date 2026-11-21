@@ -22,6 +22,56 @@ Hasta la version 2.0.0-rc.3, este protocolo pedia buscar y guardar en cada fase,
 
 Los hechos estables y de equipo (stack, gate, rutas, convenciones) siguen en `project-context.md`, en el repo: se versionan, los revisa una persona y los ve todo el equipo.
 
+## Tres capas: quien manda en que
+
+| Capa | Que guarda | Autoridad |
+|------|------------|-----------|
+| Repo (`project-context.md`, `product-context.md`, SDDs, `_INDEX.md`) | Stack, convenciones, decisiones de equipo, estado de cada HU | **Verdad**: versionada y revisada por una persona |
+| Tracker (Jira, Linear, GitHub, archivo) | Quien hace que | **Coordinacion** (`references/tracker.md`) |
+| Engram | Lecciones, trampas, hechos atados al hash, reclamos | **Experiencia**: hipotesis hasta comprobarla en el codigo |
+
+Si dos capas se contradicen, manda la de arriba. Engram nunca corrige al repo: una memoria que contradice al codigo se descarta.
+
+## Proyecto y ambito
+
+**Proyecto.** Cada repo declara `memory_project` en `project-context.md` y lo fija con `engram init <memory_project>` en la raiz del repo (crea `.engram/config.json`, que se commitea; lo hace `setup.sh`, y F0 si falta). Si `.engram/config.json` y `memory_project` no coinciden, el orquestador escala. Sin eso, Engram deduce el proyecto de la carpeta y las memorias caen en otro lado: en la maquina de referencia hay memorias de proyectos reales guardadas como `usuario`, `fernando` y `system32`. Toda llamada lleva `project: <memory_project>` explicito.
+
+**Ambito.** Cada memoria tiene uno:
+
+| Ambito | Para que | Ejemplos |
+|--------|----------|----------|
+| `project` (por defecto) | Lo que vale solo en este repo | `hecho/…`, `trabajo/<HU>`, lecciones del dominio, decisiones del producto |
+| `global` | Trampas del entorno y de las herramientas, que valen en cualquier proyecto | rtk reescribe la salida de `cat`/`grep`/`diff`; Write/Edit decodifican escapes Unicode; el hook bloquea artefactos escritos por Bash |
+
+La trampa de rtk se redescubrio por separado en cinco proyectos antes de que existiera el ambito global. Una memoria global conserva su proyecto de origen (es su procedencia) y se lee desde cualquier otro con `all_projects: true, scope: "global"`: una busqueda normal por proyecto **no** la trae. Una leccion es global solo si no nombra nada propio del repo (rutas, tablas, modulos, reglas del negocio); si duda, es `project`.
+
+## Receta de busqueda
+
+En Engram, `mem_search` exige por defecto que aparezcan todas las palabras (`match_mode: all`). Una consulta larga ("escalados supervisor GH-11 lecciones L1 L2") no encuentra nada y el agente escribe "Ninguna" aunque haya lecciones: paso en GH-12, GH-18 y GH-21 de Nexus Control. Por eso la busqueda es fija, con consultas de una o dos palabras y `match_mode: "any"`:
+
+| # | Consulta | Para que |
+|---|----------|----------|
+| 1 | `mem_search(query: "leccion", project: <memory_project>, match_mode: "any")` | Lecciones aprobadas del proyecto |
+| 2 | `mem_search(query: "trampa", project: <memory_project>, match_mode: "any")` | Trampas del proyecto |
+| 3 | `mem_search(query: "trampa", all_projects: true, scope: "global")` | Trampas de todos los proyectos |
+| 4 | `mem_search(query: "decision", project: <memory_project>, match_mode: "any")` | Decisiones de la persona: lo que ya se pregunto no se vuelve a preguntar |
+| 5 | `mem_search(query: "<archivo o modulo>", project: <memory_project>, match_mode: "any")` | `hecho/` y lecciones de lo que se va a tocar (`reader.py`, `conftest`) |
+
+Las cuatro primeras son obligatorias en todos los pipelines, FAST incluido: cuestan poco y son las que traen las lecciones y las decisiones. El hook lee el transcript del analista: si uso Engram y faltan "leccion", "trampa" (cortas o con `match_mode: any`) o la global, frena. El tope sigue en 5 busquedas y 3 lecturas completas por agente. Por eso los titulos llevan la palabra del tipo (`[proyecto] trampa: …`, `[proyecto] leccion: …`): la busqueda va por el titulo y el contenido, no por el `topic_key`.
+
+`## MEMORIA CONSULTADA` lleva siempre una linea `Busquedas:` con cada consulta y cuantos resultados dio (`Busquedas: "leccion" 4, "trampa" 0, global "trampa" 2, "reader.py" 1`). Un "Ninguna" sin esa linea no vale: el hook lo frena. Sin Engram, la seccion dice "sin Engram" y se consulta `_LECCIONES.md`.
+
+## Equipo
+
+Engram es local: cada persona tiene su base. Para compartir la memoria del proyecto, `project-context.md` declara `memory_share`:
+
+| Valor | Que pasa |
+|-------|----------|
+| `none` (por defecto) | La memoria queda en la maquina de cada persona. El equipo ve `_LECCIONES.md` y `cierre.md` |
+| `git` | Al cerrar la HU, despues de guardar hechos, lecciones y reclamo, el orquestador corre `engram sync --project <memory_project>`: escribe un chunk comprimido en `.engram/chunks/` que entra en el primer commit de la proxima HU, en su rama y su PR (la misma regla que los gates posteriores al cierre). En F1 (y F0), antes de buscar, el analista corre `engram sync --import` |
+
+Lo que viaja: solo el ambito `project`, sin los prompts (probado con Engram 3.7.2); ni `global` ni `personal`. Incluye los resumenes de sesion del proyecto, que pueden tener detalle del cliente: `git` solo en repos privados, y quien aprueba el PR revisa que el chunk no lleve nada que no deba. Lo que entra a git queda en el historial aunque despues se borre. El reclamo `trabajo/<HU>` viaja recien con el commit: para coordinar en vivo manda el tracker.
+
 ### Registro de trabajo
 
 Es coordinacion, no memoria: el gate de propiedad de `references/tracker.md` consulta al tracker antes de F0, y el tracker es la autoridad. El reclamo `trabajo/<HU>` en Engram es un candado con vencimiento para lo que el tracker no ve (otra sesion de Claude en la misma maquina, una HU sin ticket). Lo guarda el orquestador al empezar, lo actualiza en cada gate y lo cierra en DONE con el estado final y el commit aprobado. Sin cambios en mas de 3 dias, se trata como abandonado: se pregunta, no se pisa. Si contradice al tracker, manda el tracker.
@@ -55,26 +105,27 @@ Registro de trabajo: comprueba que nadie mas tenga la HU y guarda `trabajo/<HU>`
 
 ### F0 + F1 — Analista (lee)
 
-Busca por el dominio de la HU, por los archivos y modulos que va a tocar, por `trampa/` (problemas del entorno) y por `hecho/` de esos archivos. En `work-item.md`, seccion `## MEMORIA CONSULTADA`:
+Corre la receta de busqueda (las cuatro consultas fijas y una por los archivos o modulos que va a tocar), en todos los pipelines, FAST y FAST+AR incluidos. Con `memory_share: git`, antes corre `engram sync --import`. En `work-item.md`, seccion `## MEMORIA CONSULTADA`, la linea `Busquedas:` y despues:
 
 | Memoria | Que dice | Estado |
 |---------|----------|--------|
 | `#id` o `_LECCIONES.md:linea` | resumen | VERIFICADA (`archivo:linea`) / VIGENTE (hecho con el mismo hash) / DESCARTADA (contradice `archivo:linea` o cambio el hash) / SIN VERIFICAR (no aplica a esta HU) |
 
-Sin memoria disponible o sin resultados: la seccion dice "Ninguna" y por que.
+Sin resultados: la seccion dice "Ninguna", con la linea `Busquedas:` que lo prueba. Sin Engram: dice "sin Engram".
 
 ### F2 — Arquitecto (lee)
 
-Busca por los patrones, tablas y archivos del diseno. Lo que use en el SDD sale verificado contra el codigo, como cualquier otra afirmacion: `SPEC_VERIFY` lo trata igual.
+Busca por los patrones, tablas y archivos del diseno, con consultas cortas y `match_mode: "any"`, mas la consulta global de trampas. Lo que use en el SDD sale verificado contra el codigo, como cualquier otra afirmacion: `SPEC_VERIFY` lo trata igual.
 
 ### DONE — Docs (hechos y reclamo) y la persona (lecciones)
 
 Docs guarda los hechos con el script y cierra `trabajo/<HU>`. Por cada leccion que sirva a otra HU (Auto-Blindaje, trampas del entorno, decisiones con su porque) escribe una entrada en `HU_DIR/lecciones.md`, con este formato. Cuando la persona la aprueba, el orquestador la guarda con `mem_save`; con fecha de revision a 60 dias, que se renueva cada vez que una HU la usa y la encuentra vigente:
 
 ```
-title: "[proyecto] [tipo]: [resumen corto]"
+title: "[proyecto] [tipo]: [resumen corto]"     # [tipo] en palabra: trampa, leccion, decision, hecho
 type: bug | decision | pattern | discovery
 topic_key: "trampa/[slug]" | "bug/[slug]" | "decision/[tema]" | "pattern/[nombre]"
+scope: project | global                          # global solo para trampas del entorno o de las herramientas
 content:
   What: [que paso o que se decidio]
   Why: [causa]
@@ -88,14 +139,20 @@ content:
 
 Con `topic_key`, la misma leccion se actualiza en lugar de duplicarse. Una memoria que la HU encontro desactualizada se corrige con su mismo `topic_key`.
 
+**Alcance global.** Docs propone `scope: global` solo si la leccion no nombra nada propio del repo; la persona lo aprueba junto con la leccion. Antes de guardar una global, el orquestador busca la misma trampa con la consulta global: si ya existe, la actualiza con `mem_update` (suma la evidencia nueva y la HU) en lugar de crear otra.
+
+**Al final de DONE**, con `memory_share: git`: `engram sync --project <memory_project>`. El chunk de `.engram/chunks/` sigue la regla de las lineas de `.gates.jsonl` posteriores al cierre: entra en el primer commit de la proxima HU, en su rama y su PR, nunca en un push directo a `main`.
+
 **Decisiones de la persona** (`decision/<tema>`): las guarda el orquestador cuando la persona decide en un gate o un escalado, con su respuesta citada y la HU. Son la fuente para no volver a preguntar lo mismo.
 
 No se guarda: lo que ya esta en el repo o en `project-context.md`, el detalle de la HU (eso es `cierre.md`), ni defectos de la metodologia (van al repo de NexusAgil, no a la memoria del proyecto).
 
 ## Privacidad
 
-La memoria es local y puede tener datos del cliente. No se copia a un repositorio publico. Cada proyecto usa su propio `project` en Engram, declarado en `project-context.md` (`memory_project`).
+La memoria es local y puede tener datos del cliente. No se copia a un repositorio publico: `memory_share: git` solo en repos privados. Cada proyecto usa su propio `project` en Engram, declarado en `project-context.md` (`memory_project`) y fijado con `engram init`. Una memoria global se lee desde todos los proyectos de la maquina: no lleva datos del cliente ni nada propio de un repo.
 
 ## Sin Engram
 
-`$NEXUS_ROOT/doc/sdd/_LECCIONES.md`, una seccion por entrada (`## hecho/...`, `## trampa/...`, `## leccion/...`) con los mismos campos. El reclamo de trabajo, sin Engram, queda en la columna Responsable de `_INDEX.md`. Lo escribe Docs, lo leen el analista y el arquitecto con Read y Grep. Tiene una ventaja: se versiona y lo ve todo el equipo.
+`$NEXUS_ROOT/doc/sdd/_LECCIONES.md`, una seccion por entrada (`## hecho/...`, `## trampa/...`, `## leccion/...`) con los mismos campos. El reclamo de trabajo, sin Engram, queda en la columna Responsable de `_INDEX.md`. Lo escribe Docs, lo leen el analista y el arquitecto con Read y Grep. Tiene una ventaja: se versiona y lo ve todo el equipo. Sin Engram no hay ambito global: cada proyecto tiene solo su `_LECCIONES.md`.
+
+Probado con Engram 3.7.2 (`scope`, `all_projects`, `match_mode`, `engram init`, `engram sync`). Con una version sin alguna de esas opciones, se usa lo que haya y se anota en `## MEMORIA CONSULTADA`.

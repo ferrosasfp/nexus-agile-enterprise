@@ -1,5 +1,24 @@
 # Changelog — NexusAgil
 
+## 2.3.0 — La memoria en todos los proyectos
+
+### Agregado
+- **Ámbito global**: las trampas del entorno y de las herramientas se guardan con `scope: global` y el analista y el arquitecto las leen desde cualquier proyecto con `all_projects: true, scope: "global"`. Una búsqueda normal por proyecto no las trae (probado con Engram 3.7.2). Docs propone el alcance de cada lección en `lecciones.md` y la persona lo aprueba. Antes de guardar una global, se busca: si ya existe, se actualiza. Por qué: la trampa de rtk se redescubrió por separado en cinco proyectos.
+- **Proyecto fijo**: `setup.sh` corre `engram init` (nombre de la carpeta o `NEXUS_MEMORY_PROJECT`), y F0 y AUTO lo corren si falta `.engram/config.json`. En la máquina de referencia había memorias de proyectos reales guardadas como `usuario`, `fernando` y `system32`.
+- **Memoria de equipo** (`memory_share: git` en `project-context.md`): DONE corre `engram sync --project <memory_project>` y el chunk entra con la próxima HU, como los gates posteriores al cierre; F0 corre `engram sync --import`. Viaja solo el ámbito `project`, sin prompts. Solo repos privados.
+- `docs/medicion-memoria.md`: qué hizo la memoria en las 12 HUs de Nexus Control.
+
+### Cambiado
+- **Receta de búsqueda**: cuatro consultas fijas de una palabra con `match_mode: "any"` (lecciones, trampas y decisiones del proyecto, y trampas globales) y una por archivo, en todos los pipelines. FAST y FAST+AR ahora también consultan: 4 de 5 HUs FAST de Nexus Control no lo hacían.
+- **El hook lee el transcript del analista** al terminar F0/F1: si usó Engram y faltan las consultas cortas de "leccion" y "trampa" o la global, frena; si falta la línea `Busquedas:` en `## MEMORIA CONSULTADA`, frena; si no buscó y la sección no dice "sin Engram" (o "Engram no disponible"), frena. En Nexus Control, 9 búsquedas largas dieron vacío por el `match_mode: all` por defecto, y en GH-12 y GH-18 el analista escribió "Ninguna" cuando había lecciones que aplicaban. La sección se lee con el título incluido, sin confundir comentarios de un bloque de código con títulos, y acepta las variantes comunes de `Busquedas:`.
+- F0 escala si `.engram/config.json` y `memory_project` no coinciden. `engram sync --import` lo corre el analista (cubre FAST); el export, el orquestador al cerrar cada HU en todos los modos (en AUTO, al cierre del lote, después de aprobar las lecciones).
+- `setup.sh` ya no promete un `MEMORY.md` manual ni búsquedas en cada fase: el respaldo sin Engram es `doc/sdd/_LECCIONES.md`. Normaliza el nombre del proyecto (`Mi Proyecto_X` → `mi-proyecto-x`) y, si `engram init` falla, avisa y sigue con el resto de la instalación.
+- `hooks/__pycache__/` ya no se versiona (estaba ignorado, pero un `.pyc` había quedado trackeado).
+
+### Revisión
+- Un revisor adversario independiente atacó el cambio antes del merge: 4 MAYOR (setup abortaba si fallaba `engram init`; FAST y AUTO no exportaban la memoria; el commit de la próxima HU no nombraba el chunk; el hook aceptaba la búsqueda larga de GH-12 si se anotaba) y 6 MENOR, corregidos en este mismo cambio. Queda abierto: cuando el agente corrige después de un bloqueo del hook (`stop_hook_active`), esa versión corregida no se guarda en `.versions/`. Ya pasaba antes; ahora el bloqueo de F1 va a ser más frecuente.
+- `docs/plan-cerebro.md`: pasos 8 y 9 cerrados con el uso real, y la segunda etapa (pasos 10 a 17).
+
 ## 2.2.3 — Los gates posteriores al cierre van con la proxima HU
 
 ### Cambiado

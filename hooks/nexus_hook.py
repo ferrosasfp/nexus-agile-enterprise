@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import sys
 import time
+import unicodedata
 from pathlib import Path
 
 GATES = ("HU_APPROVED", "SPEC_APPROVED", "RELEASE_APPROVED", "SCOPE_APPROVED")
@@ -188,6 +189,60 @@ def questions_section(hu_dir):
         return None
     found = re.search(r"^#+ *PREGUNTAS PARA EL HUMANO[^\n]*\n(.*?)(?=^#+ |\Z)", item.read_text(encoding="utf-8"), re.M | re.S)
     return found.group(1) if found else None
+
+
+# "Busquedas:", "**Búsquedas:**", "- Busqueda (3):", "| Busquedas | ...", "### Busquedas"
+MEMORY_SEARCHES = re.compile(r"^[\s>*_|\d.#-]*b[uú]squedas?\b[^:\n|]{0,30}[:|]|^#+\s*b[uú]squedas?\b", re.M | re.I)
+NO_ENGRAM = re.compile(r"sin engram|engram no (?:esta|está|disponible|instalado)|no hay engram", re.I)
+FENCE = re.compile(r"^ {0,3}(```|~~~).*?^ {0,3}\1[^\n]*$", re.M | re.S)
+
+
+def memory_section(hu_dir):
+    """Titulo y cuerpo de MEMORIA CONSULTADA, hasta el proximo titulo del mismo nivel o mayor (un ### adentro es parte
+    de la seccion). Los bloques de codigo no cuentan como titulos."""
+    text = unicodedata.normalize("NFC", (hu_dir / "work-item.md").read_text(encoding="utf-8"))
+    text = FENCE.sub(lambda m: re.sub(r"(?m)^", "    ", m.group(0)), text)
+    head = re.search(r"^(#+) *MEMORIA CONSULTADA[^\n]*(?:\n|\Z)", text, re.M | re.I)
+    if not head:
+        return None
+    rest = text[head.end():]
+    end = re.search(r"^#{1,%d} " % len(head.group(1)), rest, re.M)
+    return head.group(0) + (rest[:end.start()] if end else rest)
+
+
+def memory_queries(transcript):
+    """Las llamadas a mem_search del agente, leidas de su transcript; None si no hay transcript."""
+    if not transcript or not Path(transcript).is_file():
+        return None
+    calls = []
+    with open(transcript, encoding="utf-8") as handle:
+        for raw in handle:
+            if "mem_search" not in raw:
+                continue
+            try:
+                content = (json.loads(raw).get("message") or {}).get("content")
+            except (ValueError, AttributeError):
+                continue
+            for item in content if isinstance(content, list) else ():
+                if isinstance(item, dict) and item.get("type") == "tool_use" and str(item.get("name", "")).endswith("mem_search"):
+                    calls.append(item.get("input") if isinstance(item.get("input"), dict) else {})
+    return calls
+
+
+def missing_recipe(calls):
+    """Lo que falta de la receta de busqueda: "leccion" y "trampa" cortas (o con match_mode any) y la global de trampas.
+    En GH-12 de Nexus Control, "escalados supervisor GH-11 lecciones L1 L2" dio vacio y habia cuatro lecciones."""
+    def plain(text):
+        return unicodedata.normalize("NFKD", str(text)).encode("ascii", "ignore").decode().lower()
+
+    def short(call, word):
+        words = plain(call.get("query", "")).split()
+        return any(w.startswith(word) for w in words) and (len(words) <= 2 or plain(call.get("match_mode")) == "any")
+
+    missing = [f'"{w}"' for w in ("leccion", "trampa") if not any(short(c, w) for c in calls)]
+    if not any(str(c.get("all_projects")).lower() == "true" and plain(c.get("scope")) == "global" for c in calls):
+        missing.append('global "trampa" (all_projects: true, scope: "global")')
+    return missing
 
 
 def open_questions(hu_dir):
@@ -1345,9 +1400,28 @@ def cmd_stop(data):
             problems.append(f"{report.name} no tiene la linea STATUS:")
     if spawn["phase"] in ("F0F1", "F1") and (hu_dir / "work-item.md").is_file() and questions_section(hu_dir) is None:
         problems.append("work-item.md no tiene la seccion PREGUNTAS PARA EL HUMANO. Agregala, aunque diga Ninguna")
-    if spawn["phase"] in ("F0F1", "F1") and (hu_dir / "work-item.md").is_file() and \
-            not re.search(r"^#+ *MEMORIA CONSULTADA", (hu_dir / "work-item.md").read_text(encoding="utf-8"), re.M | re.I):
-        problems.append("work-item.md no tiene la seccion MEMORIA CONSULTADA. Agregala, aunque diga Ninguna y por que")
+    if spawn["phase"] in ("F0F1", "F1") and (hu_dir / "work-item.md").is_file():
+        memory = memory_section(hu_dir)
+        calls = memory_queries(transcript)
+        recipe = "references/engram_protocol.md, Receta de busqueda"
+        if memory is None:
+            problems.append("work-item.md no tiene la seccion MEMORIA CONSULTADA. Agregala, aunque diga Ninguna y por que")
+        elif calls:
+            # Uso Engram: tiene que haber corrido la receta, no solo anotarla.
+            missing = missing_recipe(calls)
+            if missing:
+                problems.append(f"no corriste la receta de busqueda: faltan {', '.join(missing)}. Las consultas largas no "
+                                f"encuentran nada (match_mode all por defecto); {recipe}")
+            elif not MEMORY_SEARCHES.search(memory):
+                problems.append('MEMORIA CONSULTADA no tiene la linea "Busquedas:" con cada consulta y cuantos resultados dio')
+        elif not NO_ENGRAM.search(memory):
+            if calls is None:
+                if not MEMORY_SEARCHES.search(memory):
+                    problems.append('MEMORIA CONSULTADA no tiene la linea "Busquedas:" con cada consulta y cuantos resultados '
+                                    f'dio (o "sin Engram"); {recipe}')
+            else:
+                problems.append(f'no consultaste la memoria: corre la receta de busqueda ({recipe}) o, si no tenes Engram, '
+                                'escribi "sin Engram" en MEMORIA CONSULTADA')
     if spawn["phase"] == "F4" and transcript and Path(transcript).is_file():
         if '"name":"Bash"' not in Path(transcript).read_text(encoding="utf-8").replace('": "', '":"'):
             problems.append("QA no ejecuto ningun comando: su evidencia debe ser comando y salida")
