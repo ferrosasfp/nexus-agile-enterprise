@@ -4,7 +4,7 @@
 
 NexusAgil es una metodología de desarrollo con agentes para Claude Code. Procesa una Historia de Usuario (HU) por vez, por fases, con agentes especializados, gates que da una persona y un hook que hace cumplir las reglas que no deben depender de la memoria del modelo.
 
-Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.2.3**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
+Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.3.0**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
 
 **Estado:** release candidate. El supervisor de AUTO es experimental. Las mediciones están en [Evaluación](#evaluación).
 
@@ -20,6 +20,7 @@ Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión
 | La implementación se aleja del plan | **Drift Detection** en QA: plan contra implementación |
 | El SDD afirma cosas falsas del código | **SPEC_VERIFY**: un agente aparte verifica cada afirmación del SDD contra el código, y el hook no deja empezar F3 con falsas abiertas |
 | Los errores se repiten entre sesiones | **Auto-Blindaje + memoria (Engram)**: los hechos verificados se guardan atados al hash de git de su archivo; las lecciones, solo si una persona las aprueba |
+| La misma trampa se redescubre en cada proyecto | **Ámbito global**: las trampas del entorno y de las herramientas se leen desde todos los proyectos |
 | Dos agentes (o dos personas) hacen la misma HU | **Gate de propiedad**: antes de F0 se consulta el tracker, y el hook no deja empezar una HU ajena |
 | Contexto saturado y alucinaciones | **Protocolo de sub-agentes**: cada fase empieza con contexto limpio |
 | La IA recuerda otra versión de una librería | **Versión instalada**: el SDD anota la versión instalada y dónde se verificó cada símbolo externo |
@@ -398,6 +399,23 @@ Antes del primer analista, el orquestador consulta el responsable y el estado de
 
 Con `ajena`, se para y se escala, también en AUTO. El hook no deja lanzar el primer F0/F1 sin la línea `PROPIEDAD:` ni con `ajena`. Con `tracker_write: true`, NexusAgil comenta en el ticket al tomarla y al cerrarla. Mover el ticket de estado lo hace la persona. Si la memoria contradice al tracker, manda el tracker.
 
+### Memoria: tres capas
+
+NexusAgil es el arnés de cada proyecto y Engram guarda su experiencia, pero no es la fuente de verdad (`references/engram_protocol.md`):
+
+| Capa | Qué guarda | Autoridad |
+|---|---|---|
+| Repo (`project-context.md`, SDDs, `_INDEX.md`) | Stack, convenciones, decisiones, estado de cada HU | Verdad |
+| Tracker | Quién hace qué | Coordinación |
+| Engram | Lecciones aprobadas, trampas, hechos atados al hash, reclamos | Experiencia: hipótesis hasta comprobarla en el código |
+
+- **Proyecto fijo.** `memory_project` en `project-context.md`, fijado con `engram init` (lo hace `setup.sh`). Sin eso, Engram deduce el proyecto de la carpeta y las memorias caen en otro lado.
+- **Ámbito global.** Las trampas del entorno y de las herramientas (rtk, Write/Edit, el hook) se guardan con `scope: global` y se leen desde cualquier proyecto. La trampa de rtk se había redescubierto por separado en cinco proyectos.
+- **Búsqueda fija.** Tres consultas cortas en todos los pipelines, FAST incluido: lecciones y trampas del proyecto, y trampas globales. El work-item lleva la línea `Busquedas:` y el hook no acepta un "Ninguna" sin ella. Las consultas largas devolvían vacío y el agente escribía "Ninguna" con lecciones que aplicaban.
+- **Equipo.** Con `memory_share: git`, la memoria del proyecto viaja en `.engram/chunks/` con los PRs (`engram sync`), solo en repos privados. Por defecto queda en la máquina de cada persona.
+
+Lo que hizo la memoria en 12 HUs reales: `docs/medicion-memoria.md`.
+
 ### Rutas
 
 | Variable | Qué es | Por defecto |
@@ -770,6 +788,7 @@ cd tu-proyecto && /tmp/nexus-agile/setup.sh
 
 - copia el skill, los agentes, los comandos y `hooks/nexus_hook.py` a `.claude/`;
 - instala Engram si falta (Homebrew o `go install`);
+- fija el proyecto de Engram con `engram init` (nombre de la carpeta, o `NEXUS_MEMORY_PROJECT`), que va como `memory_project` en `project-context.md`;
 - escribe un `.mcp.json` con el servidor de Engram.
 
 **No registra los hooks**: hay que agregar el bloque de `hooks/hooks.json` a `.claude/settings.json`, cambiando `${CLAUDE_PLUGIN_ROOT}/hooks` por la ruta real (`references/enforcement.md`). Sin eso, las reglas son solo texto.

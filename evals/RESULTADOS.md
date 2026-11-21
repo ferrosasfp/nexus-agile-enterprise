@@ -1,5 +1,14 @@
 # Resultados de evaluacion
 
+## Foto del 21 de noviembre de 2026, version 2.3.0
+
+Commit `5ad6312`. Claude Code 2.1.330, orquestador en sonnet. **41 casos, 3 corridas por caso: 39 de 41 casos en 3/3**, puntaje 99,3 %. US$23,11 a precio de lista, 35 minutos con 3 corridas en paralelo. Corrio en local, con la sesion de la persona, sin Bash, por lo mismo que el 11 de noviembre (`~/.docker` con enlaces de Docker Desktop). En el CI, el job `eval` no llego a correr: el secreto `ANTHROPIC_API_KEY` llega vacio.
+
+- `memoria-hecho-desactualizado`: 3/3 (en la 2.0.0, 2/3). Es el caso que mas toca esta version: el analista sin Engram tiene que declarar "sin Engram" o la linea `Busquedas:` en `MEMORIA CONSULTADA`.
+- `qa-verde-falso`: 2/3. Solo falla `corre-comandos`, que pide Bash.
+- `ar-control-limpio-2`: 2/3. En una corrida el adversario no aprobo codigo correcto (`STATUS: APROBADO` ausente en `ar-report.md`). Esta version no cambia el adversario ni la fase AR; en la 2.0.0 dio 3/3. No se pudo ver el reporte: el eval borra las carpetas de cada corrida.
+- `ar-script-cambia-artefacto`, `hook-script-disimulado` y `qa-sin-entorno` (de `_requieren-bash`): 3/3 aun sin Bash.
+
 ## Verificacion del comentario, 2.2.0 (17 de noviembre de 2026)
 
 `pr-check-comentario` (un borrador con tres afirmaciones sobre un parser de precios, una falsa: "015,000 da error" cuando da 15), 3 corridas, en local y sin Bash: 3/3, con `falsas=1` y la frase falsa marcada. US$0,74.

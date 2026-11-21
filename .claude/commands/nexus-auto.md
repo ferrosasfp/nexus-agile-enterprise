@@ -44,7 +44,7 @@ Con `--supervisor`, en cada punto de parada un agente aparte (`nexus-supervisor`
 
 Parsear `$ARGUMENTS` para extraer la lista de HU-IDs y el flag `--user` si existe.
 
-**Gate de propiedad, antes del primer analista de cada HU** (`$SKILL_DIR/references/tracker.md`): consultá en el tracker quién tiene la HU y en qué estado está, y el reclamo `trabajo/<HU>` en memoria. Una HU de otra persona o sesión (`ajena`) siempre se escala, aunque el resto del lote siga. Pasá el resultado en la línea `PROPIEDAD:` del prompt del analista: el hook no lo deja lanzar sin ella.
+**Gate de propiedad, antes del primer analista de cada HU** (`$SKILL_DIR/references/tracker.md`): consultá en el tracker quién tiene la HU y en qué estado está, y el reclamo `trabajo/<HU>` en memoria. Una HU de otra persona o sesión (`ajena`) siempre se escala, aunque el resto del lote siga. Pasá el resultado en la línea `PROPIEDAD:` del prompt del analista: el hook no lo deja lanzar sin ella. Antes de la primera HU del lote, comprobá el proyecto de Engram como en `/nexus-p1-f0-f1` paso 1b.
 
 **Rutas**: antes de lanzar, resolvé `NEXUS_ROOT`, `CODE_ROOT`, `SKILL_DIR` y `BASE_REF`, y pasá sus valores reales en cada prompt. `BASE_REF` es la base real de la HU, no siempre `main`: si la HU parte de otro PR, es esa rama o ese commit. `SKILL_DIR` es la primera que exista de `${CLAUDE_PLUGIN_ROOT}/.claude/skills/nexus-agile`, `.claude/skills/nexus-agile` y `~/.claude/skills/nexus-agile`; las demás reglas están en `$SKILL_DIR/references/paths.md`.
 
@@ -171,7 +171,7 @@ Antes de cualquier push o PR, el punto de parada es del supervisor (punto 7 de s
 1. Push y PR: con el SÍ de la persona, hacés el push y abrís el PR en borrador.
 2. Merge: cuando el CI termina, consultás al supervisor otra vez (punto 9). Revisa el CI sobre el último commit, que sea el aprobado por QA y qué dispara el merge, y te deja la pregunta y el comando exacto. Con el SÍ de la persona, corrés ese comando y cerrás el issue de la HU si el PR no lo cerró. Con un NO, o sin respuesta, no se mergea.
 
-**Gates posteriores al cierre.** Las líneas que el hook agrega a `.gates.jsonl` después del último commit de la HU (la consulta del supervisor sobre el push y el merge, y las respuestas de la persona) no van en un push directo a `main`: quedan en el disco y entran en el primer commit de la próxima HU de ese repo (`docs(NNN): gates posteriores al cierre`), en su rama y con su PR. Volver a `main` y crear la rama nueva las lleva consigo sin conflicto, porque el archivo de `main` es el mismo que el de la rama mergeada. Si NEXUS_ROOT está fuera del repo, no hay nada que commitear. En Nexus Control, cada HU terminaba con una pregunta más y un push directo a `main` solo para esas líneas.
+**Gates posteriores al cierre.** Las líneas que el hook agrega a `.gates.jsonl` después del último commit de la HU (la consulta del supervisor sobre el push y el merge, y las respuestas de la persona) no van en un push directo a `main`: quedan en el disco y entran en el primer commit de la próxima HU de ese repo (`docs(NNN): gates posteriores al cierre`), en su rama y con su PR. Volver a `main` y crear la rama nueva las lleva consigo sin conflicto, porque el archivo de `main` es el mismo que el de la rama mergeada. Si NEXUS_ROOT está fuera del repo, no hay nada que commitear. Con `memory_share: git`, ese mismo commit lleva el chunk nuevo de `.engram/` (`chunks/` y `manifest.json`), que vive en CODE_ROOT aunque NEXUS_ROOT esté afuera. En Nexus Control, cada HU terminaba con una pregunta más y un push directo a `main` solo para esas líneas.
 
 El push y el merge los corrés vos, en la sesión principal, nunca un subagente. Un SÍ vale para lo que se preguntó: un push nuevo o un commit distinto del que se nombró es otra pregunta. Al terminar, el reporte a la persona dice qué se mergeó, con qué commit y qué disparó.
 
@@ -484,6 +484,8 @@ Este es el más grande del batch — 4 waves, ~19 archivos. Cuando F3 completa �
 ### §8.2 Completion Report
 
 Al terminar TODAS las HUs del batch (o al escalar en la regla #10), presentá el reporte con el formato de `$SKILL_DIR/references/auto_completion_report.md`. Leelo recién en ese momento.
+
+Con el reporte, la persona aprueba las lecciones del lote (`lecciones.md` de cada HU, con el alcance que propone Docs). Guardá las aprobadas como dice `/nexus-p8-done` (Después de DONE) y, con `memory_share: git`, corré después `engram sync --project <memory_project>`: el chunk entra con la próxima HU, como los gates posteriores al cierre.
 
 ---
 

@@ -108,7 +108,8 @@
 | **tracker_user** | como aparece en el tracker la persona que usa NexusAgil |
 | **tracker_write** | `true` / `false` (default `false`). Con `true`, NexusAgil comenta en el ticket al tomarlo y al cerrarlo |
 | **gitignore** | Agregar `doc/sdd/**/.nexus-state.json` al `.gitignore` del repo: es estado de ejecucion que el hook reescribe en cada agente. `.gates.jsonl`, `.versions/` y `.violations/` si se versionan: son la auditoria |
-| **memory_project** | nombre del proyecto en Engram; uno por cliente, nunca compartido entre clientes |
+| **memory_project** | nombre del proyecto en Engram; uno por cliente, nunca compartido entre clientes. Se fija con `engram init <memory_project>` en la raiz del repo |
+| **memory_share** | `none` (por defecto) o `git`: con `git`, la memoria del proyecto viaja en `.engram/chunks/` con los PRs de las HUs. Solo repos privados (`references/engram_protocol.md`, "Equipo") |
 | **security_cmd** | [opcional: controles de seguridad sin modelo, como busqueda de secretos, auditoria de dependencias o reglas estaticas (ej: `gitleaks detect --no-git && pnpm audit --prod && semgrep --config auto --error`). QA lo corre una vez en F4, junto al gate] |
 | **evidence_dir** | [opcional: carpetas absolutas, entre comillas invertidas, fuera del repo, donde AR, CR, QA y seguridad pueden dejar evidencia por Bash; ej: `/home/ana/auditoria`. Nunca el repo ni una carpeta que lo contenga] |
 | **forbidden_commands** | [opcional: expresion regular entre comillas invertidas, que el hook bloquea para todos, incluida la sesion principal. Dentro de la tabla, la barra va escapada (`\|`) y el hook la lee como alternativa; ej: `supabase db push\|prisma migrate deploy\|vercel .*--prod`] |

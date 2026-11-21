@@ -666,6 +666,90 @@ class AlTerminar(HookCase):
         self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n")
         self.assertIn("MEMORIA CONSULTADA", self.stop("nexus-analyst").stdout)
 
+    def test_memoria_ninguna_sin_busquedas(self):
+        # GH-12 de Nexus Control: "Ninguna" despues de dos busquedas largas vacias; habia cuatro lecciones.
+        self.spawn("F1", "nexus-analyst")
+        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n## MEMORIA CONSULTADA\nNinguna\n")
+        self.assertIn("Busquedas:", self.stop("nexus-analyst").stdout)
+
+    def test_memoria_tabla_sin_busquedas(self):
+        self.spawn("F1", "nexus-analyst")
+        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n## MEMORIA CONSULTADA\n| id | dice | estado |\n|--|--|--|\n| #1 | x | VIGENTE |\n")
+        self.assertIn("Busquedas:", self.stop("nexus-analyst").stdout)
+
+    def test_memoria_con_busquedas(self):
+        for line in ('Busquedas: "leccion" 4, "trampa" 0, global "trampa" 2',
+                     '**Búsquedas:** "leccion" 0', '- Busquedas: "leccion" 1', '**Busquedas**: "trampa" 0'):
+            with self.subTest(line=line):
+                self.spawn("F1", "nexus-analyst")
+                self.write("work-item.md", f"# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n## MEMORIA CONSULTADA\nNinguna\n{line}\n")
+                self.assertEqual(self.stop("nexus-analyst").stdout, "")
+
+    def test_memoria_busquedas_en_subseccion(self):
+        self.spawn("F1", "nexus-analyst")
+        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n## MEMORIA CONSULTADA\n### Detalle\nBusquedas: \"leccion\" 2\n## Alcance\nx\n")
+        self.assertEqual(self.stop("nexus-analyst").stdout, "")
+
+    def test_memoria_busquedas_fuera_de_la_seccion_no_vale(self):
+        self.spawn("F1", "nexus-analyst")
+        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n## MEMORIA CONSULTADA\nNinguna\n## Notas\nBusquedas: \"leccion\" 0\n")
+        self.assertIn("Busquedas:", self.stop("nexus-analyst").stdout)
+
+    def memory_stop(self, calls, section):
+        transcript = self.tmp / "agent-analista.jsonl"
+        lines = [{"message": {"role": "user", "content": "FASE: F1\nhaz"}}]
+        lines += [{"message": {"role": "assistant", "content": [
+            {"type": "tool_use", "name": "mcp__engram__mem_search", "input": call}]}} for call in calls]
+        transcript.write_text("".join(json.dumps(line) + "\n" for line in lines))
+        self.spawn("F1", "nexus-analyst")
+        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n" + section)
+        return self.run_hook("stop", agent_type="nexus-agile:nexus-analyst", agent_transcript_path=str(transcript)).stdout
+
+    RECETA = [{"query": "leccion", "project": "p", "match_mode": "any"}, {"query": "trampa", "project": "p", "match_mode": "any"},
+              {"query": "trampa", "all_projects": True, "scope": "global"}]
+
+    def test_memoria_receta_completa(self):
+        self.assertEqual(self.memory_stop(self.RECETA, '## MEMORIA CONSULTADA\nNinguna\nBusquedas: "leccion" 0, "trampa" 0, global "trampa" 0\n'), "")
+
+    def test_memoria_consulta_larga_de_gh12(self):
+        calls = [{"query": "escalados supervisor GH-11 lecciones L1 L2", "project": "p"},
+                 {"query": "transcripts.py hecho trampa", "project": "p"}]
+        out = self.memory_stop(calls, '## MEMORIA CONSULTADA\nNinguna\nBusquedas: las dos de arriba, 0\n')
+        self.assertIn("no corriste la receta", out)
+        self.assertIn('leccion', out)
+        self.assertIn("global", out)
+
+    def test_memoria_receta_sin_linea_busquedas(self):
+        self.assertIn("Busquedas:", self.memory_stop(self.RECETA, "## MEMORIA CONSULTADA\nNinguna\n"))
+
+    def test_memoria_con_engram_no_vale_sin_engram(self):
+        # Busco con Engram: "sin Engram" no lo exime de la receta.
+        out = self.memory_stop([{"query": "leccion", "project": "p"}], "## MEMORIA CONSULTADA\nNinguna: sin Engram\n")
+        self.assertIn("no corriste la receta", out)
+
+    def test_memoria_sin_consultas_ni_aviso(self):
+        self.assertIn("no consultaste la memoria", self.memory_stop([], '## MEMORIA CONSULTADA\nNinguna\nBusquedas: ninguna\n'))
+
+    def test_memoria_sin_engram_en_el_titulo(self):
+        for section in ("## MEMORIA CONSULTADA (sin Engram)\nNinguna\n", "## MEMORIA CONSULTADA\nNinguna: Engram no disponible\n"):
+            with self.subTest(section=section):
+                self.assertEqual(self.memory_stop([], section), "")
+
+    def test_memoria_titulo_al_final_del_archivo(self):
+        out = self.memory_stop([], "## MEMORIA CONSULTADA")
+        self.assertIn("no consultaste la memoria", out)
+        self.assertNotIn("no tiene la seccion MEMORIA", out)
+
+    def test_memoria_comentario_en_bloque_de_codigo(self):
+        section = '## MEMORIA CONSULTADA\n```bash\n# consulta\nengram search x\n```\nBusquedas: "leccion" 1, "trampa" 0, global "trampa" 0\n'
+        self.assertEqual(self.memory_stop(self.RECETA, section), "")
+
+    def test_memoria_variantes_de_busquedas(self):
+        for line in ("| Busquedas | leccion 1 |", "1. Busquedas: leccion 1", "_Busquedas:_ leccion 1", "Busqueda: leccion 1",
+                     "Busquedas realizadas: leccion 1", "Busquedas (3): leccion 1", "### Busquedas", "Bu\u0301squedas: leccion 1"):
+            with self.subTest(line=line):
+                self.assertEqual(self.memory_stop(self.RECETA, f"## MEMORIA CONSULTADA\nNinguna\n{line}\n"), "")
+
     def test_falta_reporte(self):
         self.write("work-item.md")
         self.spawn("AR", "nexus-adversary")
@@ -795,7 +879,7 @@ class Versiones(HookCase):
         transcript.write_text(json.dumps({"message": {"role": "user", "content": "FASE: F2\nhaz"}}) + "\n")
         self.assertAllowed(self.spawn("F1", "nexus-analyst"))
         for n in (1, 2, 3):
-            self.write("work-item.md", f"v{n}\n## PREGUNTAS PARA EL HUMANO\nNinguna\n## MEMORIA CONSULTADA\nNinguna\n")
+            self.write("work-item.md", f"v{n}\n## PREGUNTAS PARA EL HUMANO\nNinguna\n## MEMORIA CONSULTADA\nNinguna\nBusquedas: \"leccion\" 0\n")
             self.run_hook("stop", agent_type="nexus-agile:nexus-analyst", agent_transcript_path=str(transcript))
         self.assertEqual(len(list((self.hu / ".versions").glob("work-item-*.md"))), 3)
         # Otro agente que nunca se lanzo no hereda nada
@@ -1284,7 +1368,7 @@ class ProyectoNuevo(HookCase):
 
     def test_caracteres_invisibles_en_artefactos(self):
         self.spawn("F1", "nexus-analyst")
-        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n## MEMORIA CONSULTADA\nNinguna\nAC-1: el total \u202esin descuento\n")
+        self.write("work-item.md", "# WI\n## PREGUNTAS PARA EL HUMANO\nNinguna\n## MEMORIA CONSULTADA\nNinguna\nBusquedas: \"leccion\" 0\nAC-1: el total \u202esin descuento\n")
         out = self.run_hook("stop", agent_type="nexus-agile:nexus-analyst")
         self.assertIn("U+202E", out.stdout)
 

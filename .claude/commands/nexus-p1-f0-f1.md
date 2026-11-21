@@ -17,6 +17,7 @@ Lanza el sub-agente `nexus-analyst` para ejecutar F0 (Context Bootstrap) + F1 (W
 ## Acciones
 
 1. Verificá que `project-context.md` exista en NEXUS_ROOT. Si no existe, el sub-agente lo genera primero.
+1b. **Proyecto de Engram** (`$SKILL_DIR/references/engram_protocol.md`, "Proyecto y ambito"): si hay Engram, leé `$CODE_ROOT/.engram/config.json`. Si falta y `project-context.md` declara `memory_project`, corré `engram init <memory_project>` en `$CODE_ROOT` (el archivo se commitea con la HU). Si existe y su `project_name` no coincide con `memory_project`, **pará y escalá**: las memorias quedarían repartidas en dos proyectos, y cuál vale lo decide la persona. El `engram sync --import` de `memory_share: git` lo corre el analista.
 2. Leé `$NEXUS_ROOT/doc/sdd/_INDEX.md` para conocer el siguiente NNN y creá `$NEXUS_ROOT/doc/sdd/NNN-titulo/`: los hooks exigen ese `HU_DIR` en el prompt.
 2b. **Gate de propiedad** (`$SKILL_DIR/references/tracker.md`): consultá en el tracker del proyecto quién tiene la HU y en qué estado está, y `mem_search "trabajo/[HU]"` si hay memoria. Si es de otra persona o sesión (`ajena`), **pará y escalá**: tomarla lo decide la persona. Si no, pasá el resultado en la línea `PROPIEDAD:` del prompt y guardá el reclamo `trabajo/[HU]`. El hook no deja lanzar el primer analista sin esa línea.
 3. Lanzá el sub-agente con el Task tool:

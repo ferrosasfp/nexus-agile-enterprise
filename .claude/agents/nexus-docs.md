@@ -69,6 +69,7 @@ Si tenés `mem_save`, guardá con `topic_key`, siguiendo `$SKILL_DIR/references/
 2. **Cierre de `trabajo/<HU>`**: estado final, rama y commit aprobado.
 3. Una memoria que la HU encontró desactualizada (DESCARTADA en `## MEMORIA CONSULTADA`) se corrige con su mismo `topic_key`.
 4. **Las lecciones no las guardás vos**: escribilas en `$NEXUS_ROOT/doc/sdd/NNN-titulo/lecciones.md` con el formato del protocolo, cada una con evidencia y con cómo volver a comprobarla. Se guardan cuando la persona las aprueba.
+5. **Alcance**: cada lección declara `scope: project` o `scope: global`. Proponé `global` solo para trampas del entorno o de las herramientas (rtk, Write/Edit, el hook, Claude Code) que no nombran nada propio del repo; ante la duda, `project`. Los títulos llevan la palabra del tipo (`[proyecto] trampa: …`), porque la búsqueda va por el título.
 
 No guardes lo que ya está en el repo, el detalle de la HU ni defectos de la metodología. Si una lección es un hecho estable del proyecto, proponé agregarlo a `project-context.md` en `cierre.md`: lo decide la persona. Sin Engram, escribí lo mismo en `$NEXUS_ROOT/doc/sdd/_LECCIONES.md`.
 

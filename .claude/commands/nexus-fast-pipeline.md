@@ -86,6 +86,7 @@ Task tool:
     - Scope IN debe ser EXHAUSTIVO (lista exacta de archivos a tocar: hasta 2 de código, más sus tests). Si supera eso, ABORTÁ: esta HU no es FAST.
     - Smart Sizing forzado a "FAST" en el work-item.
     - NO necesitás Análisis de paralelismo (FAST asume secuencial).
+    - MEMORIA: corré la receta de búsqueda de $SKILL_DIR/references/engram_protocol.md ("leccion" y "trampa" del proyecto con match_mode "any", y "trampa" global con all_projects + scope global), también en este modo. El work-item lleva `## MEMORIA CONSULTADA` con la línea `Busquedas:`.
 
     INPUT:
     - HU del humano: $ARGUMENTS
@@ -230,7 +231,8 @@ Task tool:
 ### Después de DONE (orquestador)
 
 - **Si Claude Code rechaza el Write de `cierre.md`** ("Subagents should return findings as text"): el agente devuelve el contenido entre `<<<ARTEFACTO cierre.md` y `ARTEFACTO>>>`, y vos lo escribís **tal cual** con Write, anotando el mensaje del rechazo y el sha256. No es rodear nada: es el procedimiento de `/nexus-p8-done`, y pasa con cualquier modelo.
-- **Gates posteriores al cierre.** Las líneas que el hook agrega a `.gates.jsonl` después del último commit de la HU (la consulta del supervisor sobre el push y el merge, y las respuestas de la persona) no van en un push directo a `main`: quedan en el disco y entran en el primer commit de la próxima HU de ese repo (`docs(NNN): gates posteriores al cierre`), en su rama y con su PR. Volver a `main` y crear la rama nueva las lleva consigo sin conflicto, porque el archivo de `main` es el mismo que el de la rama mergeada. Si NEXUS_ROOT está fuera del repo, no hay nada que commitear. En Nexus Control, cada HU terminaba con una pregunta más y un push directo a `main` solo para esas líneas.
+- **Gates posteriores al cierre.** Las líneas que el hook agrega a `.gates.jsonl` después del último commit de la HU (la consulta del supervisor sobre el push y el merge, y las respuestas de la persona) no van en un push directo a `main`: quedan en el disco y entran en el primer commit de la próxima HU de ese repo (`docs(NNN): gates posteriores al cierre`), en su rama y con su PR. Volver a `main` y crear la rama nueva las lleva consigo sin conflicto, porque el archivo de `main` es el mismo que el de la rama mergeada. Si NEXUS_ROOT está fuera del repo, no hay nada que commitear. Con `memory_share: git`, ese mismo commit lleva el chunk nuevo de `.engram/` (`chunks/` y `manifest.json`), que vive en CODE_ROOT aunque NEXUS_ROOT esté afuera. En Nexus Control, cada HU terminaba con una pregunta más y un push directo a `main` solo para esas líneas.
+- **Memoria compartida** (solo con `memory_share: git`): después de guardar las lecciones aprobadas y cerrar el reclamo `trabajo/<HU>`, corré `engram sync --project <memory_project>` en CODE_ROOT, como en `/nexus-p8-done`. El chunk entra con la próxima HU (ver el punto anterior).
 - **Push, PR y seguimiento del CI** son tuyos, no de un agente. Antes del push, el supervisor (en AUTO) o la persona revisa qué dispara; el push lo autoriza la persona.
 
 ## Reglas críticas del FAST pipeline
