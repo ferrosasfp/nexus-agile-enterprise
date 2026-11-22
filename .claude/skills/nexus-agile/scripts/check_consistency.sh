@@ -250,6 +250,10 @@ grep -q 'mark_reviewed' $A/nexus-docs.md || fail "nexus-docs no renueva las memo
 grep -q 'mem_review' <(sed -n '1,6p' $A/nexus-docs.md) || fail "nexus-docs no tiene la herramienta mem_review"
 grep -q 'Memorias para revisar' "$C/nexus-p8-done.md" || fail "nexus-p8-done no pregunta por las memorias vencidas"
 pass "renovacion revisada"
+for f in nexus-fast-pipeline; do
+  grep -q 'nexus_memory.py usadas' "$C/$f.md" || fail "$f: el cierre FAST no renueva las memorias usadas"
+  grep -q 'nexus_candidates.py' "$C/$f.md" || fail "$f: el cierre FAST no junta las candidatas"
+done
 
 echo
 if [ "$fails" -eq 0 ]; then echo "RESULTADO: sin fallas"; exit 0; fi

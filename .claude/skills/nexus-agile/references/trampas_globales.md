@@ -55,3 +55,10 @@
 - **Que hacer:** comprobar que el texto a mutar aparece exactamente una vez (`grep -c`), exigir "N failed / M passed" con nombres de tests, y que fallen por el mutante y no por otra rotura. Una corrida vacia necesita un control positivo.
 - **Verify:** la salida de cada mutante trae el conteo de tests y el nombre del que cayo.
 - **Origen:** 9 HUs de un mismo proyecto, 2026. Revisar: 2027-05-21.
+
+## T8. Los comandos interactivos no funcionan en el Bash del agente
+
+- **Que pasa:** el Bash del agente no tiene una terminal para responder preguntas. `git add -p` (y `git add -i`, `git rebase -i`, un editor que abre `git commit` sin `-m`) se queda esperando o termina sin hacer nada. Paso al querer commitear un solo cambio de un archivo que tenia otro cambio ajeno sin commitear.
+- **Que hacer:** para commitear un solo hunk, `git diff -U0 -- <archivo> > p.patch`, dejar en el patch solo ese hunk y `git apply --cached --unidiff-zero p.patch` (con `-U0`, el `--unidiff-zero` es obligatorio). Comprobarlo con `git diff --cached -- <archivo>` (solo el hunk elegido) y `git diff -- <archivo>` (el otro sigue). Para lo demas, la forma no interactiva: `git commit -m`, `GIT_EDITOR=true`.
+- **Verify:** `git add -p` sobre un archivo con dos cambios, desde el Bash del agente: si no deja elegir, la trampa aplica.
+- **Origen:** HU de un proyecto con cambios ajenos sin commitear en `project-context.md`, nov de 2026. Revisar: 2027-01-20.

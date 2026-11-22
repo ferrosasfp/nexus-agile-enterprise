@@ -1,5 +1,13 @@
 # Changelog — NexusAgil
 
+## 2.5.1 — La memoria también en FAST
+
+### Corregido
+- **El cierre FAST no renovaba las memorias.** FAST, FAST+AR y AUTO lanzan a Docs con un pedido propio ("MODO FAST", con foco en `_INDEX.md`) que no mencionaba la memoria. En la primera HU real con la 2.5.0, Docs corrió las candidatas pero no renovó ninguna de las 5 memorias que la HU usó y encontró vigentes. Ahora el pedido lista los pasos de memoria que no se saltan (candidatas, renovación, vencidas), Docs reporta una línea `Memoria:` y el orquestador la revisa antes de cerrar.
+
+### Agregado
+- **T8 en las trampas globales:** los comandos interactivos (`git add -p`, `git rebase -i`, un editor sin `-m`) no funcionan en el Bash del agente, con la receta para commitear un solo hunk con `git apply --cached --unidiff-zero`. Salió de la misma HU, aprobada por la persona como global.
+
 ## 2.5.0 — La memoria aprende de cada HU
 
 ### Revisión
