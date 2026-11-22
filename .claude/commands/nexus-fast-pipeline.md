@@ -199,6 +199,12 @@ Task tool:
     - FOCUS: actualizar _INDEX.md con status DONE.
     - Si hubo Auto-Blindaje, conservá el archivo original sin consolidar (en FAST no se hace consolidación).
 
+    MEMORIA (no se salta en FAST; si tenés Engram, seguí "Memoria del proyecto" de tu definición):
+    a. Candidatas: `python3 $SKILL_DIR/scripts/nexus_candidates.py --hu-dir <HU_DIR> --trampas $SKILL_DIR/references/trampas_globales.md`, y `lecciones.md` con su línea `Candidatas:`.
+    b. Renovación: `python3 $SKILL_DIR/scripts/nexus_memory.py usadas --file <HU_DIR>/work-item.md`. A cada id de RENOVAR, `mem_review(action: "mark_reviewed", observation_id: N)`; las de CORREGIR, con su mismo `topic_key`. Después, `mem_review(action: "list", project: <memory_project>)` y las vencidas que no son hechos, en `cierre.md` bajo `## Memorias para revisar`.
+    c. En el reporte al orquestador, una línea `Memoria: candidatas N, renovadas #a #b, a corregir #c, vencidas #d` (o "sin Engram").
+    En una corrida real en FAST, este pedido solo decía "FOCUS: _INDEX.md": se corrieron las candidatas pero no se renovó ninguna de las 5 memorias que la HU usó.
+
     INPUT:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/{work-item.md, validation.md, auto-blindaje.md}
 
@@ -225,13 +231,14 @@ Task tool:
        [1 línea: qué cobertura no se hizo y por qué se asumió OK]
        ```
     2. $NEXUS_ROOT/doc/sdd/_INDEX.md actualizado con la fila de la HU en status DONE
-    3. Reporte al orquestador: 3 líneas resumen
+    3. Reporte al orquestador: 3 líneas resumen, más la línea `Memoria:` del punto c
 ```
 
 ### Después de DONE (orquestador)
 
 - **Si Claude Code rechaza el Write de `cierre.md`** ("Subagents should return findings as text"): el agente devuelve el contenido entre `<<<ARTEFACTO cierre.md` y `ARTEFACTO>>>`, y vos lo escribís **tal cual** con Write, anotando el mensaje del rechazo y el sha256. No es rodear nada: es el procedimiento de `/nexus-p8-done`, y pasa con cualquier modelo.
 - **Gates posteriores al cierre.** Las líneas que el hook agrega a `.gates.jsonl` después del último commit de la HU (la consulta del supervisor sobre el push y el merge, y las respuestas de la persona) no van en un push directo a `main`: quedan en el disco y entran en el primer commit de la próxima HU de ese repo (`docs(NNN): gates posteriores al cierre`), en su rama y con su PR. Volver a `main` y crear la rama nueva las lleva consigo sin conflicto, porque el archivo de `main` es el mismo que el de la rama mergeada. Si NEXUS_ROOT está fuera del repo, no hay nada que commitear. Con `memory_share: git`, ese mismo commit lleva el chunk nuevo de `.engram/` (`chunks/` y `manifest.json`), que vive en CODE_ROOT aunque NEXUS_ROOT esté afuera. En Nexus Control, cada HU terminaba con una pregunta más y un push directo a `main` solo para esas líneas.
+- **Lecciones y memorias vencidas**: igual que en `/nexus-p8-done` (Después de DONE): `lecciones.md` y `## Memorias para revisar` de `cierre.md`, en una sola ventana. Si la línea `Memoria:` del agente no trae renovadas y el work-item tiene memorias VERIFICADAS o VIGENTES, pedíselo antes de cerrar. En AUTO, queda para el cierre del lote.
 - **Memoria compartida** (solo con `memory_share: git`): después de guardar las lecciones aprobadas y cerrar el reclamo `trabajo/<HU>`, corré `engram sync --project <memory_project>` en CODE_ROOT, como en `/nexus-p8-done`. El chunk entra con la próxima HU (ver el punto anterior).
 - **Respaldo de la memoria** (si existe el repo de respaldo, `$NEXUS_BRAIN_DIR` o `~/nexus-brain`): al final, corré `python3 $SKILL_DIR/scripts/nexus_brain.py respaldar`, como en `/nexus-p8-done`.
 - **Push, PR y seguimiento del CI** son tuyos, no de un agente. Antes del push, el supervisor (en AUTO) o la persona revisa qué dispara; el push lo autoriza la persona.
