@@ -113,6 +113,8 @@ Devuelve el `topic_key` y el `content` con el **blob SHA de git** de cada archiv
 
 Para usarlo, el agente corre la linea `Verify:` que trae la entrada (`nexus_memory.py vigente ...`). **VIGENTE**: puede citar el hecho sin volver a leer el archivo. **CAMBIO**: el hecho no vale; lo vuelve a verificar y Docs lo actualiza. Un hecho nunca se usa sin esa comprobacion. Ningun producto revisado ata hechos al hash del archivo; lo mas parecido es GitHub Copilot, que verifica las citas de cada memoria contra el codigo antes de usarla (A/B del vendor: 90 % de PRs mergeados con memoria, 83 % sin). Esto evita a la vez la alucinacion (nada se afirma sin una verificacion atada al estado actual del archivo) y el trabajo repetido (lo ya verificado no se vuelve a investigar mientras el archivo no cambie).
 
+**Hechos desde SPEC_VERIFY.** La verificacion del SDD ya comprueba, con `archivo:linea`, muchas afirmaciones sobre el codigo que existe. La adversaria marca las que otra HU puede necesitar en la seccion `## Hechos para la memoria` de `sdd-verification.md` (hasta 10), y Docs las guarda al cerrar con `nexus_memory.py desde-verificacion`. Las lineas citadas son las del commit sobre el que corrio SPEC_VERIFY (la linea `BASE_SHA:` del informe; si falta, el merge-base de `BASE_REF` con `HEAD`), porque corre antes de F3. Si hay varios informes, el ultimo manda y sus hechos entran primero al tope de 10. Cada hecho lleva en su `topic_key` un hash corto de la frase, para que dos hechos que empiezan igual no se pisen. Un diff que no se puede leer (color, archivo binario) descarta el hecho en lugar de darlo por intacto. Si la HU cambio el archivo, el script guarda el hecho solo si ningun cambio toca las lineas citadas, y pasa la cita a las lineas de hoy; si las toca, lo descarta. En una HU real, los dos hechos de prueba citaban archivos que la propia HU modifico: con la regla "el archivo no cambio" se habrian perdido los dos. Se guardan sin preguntar porque son verificables: la linea `Verify:` los invalida sola si el archivo cambia. La HU siguiente los cita como VIGENTE en `## MEMORIA CONSULTADA`.
+
 Cuando una leccion resulta ser un hecho estable ("en este repo los tests viven en `tests/**`"), Docs propone agregarlo a `project-context.md` en lugar de guardarlo en memoria. La persona decide.
 
 ## Tres reglas
@@ -143,7 +145,7 @@ Busca por los patrones, tablas y archivos del diseno, con consultas cortas y `ma
 
 ### DONE — Docs (hechos y reclamo) y la persona (lecciones)
 
-Docs guarda los hechos con el script y cierra `trabajo/<HU>`. Por cada leccion que sirva a otra HU (Auto-Blindaje, trampas del entorno, decisiones con su porque) escribe una entrada en `HU_DIR/lecciones.md`, con este formato. Cuando la persona la aprueba, el orquestador la guarda con `mem_save`; con fecha de revision a 60 dias, que se renueva cada vez que una HU la usa y la encuentra vigente:
+Docs guarda los hechos con el script y cierra `trabajo/<HU>`. Para las lecciones parte de las candidatas que junta `scripts/nexus_candidates.py` (bloqueos del hook de `.blocks.jsonl`, VIOLATION, BLQ y MAYOR de las revisiones, auto-blindaje) y las cura: la persona las aprueba en una sola ventana. Por cada leccion que sirva a otra HU (Auto-Blindaje, trampas del entorno, decisiones con su porque) escribe una entrada en `HU_DIR/lecciones.md`, con este formato. Cuando la persona la aprueba, el orquestador la guarda con `mem_save`; con fecha de revision a 60 dias, que se renueva cada vez que una HU la usa y la encuentra vigente:
 
 ```
 title: "[proyecto] [tipo]: [resumen corto]"     # [tipo] en palabra: trampa, leccion, decision, hecho
@@ -160,6 +162,8 @@ content:
   Source: [HU, fecha]
   Review: [fecha + 60 dias]
 ```
+
+**Renovacion.** La fecha que cuenta es `review_after`, que Engram pone al guardar (6 meses para un `discovery`) y que `mem_review(action: "mark_reviewed")` vuelve a correr. Al cerrar, Docs renueva cada memoria que la HU uso y encontro cierta (VERIFICADA o VIGENTE en `## MEMORIA CONSULTADA`, que lee `nexus_memory.py usadas`), y lista las vencidas con `mem_review(action: "list")`: un hecho vencido se renueva solo si su `Verify:` da VIGENTE; lo demas se le pregunta a la persona en la misma ventana de las lecciones. Asi lo que se usa sigue vivo y lo que nadie usa sale a la luz en lugar de quedar como verdad vieja. Las memorias guardadas antes de Engram 3.7 no tienen `review_after`: nunca vencen hasta que una HU las renueva. La linea `Review:` del contenido es informativa. `mark_reviewed` solo encuentra memorias del proyecto que Engram resuelve para la sesion (probado con 3.7.2: desde otro proyecto da "observation not found in resolved project"), asi que se corre en la sesion del proyecto, con su `.engram/config.json`.
 
 Una memoria por leccion: cada una con su `topic_key` y su `scope`, nunca varias juntas (tres lecciones en una sola memoria quedaron con un solo `scope`, y la global se perdio como de proyecto). Con `topic_key`, la misma leccion se actualiza en lugar de duplicarse. Una memoria que la HU encontro desactualizada se corrige con su mismo `topic_key`.
 

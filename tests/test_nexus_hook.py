@@ -883,6 +883,19 @@ class AlTerminar(HookCase):
             (self.repo / "project-context.md").write_text(rows + "\n")
             self.assertEqual(self.run_hook("session", source="startup").stdout, "", rows)
 
+    def test_rutas_sin_falsos_avisos_de_la_revision(self):
+        # Filas reales que la primera version reportaba mal: espacios, relativas, variables, URLs, Windows, prosa.
+        self.with_engram(installed=False)
+        spaced = self.tmp / "Mis Proyectos" / "app"
+        spaced.mkdir(parents=True)
+        for value in (f"`{spaced}`", "../hermano", "${HOME}/hermano", "(https://github.com/org/app)", "C:/code/app",
+                      f"{self.repo}: el repo de la app", "la raiz git del directorio actual (/no/existe en otra maquina)"):
+            (self.repo / "project-context.md").write_text(f"| **CODE_ROOT** | {value} |\n")
+            self.assertEqual(self.run_hook("session", source="startup").stdout, "", value)
+        (self.repo / "project-context.md").write_text(
+            "Se define CODE_ROOT | en la tabla de abajo.\n\n| **CODE_ROOT** | `/no/existe/app` |\n")
+        self.assertIn("CODE_ROOT /no/existe/app no existe", self.run_hook("session", source="startup").stdout)
+
     def test_rutas_y_memoria_avisan_las_dos(self):
         self.with_engram()
         (self.repo / "project-context.md").write_text("| **Nombre** | demo |\n| **CODE_ROOT** | /no/existe |\n")
@@ -920,6 +933,63 @@ class PorDestino(HookCase):
         self.assertEqual([p.read_text() for p in (self.hu / ".violations").iterdir()], ["v2\n"])  # lo modificado, para la persona
         stop = self.run_hook("stop", agent_type="nexus-agile:nexus-analyst")
         self.assertIn("con Bash", stop.stdout)
+
+    def test_bloqueo_queda_en_blocks_jsonl(self):
+        self.write("work-item.md")
+        self.assertAllowed(self.spawn("F1", "nexus-analyst"))
+        blocked = self.run_hook("gate", agent_type="nexus-agile:nexus-architect", tool_name="Write",
+                                tool_input={"file_path": str(self.repo / "app.ts")})
+        self.assertBlocked(blocked, "no puede escribir")
+        entries = [json.loads(l) for l in (self.hu / ".blocks.jsonl").read_text().splitlines()]
+        self.assertEqual(len(entries), 1)
+        self.assertEqual((entries[0]["agent"], entries[0]["tool"]), ("nexus-architect", "Write"))
+        self.assertIn("no puede escribir", entries[0]["message"])
+        self.assertNotIn("VIOLATION", (self.hu / ".gates.jsonl").read_text() if (self.hu / ".gates.jsonl").exists() else "")
+
+    def test_un_bloqueo_durante_otro_bash_no_es_violation(self):
+        # Con agentes en paralelo: mientras corre el Bash de uno, el hook bloquea a otro y escribe .blocks.jsonl.
+        self.write("work-item.md", "v1\n")
+        before, data = self.bash("nexus-analyst", "F1", "python3 /tmp/s/leer.py")
+        self.assertAllowed(before)
+        self.assertBlocked(self.run_hook("gate", agent_type="nexus-architect", tool_name="Write",
+                                         tool_input={"file_path": str(self.repo / "app.ts")}))
+        self.assertTrue((self.hu / ".blocks.jsonl").exists())
+        self.assertAllowed(self.run_hook("after-bash", **data))
+
+    def test_bloqueo_de_fase_va_a_la_hu_del_prompt(self):
+        # Revision de la 2.5: el gate de F2 de la HU 002 se anotaba en la 001, la ultima de la sesion.
+        self.write("work-item.md")
+        self.assertAllowed(self.spawn("F1", "nexus-analyst"))
+        other = self.repo / "doc/sdd/002-dos"
+        other.mkdir()
+        prompt = f"RUTAS: CODE_ROOT={self.repo}\nFASE: F2\nHU_DIR: {other}\nPROPIEDAD: propia (archivo, de prueba)\nhaz"
+        self.assertBlocked(self.run_hook("gate", tool_name="Agent", tool_input={"subagent_type": "nexus-architect", "prompt": prompt}))
+        self.assertFalse((self.hu / ".blocks.jsonl").exists())
+        entry = json.loads((other / ".blocks.jsonl").read_text())
+        self.assertIn("doc/sdd/002-dos/work-item.md", entry["message"])
+        self.assertNotIn(str(self.repo), entry["message"])  # sin la ruta del repo: el archivo se commitea
+
+    def test_nadie_escribe_blocks_jsonl(self):
+        self.write("work-item.md")
+        self.assertAllowed(self.spawn("F1", "nexus-analyst"))
+        self.assertBlocked(self.run_hook("gate", agent_type="nexus-dev", tool_name="Write",
+                                         tool_input={"file_path": str(self.hu / ".blocks.jsonl")}), "bloqueos")
+        self.assertBlocked(self.run_hook("gate", agent_type="nexus-dev", tool_name="Bash",
+                                         tool_input={"command": f": > {self.hu}/.blocks.jsonl"}), "bloqueos")
+
+    def test_sesion_corrupta_no_convierte_el_bloqueo_en_permiso(self):
+        # Revision de la 2.5: con hu_dir no texto, record_block lanzaba TypeError, el hook salia con 1 y el Write pasaba.
+        data_dir = self.tmp / "data"
+        data_dir.mkdir(exist_ok=True)
+        (data_dir / "s1.json").write_text(json.dumps({"hu_dir": 5}))
+        blocked = self.run_hook("gate", agent_type="nexus-qa", tool_name="Write", tool_input={"file_path": str(self.repo / "app.ts")})
+        self.assertEqual(blocked.returncode, 2, blocked.stderr)
+
+    def test_sin_hu_activa_el_bloqueo_no_escribe_nada(self):
+        blocked = self.run_hook("gate", agent_type="nexus-architect", tool_name="Write",
+                                tool_input={"file_path": str(self.repo / "app.ts")})
+        self.assertBlocked(blocked)
+        self.assertEqual(list(self.repo.rglob(".blocks.jsonl")), [])
 
     def test_archivo_creado_por_bash_se_retira(self):
         _, data = self.bash("nexus-analyst", "F1", "python3 /tmp/s/x.py")

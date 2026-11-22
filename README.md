@@ -4,7 +4,7 @@
 
 NexusAgil es una metodología de desarrollo con agentes para Claude Code. Procesa una Historia de Usuario (HU) por vez, por fases, con agentes especializados, gates que da una persona y un hook que hace cumplir las reglas que no deben depender de la memoria del modelo.
 
-Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.4.0**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
+Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.5.0**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
 
 **Estado:** release candidate. El supervisor de AUTO es experimental. Las mediciones están en [Evaluación](#evaluación).
 
@@ -415,6 +415,7 @@ NexusAgil es el arnés de cada proyecto y Engram guarda su experiencia, pero no 
 - **Equipo.** Con `memory_share: git`, la memoria del proyecto viaja en `.engram/chunks/` con los PRs (`engram sync`), solo en repos privados. Por defecto queda en la máquina de cada persona.
 - **Trampas en el plugin.** Las trampas globales aprobadas también viven en `references/trampas_globales.md`, que el analista y Dev leen con o sin Engram: `engram sync` no exporta el ámbito global, y así llegan a cualquier máquina.
 - **Respaldo.** `scripts/nexus_brain.py respaldar` exporta toda la memoria (global incluida) a un repo git propio (`~/nexus-brain`), y `restaurar` la carga en otra máquina sin duplicar. DONE lo corre si el repo existe. El remoto lo agrega la persona: el script empuja solo si `gh` confirma que es un repo privado de GitHub. No pisa el respaldo desde una máquina sin restaurar y solo escribe en su propio repo.
+- **Candidatas al cerrar.** `scripts/nexus_candidates.py` junta, de una HU, los bloqueos del hook (el hook los anota en `HU_DIR/.blocks.jsonl`), las VIOLATION, los BLQ y MAYOR de AR y CR, y el auto-blindaje, y marca los que repiten una trampa global. Docs las cura en `lecciones.md` y la persona las aprueba en una sola ventana.
 - **Siembra.** `scripts/nexus_seed.py` junta las candidatas a lección que un proyecto ya escribió en `doc/sdd/` (auto-blindaje y lecciones de los reportes), para aprobarlas al conectar la memoria.
 - **Aviso.** Al abrir una sesión en un proyecto con NexusAgil y Engram pero sin `memory_project` (o sin `.engram/config.json`), el hook lo dice.
 
@@ -448,7 +449,7 @@ Todos en `.claude/skills/nexus-agile/scripts/`. Ninguno usa un modelo.
 | `check_contract.py <HU_DIR> --code-root DIR` | antes de F3: cada AC con su tarea y su test, y las rutas del Scope IN existentes. Entiende listas y rangos (`AC-1, 2, 3`) y sufijos (`AC-8b`) | el orquestador, en `/nexus-p4-f3` |
 | `review_package.sh <base> <HU_DIR> [CODE_ROOT]` | deja el diff de la HU en `HU_DIR/review-package-<sha>.diff`, para no pegarlo en el prompt | el orquestador, en `/nexus-p5-ar` |
 | `nexus_metrics.py --hu-dir HU_DIR [--json]` | por agente: fase, tokens, tiempo, herramientas, Bash y bloqueos del hook, leídos de los transcripts y de `.gates.jsonl`. Solo lee | el orquestador antes de DONE; el supervisor para la regla #11 |
-| `nexus_memory.py hecho / vigente` | arma un hecho para la memoria con el blob SHA de git de cada archivo, y comprueba si sigue vigente. Solo lee | analista, arquitecto y docs |
+| `nexus_memory.py hecho / vigente / desde-verificacion` | arma un hecho para la memoria con el blob SHA de git de cada archivo, comprueba si sigue vigente, y arma los hechos que marcó SPEC_VERIFY (descarta los que la HU cambió en las líneas citadas). Solo lee | analista, arquitecto y docs |
 | `check_spec_ids.py` | después de fusionar deltas de una spec viva: ningún requisito se pierde | docs, solo con la spec viva, que es opcional (`references/living_spec.md`) |
 | `check_consistency.sh` | agentes, comandos, skill y README dicen lo mismo (conteos, modelos, herramientas, frases obligatorias) | CI |
 
@@ -860,6 +861,9 @@ docs/                                    # planes de diseño (plan-2.0.md, plan-
     │   ├── check_spec_ids.py            # después de fusionar deltas: ningún requisito perdido
     │   ├── nexus_metrics.py             # métricas por HU desde transcripts y .gates.jsonl
     │   ├── nexus_memory.py              # hechos verificados atados al blob SHA de git
+    │   ├── nexus_candidates.py          # candidatas a lección de una HU, al cerrar
+    │   ├── nexus_seed.py                # candidatas de todo doc/sdd/, al conectar la memoria
+    │   ├── nexus_brain.py               # respaldo y restauración de la memoria
     │   └── review_package.sh            # diff de la HU a un archivo, para AR y CR
     └── references/
         ├── enforcement.md               # qué hace cumplir el hook y qué no

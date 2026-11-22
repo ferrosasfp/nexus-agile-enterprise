@@ -231,6 +231,26 @@ grep -q 'Despu.s del merge' "$C/nexus-p8-done.md" || fail "nexus-p8-done no actu
 grep -q 'Despu.s del merge' "$C/nexus-auto.md" || fail "nexus-auto no actualiza el reclamo despues del merge"
 pass "ajustes de la primera HU real revisados"
 
+# --- Hechos desde SPEC_VERIFY (etapa B, paso 25)
+grep -q 'Hechos para la memoria' $A/nexus-adversary.md || fail "SPEC_VERIFY no marca los hechos para la memoria"
+grep -q 'desde-verificacion' $A/nexus-docs.md || fail "nexus-docs no guarda los hechos de SPEC_VERIFY"
+grep -q 'def cmd_desde_verificacion' "$ROOT/.claude/skills/nexus-agile/scripts/nexus_memory.py" || fail "falta nexus_memory.py desde-verificacion"
+pass "hechos desde SPEC_VERIFY revisados"
+
+# --- Candidatas automaticas (etapa B, paso 23)
+[ -f "$ROOT/.claude/skills/nexus-agile/scripts/nexus_candidates.py" ] || fail "falta scripts/nexus_candidates.py"
+grep -q 'def record_block' "$ROOT/hooks/nexus_hook.py" || fail "el hook no anota los bloqueos en .blocks.jsonl"
+grep -q 'nexus_candidates.py' $A/nexus-docs.md || fail "nexus-docs no parte de las candidatas"
+grep -q 'una sola ventana' "$C/nexus-p8-done.md" || fail "nexus-p8-done no aprueba las lecciones en una sola ventana"
+pass "candidatas automaticas revisadas"
+
+# --- Renovacion (etapa B, paso 26)
+grep -q 'def cmd_usadas' "$ROOT/.claude/skills/nexus-agile/scripts/nexus_memory.py" || fail "falta nexus_memory.py usadas"
+grep -q 'mark_reviewed' $A/nexus-docs.md || fail "nexus-docs no renueva las memorias usadas"
+grep -q 'mem_review' <(sed -n '1,6p' $A/nexus-docs.md) || fail "nexus-docs no tiene la herramienta mem_review"
+grep -q 'Memorias para revisar' "$C/nexus-p8-done.md" || fail "nexus-p8-done no pregunta por las memorias vencidas"
+pass "renovacion revisada"
+
 echo
 if [ "$fails" -eq 0 ]; then echo "RESULTADO: sin fallas"; exit 0; fi
 echo "RESULTADO: $fails falla(s)"; exit 1
