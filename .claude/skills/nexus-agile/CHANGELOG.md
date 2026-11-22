@@ -1,6 +1,32 @@
 # Changelog — NexusAgil
 
-## Sin publicar (etapa B del cerebro)
+## 2.5.0 — La memoria aprende de cada HU
+
+### Revisión
+Una revisión adversaria independiente reprodujo 5 problemas mayores y 10 menores, y no encontró nada bloqueante. Todos quedaron corregidos con su test:
+- **Citas corridas** cuando `main` recibe otro merge entre SPEC_VERIFY y el cierre. SPEC_VERIFY anota ahora `BASE_SHA:` y las líneas se mueven desde ese commit; si falta, desde el merge-base de `BASE_REF` con `HEAD`.
+- **Un diff ilegible ya no da el hecho por intacto.** Con `color.diff=always` o un archivo `-diff` no había hunks y el hecho se guardaba sin mover; ahora se descarta.
+- **Las secciones terminan con su tabla.** Una tabla posterior (otro hallazgo, notas del analista) entraba como hecho o como memoria a renovar. Un título dentro de un bloque de código ya no cuenta.
+- **Hechos que empiezan igual no se pisan:** la clave lleva un hash corto de la frase.
+- **El bloqueo de una HU nueva se anota en esa HU**, no en la última de la sesión.
+- **Menores:**
+  - `.blocks.jsonl` protegido contra escritura, como `.gates.jsonl`.
+  - Anotar un bloqueo nunca convierte un bloqueo en permiso.
+  - Sin falsos avisos de rutas: espacios, relativas, variables, URLs, Windows, prosa.
+  - En varios informes, el último manda y entra primero al tope.
+  - `\|` no corta celdas.
+  - Estados con emoji o backticks se reconocen, y los desconocidos se listan.
+  - Hallazgos en viñetas y tablas, sin repetir los de las re-revisiones.
+  - Rutas del repo y de la carpeta personal fuera de `.blocks.jsonl`.
+  - Preguntas de aprobación con al menos 2 opciones.
+
+
+### Agregado
+- **Hechos desde SPEC_VERIFY** (paso 25 del plan): la adversaria cierra `sdd-verification.md` con `## Hechos para la memoria`, hasta 10 afirmaciones VERDADERAS sobre el código que ya existe, cada una con sus `archivo:línea`. Al cerrar, Docs corre `nexus_memory.py desde-verificacion`, que arma una entrada por hecho con el blob SHA de cada archivo. Las líneas citadas son las de `BASE_REF`: si la HU cambió el archivo, el hecho se guarda solo si ningún cambio toca esas líneas, con la cita movida a las líneas de hoy; si las toca, o el archivo no existía en la base, se descarta. Se guardan sin preguntar: si el archivo cambia, la línea `Verify:` los invalida. Por qué: SPEC_VERIFY ya verificaba decenas de afirmaciones por HU y ninguna llegaba a la memoria; la HU siguiente las volvía a investigar.
+
+- **Candidatas automáticas** (paso 23 del plan): el hook anota cada bloqueo en `HU_DIR/.blocks.jsonl`. Al cerrar, `scripts/nexus_candidates.py` junta de la HU los bloqueos, las VIOLATION, los BLQ y MAYOR de AR y CR, y el auto-blindaje, cada uno con su origen, y marca los que se parecen a una trampa global del plugin. Docs las cura en `lecciones.md` y la persona aprueba todas en una sola ventana (`AskUserQuestion` con selección múltiple). Por qué: los bloqueos se perdían (solo quedaban si alguien los anotaba en el auto-blindaje), y cada lección pedía su propia respuesta. Sobre una HU real: 12 candidatas, y la única marcada como trampa existente era la que de verdad repetía T2.
+
+- **Renovación** (paso 26 del plan): al cerrar, `nexus_memory.py usadas` lee `## MEMORIA CONSULTADA` y Docs renueva con `mem_review` cada memoria que la HU usó y encontró cierta (VERIFICADA o VIGENTE), y corrige las DESCARTADAS. Después lista las vencidas del proyecto: un hecho vencido se renueva solo si su `Verify:` da VIGENTE; las demás se le preguntan a la persona en la misma ventana de las lecciones. Usa la fecha nativa de Engram (`review_after`). Por qué: la fecha de revisión se ponía al guardar y nadie la movía; lo usado y lo olvidado vencían igual.
 
 ### Ajustes de la primera HU real con la 2.4.0
 - **Aviso de rutas al abrir** (hook `SessionStart`, solo en `startup`): si `NEXUS_ROOT` o `CODE_ROOT` de `project-context.md` nombran una ruta absoluta que no existe en esta máquina, lo dice antes de la primera HU, con o sin Engram. Por qué: en una HU real las dos filas apuntaban a la carpeta de otra máquina; la HU lo descubrió a mitad de camino y lo anotó como hallazgo.

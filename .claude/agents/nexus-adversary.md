@@ -168,8 +168,10 @@ No revisás código nuevo: verificás que el SDD dice la verdad sobre el código
 4. Escribí `sdd-verification.md`:
    - Primera línea: `STATUS: VERIFICADO falsas=0 no_verificables=N debiles=K` o `STATUS: CON_FALSAS falsas=N no_verificables=M debiles=K`.
    - Segunda línea: `SDD_SHA256: <sha256 de sdd.md que verificaste>`, sacado con `sha256sum`.
+   - Tercera línea: `BASE_SHA: <git -C "$CODE_ROOT" rev-parse HEAD>`, el commit sobre el que verificaste. Al cerrar, las líneas de `## Hechos para la memoria` se mueven desde ese commit: si `main` recibió otro merge en el medio, sin esta línea las citas podrían correrse.
    - Una tabla con cada afirmación, `sdd.md:línea`, veredicto y evidencia. Las FALSAS primero.
    - Los CONTROLES DÉBILES en una tabla aparte: control, `sdd.md:línea`, la forma que lo evade.
+   - Al final, `## Hechos para la memoria`: una tabla `| Hecho | Archivos | Evidencia |` con hasta 10 afirmaciones VERDADERAS sobre el código que **ya existe** y que otra HU puede volver a necesitar: qué incluye una configuración, la firma de una función, cómo se chequea un permiso, dónde vive algo. En la columna Archivos, cada `archivo:línea` o `archivo:inicio-fin` de la que depende, con la ruta relativa a la raíz del repo (`src/x/cli.py:749-766`, no `cli.py` ni `sdd.md`), y el rango entero que sostiene el hecho: si la HU cambia esas líneas, el hecho se descarta al cerrar. Cada hecho, una frase que se entiende sin el SDD. No van el plan, el diseño, lo que la HU va a cambiar ni los conteos que se vuelven viejos con cualquier commit. Sin hechos así, la sección dice "Ninguno". Al cerrar, Docs los guarda en la memoria atados al hash de cada archivo.
 
 No corregís el SDD ni proponés diseño: solo decís qué es falso y qué dice el código. Una afirmación que no podés comprobar es NO VERIFICABLE, no VERDADERA.
 

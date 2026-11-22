@@ -72,9 +72,38 @@ FILE_MUTATION = re.compile(r"(?:^|(?<=[\s|;&(])|(?<=/bin/))tee\b|\b(sed|perl)\b[
 REDIRECT = re.compile(r"(?<![0-9&<>])>>?\s*([^\s&|;]+)")
 
 
+HOOK_DATA = {}  # la entrada del hook en curso: deny la usa para anotar el bloqueo en la HU activa
+CURRENT_HU = {}  # la HU que nombra el prompt que se esta revisando, antes de que pase los chequeos
+
+
 def deny(message):
     print(f"NEXUS GATE: {message}", file=sys.stderr)
+    record_block(message)
     sys.exit(2)
+
+
+def record_block(message):
+    """Cada bloqueo queda en HU_DIR/.blocks.jsonl: es materia prima de las candidatas a leccion del cierre
+    (nexus_candidates.py). Antes se perdian: en una HU real, un bloqueo que ya estaba en las trampas se repitio y
+    nadie lo vio hasta el auto-blindaje. Anotarlo nunca puede cambiar la decision del hook."""
+    try:
+        if not HOOK_DATA:
+            return
+        # Un gate de fase de otra HU se anota en esa HU, no en la ultima de la sesion: en AUTO, la HU 1 se quedaba
+        # con los bloqueos de la HU 2. Si la HU nueva todavia no existe, no se anota.
+        hu_dir = CURRENT_HU.get("path") or load_session(HOOK_DATA).get("hu_dir")
+        if not isinstance(hu_dir, str) or not Path(hu_dir).is_dir():
+            return
+        # El archivo se commitea con los artefactos: sin la carpeta personal ni la ruta del repo.
+        parents = Path(hu_dir).resolve().parents
+        text = message.replace(str(parents[2]) + "/", "") if len(parents) > 3 else message
+        text = text.replace(os.path.expanduser("~"), "~")
+        entry = {"ts": int(time.time()), "agent": (HOOK_DATA.get("agent_type") or "orquestador").split(":")[-1],
+                 "tool": HOOK_DATA.get("tool_name") or HOOK_DATA.get("hook_event_name") or "", "message": text[:500]}
+        with (Path(hu_dir) / ".blocks.jsonl").open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:  # noqa: BLE001 - anotar nunca puede cambiar el exit 2: un exit 1 dejaria pasar lo bloqueado
+        pass
 
 
 def state_dir():
@@ -402,6 +431,7 @@ def check_phase(data, session):
                  f"y la linea 'Punto de parada: {phase} ...'")
         deny(f"fase desconocida {phase}. Validas: {', '.join(PHASES)}")
     hu_dir = abs_path(hu_value, data)
+    CURRENT_HU["path"] = str(hu_dir)
     if os.environ.get("CLAUDE_PLUGIN_ROOT") and ":" not in (tool_input.get("subagent_type") or ""):
         deny(f"esta sesion usa el plugin: lanza nexus-agile:{agent}. Sin prefijo correria otra version instalada")
     check_skill_dir(prompt)
@@ -854,6 +884,9 @@ def check_bash(agent, command, data):
     # prueba en /tmp se puede crear, el de una HU no. Se probo con los comandos literales de tres corridas reales.
     mentions = [(m.group(0).strip("'\"();"), m.start()) for m in re.finditer(r"[^\s'\"=]*\.gates\.jsonl", expanded)]
     outside = [t for t, pos in mentions if not disposable(resolve_at(expanded, t, pos, data), data)]
+    if any(t.endswith(".blocks.jsonl") and not disposable(resolve_at(expanded, t, 0, data), data)
+           for t in redirect_targets(expanded)):
+        deny("los bloqueos solo los registra el hook")
     if outside and (any(t.endswith(".gates.jsonl") for t in redirect_targets(expanded))
                     or FILE_MUTATION.search(masked(expanded)) or INLINE_REAL_WRITE.search(command)):
         # Leer con open() no es escribir: en una corrida real, un python3 -c que solo listaba los gates se freno.
@@ -916,8 +949,8 @@ def cmd_gate(data):
         return
     if tool in ("Write", "Edit"):
         path = str(abs_path(tool_input.get("file_path") or "", data))
-        if path.endswith(".gates.jsonl") and not disposable(path, data):
-            deny("los gates solo los registra el hook")
+        if path.endswith((".gates.jsonl", ".blocks.jsonl")) and not disposable(path, data):
+            deny("los gates y los bloqueos solo los registra el hook")
         rule = WRITE_RULES.get(agent)
         if rule and not disposable(path, data) and not re.search(rule, path):
             deny(f"{agent} no puede escribir {path}. Reporta el hallazgo en lugar de modificarlo")
@@ -1011,8 +1044,11 @@ def check_bash_into_hu_dir(agent, command, data):
                     deny(f"{agent} no puede escribir doc/sdd/{path.split('/doc/sdd/', 1)[1]} con un script. Reporta el cambio al orquestador")
 
 
+HOOK_FILES = (".nexus-state.json", ".gates.jsonl", ".blocks.jsonl")  # los escribe el hook, no los agentes
+
+
 def artifact_hashes(hu_dir):
-    return {str(p): sha(p) for p in sorted(Path(hu_dir).glob("*")) if p.is_file() and p.name != ".nexus-state.json"}
+    return {str(p): sha(p) for p in sorted(Path(hu_dir).glob("*")) if p.is_file() and p.name not in HOOK_FILES}
 
 
 def snapshot_file(data):
@@ -1024,7 +1060,7 @@ def snapshot_artifacts(data):
     hu_dir = load_session(data).get("hu_dir")
     if hu_dir and Path(hu_dir).is_dir():
         contents = {str(p): base64.b64encode(p.read_bytes()).decode() for p in Path(hu_dir).glob("*")
-                    if p.is_file() and p.name not in (".nexus-state.json", ".gates.jsonl") and p.stat().st_size <= 1_000_000}
+                    if p.is_file() and p.name not in HOOK_FILES and p.stat().st_size <= 1_000_000}
         atomic_write(snapshot_file(data), json.dumps({"hu_dir": hu_dir, "ts": time.time(), "hashes": artifact_hashes(hu_dir),
                                                      "contents": contents}))
     # Las fotos de un Bash cancelado no las borra nadie, y guardan copias de los artefactos (con datos del cliente).
@@ -1057,7 +1093,7 @@ def cmd_after_bash(data):
         log.write_text("".join(l + "\n" for l in recent), encoding="utf-8")
     after = artifact_hashes(before["hu_dir"])
     changed = sorted(f for f in set(before["hashes"]) | set(after)
-                     if before["hashes"].get(f) != after.get(f) and f not in written and not f.endswith(".gates.jsonl"))
+                     if before["hashes"].get(f) != after.get(f) and f not in written and not f.endswith(HOOK_FILES))
     if not changed:
         return
     agent = (data.get("agent_type") or "").split(":")[-1]
@@ -1463,15 +1499,19 @@ def memory_roots(data):
     return roots
 
 
-ABSOLUTE_PATH = re.compile(r"(?<![\w`])[`]?((?:/|~/)[^\s`|)]+)")
-
-
 def root_row_paths(text, field):
-    """Las rutas absolutas (o con ~) de la fila NEXUS_ROOT o CODE_ROOT de project-context."""
-    row = re.search(rf"\b{field}\b\W{{0,6}}\|([^\n]*)", text)
+    """La ruta absoluta (o con ~/) con la que empieza la celda de valor de la fila NEXUS_ROOT o CODE_ROOT.
+    Solo la fila de una tabla y solo una ruta al principio de la celda: una URL, una variable ($HOME), una ruta
+    relativa o de Windows, o una ruta en medio de una explicacion no cuentan (falsos avisos de la revision de la 2.5)."""
+    row = re.search(rf"^\|\s*\**`?{field}`?\**\s*\|([^\n]*)", text, re.M)
     if not row:
         return []
-    return [Path(os.path.expanduser(raw.rstrip(".,;"))) for raw in ABSOLUTE_PATH.findall(row.group(1))]
+    cell = re.split(r"(?<!\\)\|", row.group(1))[0].strip()
+    quoted = re.match(r"`((?:/|~/)[^`]+)`", cell)
+    raw = quoted.group(1) if quoted else (re.match(r"(?:/|~/)[^\s|()]+", cell) or [None])[0]
+    if not raw or raw.startswith("//"):
+        return []
+    return [Path(os.path.expanduser(raw.rstrip(".,;:")))]
 
 
 def separate_code_root(text, root):
@@ -1558,6 +1598,7 @@ def main():
     import fcntl
     with open(state_dir() / ".lock", "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
+        HOOK_DATA.update(data)
         COMMANDS[command](data)
 
 
