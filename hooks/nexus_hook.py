@@ -1463,17 +1463,45 @@ def memory_roots(data):
     return roots
 
 
+ABSOLUTE_PATH = re.compile(r"(?<![\w`])[`]?((?:/|~/)[^\s`|)]+)")
+
+
+def root_row_paths(text, field):
+    """Las rutas absolutas (o con ~) de la fila NEXUS_ROOT o CODE_ROOT de project-context."""
+    row = re.search(rf"\b{field}\b\W{{0,6}}\|([^\n]*)", text)
+    if not row:
+        return []
+    return [Path(os.path.expanduser(raw.rstrip(".,;"))) for raw in ABSOLUTE_PATH.findall(row.group(1))]
+
+
 def separate_code_root(text, root):
     """True si project-context declara un CODE_ROOT que es otro repo existente (artefactos y codigo separados).
     La fila de la plantilla ([raiz git del codigo; default: ...]) o un CODE_ROOT que es este mismo repo no cuentan."""
-    row = re.search(r"\bCODE_ROOT\b\W{0,6}\|([^\n]*)", text)
-    if not row:
-        return False
-    for raw in re.findall(r"(?<![\w`])[`]?((?:/|~/)[^\s`|)]+)", row.group(1)):
-        path = Path(os.path.expanduser(raw.rstrip(".,;")))
-        if path.is_dir() and os.path.realpath(path) != os.path.realpath(root):
-            return True
-    return False
+    return any(path.is_dir() and os.path.realpath(path) != os.path.realpath(root)
+               for path in root_row_paths(text, "CODE_ROOT"))
+
+
+def project_contexts(data):
+    """El primer project-context.md del proyecto de la sesion, buscado como lo busca F0."""
+    for root in memory_roots(data):
+        for sub in (".", ".nexus", "docs"):
+            path = root / sub / "project-context.md"
+            if path.is_file():
+                yield root, path, path.read_text(encoding="utf-8", errors="replace")
+                return
+
+
+def paths_warning(data):
+    """NEXUS_ROOT o CODE_ROOT con una ruta que no existe en esta maquina: en Nexus Control apuntaban a la carpeta de
+    otra maquina, la HU lo descubrio a mitad de camino y lo anoto como hallazgo de su auditoria."""
+    for _root, path, text in project_contexts(data):
+        missing = [f"{field} {target}" for field in ("NEXUS_ROOT", "CODE_ROOT")
+                   for target in root_row_paths(text, field) if not target.exists()]
+        if missing:
+            return (f"NexusAgil: en {path}, {'; '.join(missing)} no existe en esta maquina. Antes de la proxima HU, "
+                    "decile a la persona: corregir la fila con la ruta real, o escribir \"la raiz git del directorio "
+                    "actual\" si el codigo y los artefactos viven en el mismo repo")
+    return None
 
 
 def memory_warning(data):
@@ -1481,22 +1509,16 @@ def memory_warning(data):
     habia 8 proyectos asi, y la memoria caia en el proyecto que Engram dedujera de la carpeta, o no se usaba."""
     if not shutil.which("engram"):
         return None
-    for root in memory_roots(data):
-        for sub in (".", ".nexus", "docs"):
-            path = root / sub / "project-context.md"
-            if not path.is_file():
-                continue
-            text = path.read_text(encoding="utf-8", errors="replace")
-            found = MEMORY_PROJECT.search(text)
-            if found is None:
-                return (f"NexusAgil: {path} no declara memory_project, asi que este proyecto no usa la memoria de Engram. "
-                        "Antes de la proxima HU, decile a la persona: agregar la fila memory_project (nombre del proyecto en "
-                        "Engram, uno por cliente) y correr engram init <nombre> en la raiz del repo (references/engram_protocol.md)")
-            name = found.group(1)
-            if not (root / ".engram" / "config.json").is_file() and not separate_code_root(text, root):
-                return (f"NexusAgil: memory_project es {name}, pero falta .engram/config.json en {root}. "
-                        f"F0 corre engram init {name}; si el repo es de otro, va en .git/info/exclude")
-            return None
+    for root, path, text in project_contexts(data):
+        found = MEMORY_PROJECT.search(text)
+        if found is None:
+            return (f"NexusAgil: {path} no declara memory_project, asi que este proyecto no usa la memoria de Engram. "
+                    "Antes de la proxima HU, decile a la persona: agregar la fila memory_project (nombre del proyecto en "
+                    "Engram, uno por cliente) y correr engram init <nombre> en la raiz del repo (references/engram_protocol.md)")
+        name = found.group(1)
+        if not (root / ".engram" / "config.json").is_file() and not separate_code_root(text, root):
+            return (f"NexusAgil: memory_project es {name}, pero falta .engram/config.json en {root}. "
+                    f"F0 corre engram init {name}; si el repo es de otro, va en .git/info/exclude")
     return None
 
 
@@ -1506,13 +1528,14 @@ def cmd_session(data):
     # Solo al abrir: repetirlo en cada compactacion es ruido. Un error leyendo el proyecto (permisos, carpeta que no
     # existe) no puede tumbar el arranque ni tapar el recordatorio de la HU activa.
     if data.get("source", "startup") == "startup":
-        try:
-            warning = memory_warning(data)
-        except (OSError, ValueError) as error:
-            warning = None
-            print(f"NexusAgil: no se pudo revisar la memoria del proyecto ({type(error).__name__})", file=sys.stderr)
-        if warning:
-            print(warning)
+        for check, what in ((paths_warning, "las rutas"), (memory_warning, "la memoria")):
+            try:
+                warning = check(data)
+            except (OSError, ValueError) as error:
+                warning = None
+                print(f"NexusAgil: no se pudo revisar {what} del proyecto ({type(error).__name__})", file=sys.stderr)
+            if warning:
+                print(warning)
     session = load_session(data)
     if not session.get("hu_dir"):
         return

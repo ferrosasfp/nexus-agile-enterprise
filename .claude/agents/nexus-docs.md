@@ -70,6 +70,8 @@ Si tenés `mem_save`, guardá con `topic_key`, siguiendo `$SKILL_DIR/references/
 3. Una memoria que la HU encontró desactualizada (DESCARTADA en `## MEMORIA CONSULTADA`) se corrige con su mismo `topic_key`.
 4. **Las lecciones no las guardás vos**: escribilas en `$NEXUS_ROOT/doc/sdd/NNN-titulo/lecciones.md` con el formato del protocolo, cada una con evidencia y con cómo volver a comprobarla. Se guardan cuando la persona las aprueba.
 5. **Alcance**: cada lección declara `scope: project` o `scope: global`. Proponé `global` solo para trampas del entorno o de las herramientas (rtk, Write/Edit, el hook, Claude Code) que no nombran nada propio del repo; ante la duda, `project`. Los títulos llevan la palabra del tipo (`[proyecto] trampa: …`), porque la búsqueda va por el título.
+6. **Antes de proponer una global, buscá si ya existe**: leé `$SKILL_DIR/references/trampas_globales.md` y corré `mem_search(query: "trampa leccion", all_projects: true, scope: "global", match_mode: "any")`. Si la lección repite una trampa que ya está (T-N del plugin o una global de Engram), no la propongas como nueva: escribila como **evidencia para T-N** (o para la memoria #id), con lo que agrega esta HU. Pasó en una corrida real: se propuso como global nueva el bloqueo de `.gates.jsonl` por Bash, que T2 ya decía.
+7. **Una entrada por lección** en `lecciones.md`, cada una con su `scope`: el orquestador guarda una memoria por cada una.
 
 No guardes lo que ya está en el repo, el detalle de la HU ni defectos de la metodología. Si una lección es un hecho estable del proyecto, proponé agregarlo a `project-context.md` en `cierre.md`: lo decide la persona. Sin Engram, escribí lo mismo en `$NEXUS_ROOT/doc/sdd/_LECCIONES.md`.
 

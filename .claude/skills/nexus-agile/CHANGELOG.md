@@ -1,5 +1,13 @@
 # Changelog — NexusAgil
 
+## Sin publicar (etapa B del cerebro)
+
+### Ajustes de la primera HU real con la 2.4.0
+- **Aviso de rutas al abrir** (hook `SessionStart`, solo en `startup`): si `NEXUS_ROOT` o `CODE_ROOT` de `project-context.md` nombran una ruta absoluta que no existe en esta máquina, lo dice antes de la primera HU, con o sin Engram. Por qué: en una HU real las dos filas apuntaban a la carpeta de otra máquina; la HU lo descubrió a mitad de camino y lo anotó como hallazgo.
+- **Una memoria por lección**: DONE guarda cada lección aprobada en su propia memoria, con su `topic_key` y su `scope`. Por qué: tres lecciones quedaron en una sola memoria con `scope: project`, y la que era global se perdió como de proyecto.
+- **Docs busca antes de proponer una global**: lee `trampas_globales.md` y corre la consulta global; si la lección repite una trampa que ya existe, la propone como evidencia para esa trampa. Por qué: se propuso como global nueva el bloqueo de `.gates.jsonl` por Bash, que T2 ya decía.
+- **El reclamo se actualiza después del merge**: DONE y AUTO vuelven a escribir `trabajo/<HU>` con el PR mergeado y el issue cerrado. Por qué: el reclamo quedó diciendo "PR en borrador, sin mergear" después del merge.
+
 ## 2.4.0 — El cerebro en cualquier máquina y en todos los proyectos
 
 ### Agregado
