@@ -254,6 +254,9 @@ for f in nexus-fast-pipeline; do
   grep -q 'nexus_memory.py usadas' "$C/$f.md" || fail "$f: el cierre FAST no renueva las memorias usadas"
   grep -q 'nexus_candidates.py' "$C/$f.md" || fail "$f: el cierre FAST no junta las candidatas"
 done
+grep -q 'desde-verificacion' "$C/nexus-p8-done.md" || fail "nexus-p8-done: el pedido de Docs no guarda los hechos de SPEC_VERIFY"
+grep -q 'nexus_memory.py usadas' "$C/nexus-p8-done.md" || fail "nexus-p8-done: el pedido de Docs no renueva las memorias usadas"
+grep -q 'Memoria de Docs' "$C/nexus-p8-done.md" || fail "nexus-p8-done: el orquestador no revisa la linea Memoria: de Docs"
 
 echo
 if [ "$fails" -eq 0 ]; then echo "RESULTADO: sin fallas"; exit 0; fi

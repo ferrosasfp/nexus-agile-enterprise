@@ -394,7 +394,7 @@ Fase 7 — F4 QA
   Modelo: sonnet
 
 Fase 8 — DONE
-  Prompt: usar el de /nexus-p8-done
+  Prompt: usar el de /nexus-p8-done, con todos los puntos de TU TAREA, también el 4 (MEMORIA): en una corrida real el pedido armado a mano lo dejó afuera
   Sub-agente: nexus-docs
   Modelo: sonnet (en la segunda corrida real, haiku metió 5 errores en el reporte final)
 ```

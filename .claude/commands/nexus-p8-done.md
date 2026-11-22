@@ -62,11 +62,18 @@ Task tool:
        - Dependencias de merge: base, PRs de los que depende en orden, commit y árbol aprobados por QA (te los paso)
     2. Actualizar $NEXUS_ROOT/doc/sdd/_INDEX.md con status final (DONE/ABORTED/BLOCKED), fecha, branch, link al report
     3. Verificar que el validation.md tiene veredicto APROBADO. Si no → marcar BLOCKED.
+    4. MEMORIA (es parte de esta tarea, no del orquestador; si tenés Engram, seguí "Memoria del proyecto" de tu definición):
+       a. Hechos de SPEC_VERIFY: si HU_DIR tiene `sdd-verification*.md`, `python3 $SKILL_DIR/scripts/nexus_memory.py desde-verificacion --repo "$CODE_ROOT" --base <BASE_REF> --source "<HU>, <fecha>" --project <memory_project>` con un `--report` por informe, en orden. Guardá cada entrada con `mem_save` (`type: discovery`, `scope: project`, su `title` y su `topic_key`), sin editarla.
+       b. Candidatas: `python3 $SKILL_DIR/scripts/nexus_candidates.py --hu-dir <HU_DIR> --trampas $SKILL_DIR/references/trampas_globales.md`, y `lecciones.md` con su línea `Candidatas:`.
+       c. Renovación: `python3 $SKILL_DIR/scripts/nexus_memory.py usadas --file <HU_DIR>/work-item.md` (más un `--file` por artefacto con `## MEMORIA CONSULTADA`). A cada id de RENOVAR, `mem_review(action: "mark_reviewed", observation_id: N)`; las de CORREGIR, con su mismo `topic_key`. Después, `mem_review(action: "list", project: <memory_project>)` y las vencidas que no son hechos, en `cierre.md` bajo `## Memorias para revisar`.
+       d. En el reporte al orquestador, una línea `Memoria: hechos guardados N (descartados M), candidatas N, renovadas #a #b, a corregir #c, vencidas #d` (o "sin Engram").
+       En una corrida real en AUTO, este pedido no mencionaba la memoria: Docs escribió las lecciones, pero no guardó los hechos de SPEC_VERIFY ni renovó las memorias que la HU usó, y lo dejó "para el orquestador".
 
     OUTPUT ESPERADO:
     - $NEXUS_ROOT/doc/sdd/NNN-titulo/cierre.md
     - $NEXUS_ROOT/doc/sdd/_INDEX.md actualizado
-    - Resumen ejecutivo (5-10 líneas) al orquestador
+    - $NEXUS_ROOT/doc/sdd/NNN-titulo/lecciones.md
+    - Resumen ejecutivo (5-10 líneas) al orquestador, con la línea `Memoria:` del punto 4d
 
     ## Prohibido en esta fase
     - NO modificar código fuente
@@ -77,6 +84,7 @@ Task tool:
 
 ## Después de DONE
 
+- **Memoria de Docs**: leé la línea `Memoria:` de su reporte. Si falta, o no trae hechos guardados y `sdd-verification.md` tiene `## Hechos para la memoria`, o no trae renovadas y el work-item tiene memorias VERIFICADAS o VIGENTES, pedíselo a Docs otra vez (con `SendMessage`, o un DONE nuevo solo con el punto 4) antes de cerrar. Si `cierre.md` dice que algo de la memoria quedó "para el orquestador", hacelo vos o pedíselo: no lo des por hecho
 - **Temporales**: borrá lo que los agentes dejaron en `/tmp` para esta HU (copias, reproducciones, salidas de gates: los reportes nombran las rutas). Los agentes de solo lectura no pueden borrar sus propios temporales
 - **Lecciones**: presentale a la persona `lecciones.md`, con el alcance que propone Docs para cada una (`scope: project` o `scope: global`), en **una sola ventana**: un `AskUserQuestion` con `multiSelect: true`, una opción por lección (título corto, y en la descripción el alcance y la evidencia en una línea), de 2 a 4 opciones por pregunta (la herramienta pide al menos 2: repartilas para que ninguna pregunta quede con una sola; con una sola lección, pregunta de sí o no) y hasta 4 preguntas en la misma llamada. Lo que no marque queda rechazado. Si hay más de 16, las de menos evidencia van en una segunda ronda. Si `cierre.md` trae `## Memorias para revisar`, sumá en esa misma llamada una pregunta `multiSelect` "¿Cuáles siguen valiendo?": las marcadas se renuevan con `mem_review(action: "mark_reviewed")`; las demás se corrigen o se borran (`engram delete <id>`, suave) según lo que diga la persona. Antes eran una pregunta por lección o un texto largo para responder a mano. Las que apruebe, guardalas con `mem_save` y `project: <memory_project>` (o en `$NEXUS_ROOT/doc/sdd/_LECCIONES.md` sin Engram), con su fecha de revisión y el `scope` aprobado: **una memoria por lección**, cada una con su `topic_key`, su `scope` y su título con la palabra del tipo. No juntes varias en una sola memoria: en una corrida real, tres lecciones quedaron en una memoria con un solo `scope`, y la global quedó como de proyecto. Antes de guardar una global, buscala con `mem_search(query: "trampa leccion", all_projects: true, scope: "global", match_mode: "any")`: si ya está, sumale la evidencia con `mem_update` en lugar de crear otra. Las que rechace no se guardan. En AUTO, esta aprobación queda para el cierre del lote: no frena la HU
 - **Cerrar el reclamo**: actualizá `trabajo/[HU]` en memoria con el estado final, la rama y el commit aprobado. Con `tracker_write: true`, comentá en el ticket el PR o la rama, el commit y el costo de la HU (`$SKILL_DIR/references/tracker.md`). Mover el ticket de estado lo hace la persona
