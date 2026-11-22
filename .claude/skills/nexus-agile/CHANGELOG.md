@@ -1,5 +1,10 @@
 # Changelog — NexusAgil
 
+## 2.5.2 — La memoria también en el cierre QUALITY
+
+### Corregido
+- **El cierre QUALITY no guardaba los hechos ni renovaba las memorias.** El pedido a Docs de `/nexus-p8-done`, que AUTO copia, pedía `cierre.md`, `_INDEX.md` y lecciones, pero no mencionaba la memoria. En la primera HU QUALITY real con la 2.5.1, Docs escribió las lecciones pero no guardó los 6 hechos de SPEC_VERIFY ni renovó las 3 memorias que la HU encontró vigentes, y lo dejó "para el orquestador", que tampoco lo hizo. Ahora el pedido trae el punto MEMORIA (hechos de SPEC_VERIFY, candidatas, renovación, vencidas), Docs reporta una línea `Memoria:` y el orquestador la revisa antes de cerrar. FAST+AR ya usaba el pedido de FAST, corregido en la 2.5.1.
+
 ## 2.5.1 — La memoria también en FAST
 
 ### Corregido
