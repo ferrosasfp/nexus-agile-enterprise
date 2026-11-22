@@ -74,6 +74,13 @@ if command -v engram >/dev/null 2>&1; then
   fi
 fi
 
+# ── 2c. Restore the memory backup, if there is one ──────────────────────────
+BRAIN_DIR="${NEXUS_BRAIN_DIR:-$HOME/nexus-brain}"
+if command -v engram >/dev/null 2>&1 && [ -f "${BRAIN_DIR}/memoria.json" ]; then
+  say "Memory backup found in ${BRAIN_DIR}. To load it on this machine (safe to repeat):"
+  echo "    python3 ${REPO_ROOT}/.claude/skills/nexus-agile/scripts/nexus_brain.py restaurar --dir ${BRAIN_DIR}"
+fi
+
 # ── 3. Wire the Engram MCP server into the target project ───────────────────
 MCP_FILE="${TARGET_DIR}/.mcp.json"
 if [ -f "${MCP_FILE}" ]; then

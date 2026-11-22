@@ -485,7 +485,7 @@ Este es el más grande del batch — 4 waves, ~19 archivos. Cuando F3 completa �
 
 Al terminar TODAS las HUs del batch (o al escalar en la regla #10), presentá el reporte con el formato de `$SKILL_DIR/references/auto_completion_report.md`. Leelo recién en ese momento.
 
-Con el reporte, la persona aprueba las lecciones del lote (`lecciones.md` de cada HU, con el alcance que propone Docs). Guardá las aprobadas como dice `/nexus-p8-done` (Después de DONE) y, con `memory_share: git`, corré después `engram sync --project <memory_project>`: el chunk entra con la próxima HU, como los gates posteriores al cierre.
+Con el reporte, la persona aprueba las lecciones del lote (`lecciones.md` de cada HU, con el alcance que propone Docs). Guardá las aprobadas como dice `/nexus-p8-done` (Después de DONE) y, con `memory_share: git`, corré después `engram sync --project <memory_project>`: el chunk entra con la próxima HU, como los gates posteriores al cierre. Si existe el repo de respaldo, cerrá con `python3 $SKILL_DIR/scripts/nexus_brain.py respaldar`.
 
 ---
 

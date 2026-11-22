@@ -45,6 +45,8 @@ Si dos capas se contradicen, manda la de arriba. Engram nunca corrige al repo: u
 
 La trampa de rtk se redescubrio por separado en cinco proyectos antes de que existiera el ambito global. Una memoria global conserva su proyecto de origen (es su procedencia) y se lee desde cualquier otro con `all_projects: true, scope: "global"`: una busqueda normal por proyecto **no** la trae. Una leccion es global solo si no nombra nada propio del repo (rutas, tablas, modulos, reglas del negocio); si duda, es `project`.
 
+**Trampas globales en el plugin.** `engram sync` no exporta el ambito `global`, asi que una trampa global guardada en una maquina no llega a otra. Las aprobadas pasan tambien a `references/trampas_globales.md` por PR, sin nombres de clientes ni rutas personales, y viajan con el plugin a cualquier maquina, con o sin Engram. El analista las lee en F0 junto con la busqueda global, y Dev antes de F3. Si una trampa esta en los dos lados, la busqueda trae la evidencia nueva y el archivo es la referencia revisada.
+
 ## Receta de busqueda
 
 En Engram, `mem_search` exige por defecto que aparezcan todas las palabras (`match_mode: all`). Una consulta larga ("escalados supervisor GH-11 lecciones L1 L2") no encuentra nada y el agente escribe "Ninguna" aunque haya lecciones: paso en GH-12, GH-18 y GH-21 de Nexus Control. Por eso la busqueda es fija, con consultas de una o dos palabras y `match_mode: "any"`:
@@ -53,7 +55,7 @@ En Engram, `mem_search` exige por defecto que aparezcan todas las palabras (`mat
 |---|----------|----------|
 | 1 | `mem_search(query: "leccion", project: <memory_project>, match_mode: "any")` | Lecciones aprobadas del proyecto |
 | 2 | `mem_search(query: "trampa", project: <memory_project>, match_mode: "any")` | Trampas del proyecto |
-| 3 | `mem_search(query: "trampa", all_projects: true, scope: "global")` | Trampas de todos los proyectos |
+| 3 | `mem_search(query: "trampa leccion", all_projects: true, scope: "global", match_mode: "any")` | Trampas y lecciones globales de todos los proyectos (las lecciones de criterio que no nombran nada del repo tambien son globales) |
 | 4 | `mem_search(query: "decision", project: <memory_project>, match_mode: "any")` | Decisiones de la persona: lo que ya se pregunto no se vuelve a preguntar |
 | 5 | `mem_search(query: "<archivo o modulo>", project: <memory_project>, match_mode: "any")` | `hecho/` y lecciones de lo que se va a tocar (`reader.py`, `conftest`) |
 
@@ -71,6 +73,28 @@ Engram es local: cada persona tiene su base. Para compartir la memoria del proye
 | `git` | Al cerrar la HU, despues de guardar hechos, lecciones y reclamo, el orquestador corre `engram sync --project <memory_project>`: escribe un chunk comprimido en `.engram/chunks/` que entra en el primer commit de la proxima HU, en su rama y su PR (la misma regla que los gates posteriores al cierre). En F1 (y F0), antes de buscar, el analista corre `engram sync --import` |
 
 Lo que viaja: solo el ambito `project`, sin los prompts (probado con Engram 3.7.2); ni `global` ni `personal`. Incluye los resumenes de sesion del proyecto, que pueden tener detalle del cliente: `git` solo en repos privados, y quien aprueba el PR revisa que el chunk no lleve nada que no deba. Lo que entra a git queda en el historial aunque despues se borre. El reclamo `trabajo/<HU>` viaja recien con el commit: para coordinar en vivo manda el tracker.
+
+## Respaldo: no depender de una maquina
+
+Engram vive en `~/.engram` de una sola maquina. `memory_share: git` comparte el ambito `project` de un repo, pero no las globales ni los repos de terceros, donde nada de la memoria puede ir al repo del cliente. Para eso esta el respaldo personal:
+
+```
+python3 $SKILL_DIR/scripts/nexus_brain.py respaldar            # ~/nexus-brain o $NEXUS_BRAIN_DIR
+python3 $SKILL_DIR/scripts/nexus_brain.py respaldar --push     # exige empujarlo (falla si no puede)
+python3 $SKILL_DIR/scripts/nexus_brain.py restaurar            # en la maquina nueva
+```
+
+Exporta toda la memoria (`engram export --all`: todos los proyectos y ambitos, global incluido) a `memoria.json` en un repo git propio, normalizada para que cada commit muestre solo lo que cambio. El import no duplica: restaurar dos veces no hace dano. El remoto lo agrega la persona y tiene que ser **privado** (la memoria trae detalle de los clientes); el script no crea ninguno, y empuja solo si `gh` confirma que el remoto de push es un repo de GitHub **privado** (otro host, un alias que gh no resuelve o gh sin sesion: queda local y avisa; con `--push`, falla). Salvaguardas: solo escribe en un repo de respaldo (lo marca con `.nexus-brain`; un repo de otra cosa se rechaza), no pisa el respaldo si a la base local le faltan memorias que el respaldo tiene (una maquina nueva sin restaurar; `--forzar` para un borrado a proposito), y lo borrado no se respalda. DONE lo corre al final si el repo de respaldo existe.
+
+## Siembra retroactiva
+
+Un proyecto que ya tenia HUs antes de conectar la memoria tiene su experiencia escrita en `doc/sdd/` (auto-blindaje, lecciones de los reportes), pero no en Engram. Para traerla:
+
+```
+python3 $SKILL_DIR/scripts/nexus_seed.py --sdd $NEXUS_ROOT/doc/sdd --out candidatas.md --json candidatas.json
+```
+
+Junta cada entrada de `auto-blindaje.md` (con su "Aplicar en") y cada punto de las secciones "Lecciones", con `HU/archivo:linea`, y agrupa las casi identicas. Solo lee. Las candidatas se curan (se agrupan por significado, se descartan las de una sola vez, las que ya estan en `project-context.md` y las que ya son globales) y la persona aprueba la lista, con el `scope` de cada una, antes de guardarlas: es la regla 2, igual que en DONE. En un proyecto de 122 HUs dio 578 candidatas, que la curacion dejo en 25.
 
 ### Registro de trabajo
 

@@ -209,6 +209,19 @@ grep -q 'engram init' "$ROOT/setup.sh" || fail "setup.sh no fija el proyecto de 
 check_absent "sin MEMORY.md manual como respaldo" 'manual MEMORY\.md' "$ROOT/setup.sh"
 pass "memoria en todos los proyectos revisada"
 
+# --- El cerebro en cualquier maquina (2.4.0)
+[ -f $R/trampas_globales.md ] || fail "falta references/trampas_globales.md"
+grep -q 'Verify:' $R/trampas_globales.md || fail "trampas_globales.md: cada trampa necesita su Verify:"
+for f in $A/nexus-analyst.md $A/nexus-dev.md $R/engram_protocol.md; do
+  grep -q 'trampas_globales.md' "$f" || fail "$(basename "$f") no lee las trampas globales del plugin"
+done
+for f in nexus_seed.py nexus_brain.py; do [ -f "$ROOT/.claude/skills/nexus-agile/scripts/$f" ] || fail "falta scripts/$f"; done
+for f in nexus-p8-done nexus-fast-pipeline nexus-fast-plus-ar nexus-auto; do
+  grep -q 'nexus_brain.py respaldar' "$C/$f.md" || fail "$f no respalda la memoria al cerrar"
+done
+grep -q 'startup' "$ROOT/hooks/hooks.json" || fail "el hook no avisa al abrir un proyecto sin memory_project"
+pass "cerebro en cualquier maquina revisado"
+
 echo
 if [ "$fails" -eq 0 ]; then echo "RESULTADO: sin fallas"; exit 0; fi
 echo "RESULTADO: $fails falla(s)"; exit 1
