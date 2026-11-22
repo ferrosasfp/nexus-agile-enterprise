@@ -863,6 +863,33 @@ class AlTerminar(HookCase):
         (self.repo / ".engram/config.json").write_text('{"project_name": "demo"}\n')
         self.assertEqual(self.run_hook("session", source="startup").stdout, "")
 
+    def test_rutas_que_no_existen_avisan_aunque_no_haya_engram(self):
+        # Caso real: NEXUS_ROOT y CODE_ROOT con la carpeta de otra maquina; la HU lo descubrio a mitad de camino.
+        self.with_engram(installed=False)
+        (self.repo / "project-context.md").write_text(
+            "| **NEXUS_ROOT** | /home/otra/proyectos/demo (raiz del repo) |\n| **CODE_ROOT** | `/home/otra/proyectos/demo` |\n")
+        out = self.run_hook("session", source="startup").stdout
+        self.assertIn("NEXUS_ROOT /home/otra/proyectos/demo", out)
+        self.assertIn("CODE_ROOT /home/otra/proyectos/demo", out)
+        self.assertIn("no existe en esta maquina", out)
+        self.assertNotIn("no existe", self.run_hook("session", source="compact").stdout)
+
+    def test_rutas_sin_aviso_si_existen_o_no_son_rutas(self):
+        self.with_engram(installed=False)
+        for rows in (f"| **NEXUS_ROOT** | {self.repo} |\n| **CODE_ROOT** | `{self.repo}` |",
+                     "| **NEXUS_ROOT** | [carpeta con project-context.md; default: raiz del repo] |\n"
+                     "| **CODE_ROOT** | [raiz git del codigo; default: el repo del directorio actual] |",
+                     "| **NEXUS_ROOT** | la raiz git del directorio actual |\n| **CODE_ROOT** | la raiz git del directorio actual |"):
+            (self.repo / "project-context.md").write_text(rows + "\n")
+            self.assertEqual(self.run_hook("session", source="startup").stdout, "", rows)
+
+    def test_rutas_y_memoria_avisan_las_dos(self):
+        self.with_engram()
+        (self.repo / "project-context.md").write_text("| **Nombre** | demo |\n| **CODE_ROOT** | /no/existe |\n")
+        out = self.run_hook("session", source="startup").stdout
+        self.assertIn("CODE_ROOT /no/existe no existe", out)
+        self.assertIn("no declara memory_project", out)
+
     def test_memoria_sin_aviso_sin_engram_ni_nexus(self):
         self.with_engram(installed=False)
         (self.repo / "project-context.md").write_text("| **Nombre** | demo |\n")

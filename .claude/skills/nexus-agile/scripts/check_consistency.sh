@@ -222,6 +222,15 @@ done
 grep -q 'startup' "$ROOT/hooks/hooks.json" || fail "el hook no avisa al abrir un proyecto sin memory_project"
 pass "cerebro en cualquier maquina revisado"
 
+# --- Ajustes de la primera HU real (etapa B)
+grep -q 'def paths_warning' "$ROOT/hooks/nexus_hook.py" || fail "el hook no avisa de NEXUS_ROOT/CODE_ROOT que no existen"
+grep -q 'una memoria por lecci' "$C/nexus-p8-done.md" || fail "nexus-p8-done no guarda una memoria por leccion"
+grep -q 'Una memoria por leccion' $R/engram_protocol.md || fail "engram_protocol.md no pide una memoria por leccion"
+grep -q 'trampas_globales.md' $A/nexus-docs.md || fail "nexus-docs no busca la trampa antes de proponer una global"
+grep -q 'Despu.s del merge' "$C/nexus-p8-done.md" || fail "nexus-p8-done no actualiza el reclamo despues del merge"
+grep -q 'Despu.s del merge' "$C/nexus-auto.md" || fail "nexus-auto no actualiza el reclamo despues del merge"
+pass "ajustes de la primera HU real revisados"
+
 echo
 if [ "$fails" -eq 0 ]; then echo "RESULTADO: sin fallas"; exit 0; fi
 echo "RESULTADO: $fails falla(s)"; exit 1

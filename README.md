@@ -173,7 +173,7 @@ Cómo cuenta un gate:
 | `PostToolUse(Bash)` | Compara los artefactos con la foto. Si un Bash cambió alguno que no se escribió con Write o Edit, restaura la versión anterior, guarda la modificada en `.violations/`, registra un `VIOLATION` y frena al agente |
 | `PostToolUse(AskUserQuestion)` | Registra el gate si se eligió la opción con su nombre |
 | `SubagentStop` | Al terminar un agente: exige su artefacto y su línea `STATUS:`, revisa el árbol de git si el agente no implementa, busca caracteres invisibles y guarda la versión entregada en `.versions/`. Insiste una sola vez |
-| `SessionStart(startup, compact, resume)` | Avisa si el proyecto no tiene `memory_project` o `.engram/config.json`. Recuerda la HU activa y su `.nexus-state.json` |
+| `SessionStart(startup, compact, resume)` | Al abrir, avisa si `NEXUS_ROOT` o `CODE_ROOT` nombran una ruta que no existe, o si el proyecto no tiene `memory_project` o `.engram/config.json`. Recuerda la HU activa y su `.nexus-state.json` |
 
 Requisitos por fase al lanzar (de `check_phase`):
 

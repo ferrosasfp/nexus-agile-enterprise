@@ -15,7 +15,7 @@
 | `PreToolUse(Bash)` | Solo lectura para quienes no implementan, incluidos interpretes en linea que escriben. Nadie usa `--no-verify`. `forbidden_commands` del proyecto vale para todos, incluida la sesion principal |
 | `PostToolUse(Bash)` | Bloqueo por destino real: compara los archivos de `HU_DIR` antes y despues de cada Bash de un agente. Si cambio alguno que no se escribio con Write o Edit, restaura la version anterior, guarda la modificada en `HU_DIR/.violations/`, lo registra como `VIOLATION` en `.gates.jsonl` y frena al agente, sin importar como estaba escrito el comando |
 | `SubagentStop` | Frena al agente que tiene una `VIOLATION` propia en esta fase; exige el reporte y su linea `STATUS:`; exige la seccion de preguntas en el work-item; compara el arbol de git de todo agente que no implementa; QA debe haber ejecutado al menos un comando; en la revision de un PR ajeno, que cada `pr-review-<unidad>.md` exista con `STATUS:` y conteos que cuadran con sus hallazgos, y que `pr-comment.md` no lleve un hallazgo refutado |
-| `SessionStart(startup, compact, resume)` | Avisa si el proyecto usa NexusAgil sin `memory_project` o sin `.engram/config.json` (con Engram instalado). Recuerda la HU activa y su estado |
+| `SessionStart(startup, compact, resume)` | Al abrir, avisa si `NEXUS_ROOT` o `CODE_ROOT` nombran una ruta absoluta que no existe en esta maquina, y si el proyecto usa NexusAgil sin `memory_project` o sin `.engram/config.json` (con Engram instalado). Recuerda la HU activa y su estado |
 
 ## Archivos que escribe
 

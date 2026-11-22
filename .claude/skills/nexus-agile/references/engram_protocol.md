@@ -98,7 +98,7 @@ Junta cada entrada de `auto-blindaje.md` (con su "Aplicar en") y cada punto de l
 
 ### Registro de trabajo
 
-Es coordinacion, no memoria: el gate de propiedad de `references/tracker.md` consulta al tracker antes de F0, y el tracker es la autoridad. El reclamo `trabajo/<HU>` en Engram es un candado con vencimiento para lo que el tracker no ve (otra sesion de Claude en la misma maquina, una HU sin ticket). Lo guarda el orquestador al empezar, lo actualiza en cada gate y lo cierra en DONE con el estado final y el commit aprobado. Sin cambios en mas de 3 dias, se trata como abandonado: se pregunta, no se pisa. Si contradice al tracker, manda el tracker.
+Es coordinacion, no memoria: el gate de propiedad de `references/tracker.md` consulta al tracker antes de F0, y el tracker es la autoridad. El reclamo `trabajo/<HU>` en Engram es un candado con vencimiento para lo que el tracker no ve (otra sesion de Claude en la misma maquina, una HU sin ticket). Lo guarda el orquestador al empezar, lo actualiza en cada gate, lo cierra en DONE con el estado final y el commit aprobado, y lo actualiza una vez mas despues del merge (PR, commit del merge, issue cerrado): si no, queda diciendo "PR en borrador" y la proxima sesion cree que la HU sigue abierta. Sin cambios en mas de 3 dias, se trata como abandonado: se pregunta, no se pisa. Si contradice al tracker, manda el tracker.
 
 ### Hechos verificados
 
@@ -161,9 +161,9 @@ content:
   Review: [fecha + 60 dias]
 ```
 
-Con `topic_key`, la misma leccion se actualiza en lugar de duplicarse. Una memoria que la HU encontro desactualizada se corrige con su mismo `topic_key`.
+Una memoria por leccion: cada una con su `topic_key` y su `scope`, nunca varias juntas (tres lecciones en una sola memoria quedaron con un solo `scope`, y la global se perdio como de proyecto). Con `topic_key`, la misma leccion se actualiza en lugar de duplicarse. Una memoria que la HU encontro desactualizada se corrige con su mismo `topic_key`.
 
-**Alcance global.** Docs propone `scope: global` solo si la leccion no nombra nada propio del repo; la persona lo aprueba junto con la leccion. Antes de guardar una global, el orquestador busca la misma trampa con la consulta global: si ya existe, la actualiza con `mem_update` (suma la evidencia nueva y la HU) en lugar de crear otra.
+**Alcance global.** Docs propone `scope: global` solo si la leccion no nombra nada propio del repo; la persona lo aprueba junto con la leccion. Antes de proponerla, Docs lee `references/trampas_globales.md` y corre la consulta global: si ya existe, la propone como evidencia para esa trampa (T-N o #id), no como una nueva. Para una T-N del plugin, la evidencia entra por PR al repo de NexusAgil. Antes de guardar una global, el orquestador busca la misma trampa con la consulta global: si ya existe, la actualiza con `mem_update` (suma la evidencia nueva y la HU) en lugar de crear otra.
 
 **Al final de DONE**, con `memory_share: git`: `engram sync --project <memory_project>`. El chunk de `.engram/chunks/` sigue la regla de las lineas de `.gates.jsonl` posteriores al cierre: entra en el primer commit de la proxima HU, en su rama y su PR, nunca en un push directo a `main`.
 
