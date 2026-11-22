@@ -4,7 +4,7 @@
 
 NexusAgil es una metodología de desarrollo con agentes para Claude Code. Procesa una Historia de Usuario (HU) por vez, por fases, con agentes especializados, gates que da una persona y un hook que hace cumplir las reglas que no deben depender de la memoria del modelo.
 
-Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.3.0**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
+Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.4.0**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
 
 **Estado:** release candidate. El supervisor de AUTO es experimental. Las mediciones están en [Evaluación](#evaluación).
 
@@ -173,7 +173,7 @@ Cómo cuenta un gate:
 | `PostToolUse(Bash)` | Compara los artefactos con la foto. Si un Bash cambió alguno que no se escribió con Write o Edit, restaura la versión anterior, guarda la modificada en `.violations/`, registra un `VIOLATION` y frena al agente |
 | `PostToolUse(AskUserQuestion)` | Registra el gate si se eligió la opción con su nombre |
 | `SubagentStop` | Al terminar un agente: exige su artefacto y su línea `STATUS:`, revisa el árbol de git si el agente no implementa, busca caracteres invisibles y guarda la versión entregada en `.versions/`. Insiste una sola vez |
-| `SessionStart(compact, resume)` | Recuerda la HU activa y su `.nexus-state.json` |
+| `SessionStart(startup, compact, resume)` | Avisa si el proyecto no tiene `memory_project` o `.engram/config.json`. Recuerda la HU activa y su `.nexus-state.json` |
 
 Requisitos por fase al lanzar (de `check_phase`):
 
@@ -413,6 +413,10 @@ NexusAgil es el arnés de cada proyecto y Engram guarda su experiencia, pero no 
 - **Ámbito global.** Las trampas del entorno y de las herramientas (rtk, Write/Edit, el hook) se guardan con `scope: global` y se leen desde cualquier proyecto. La trampa de rtk se había redescubierto por separado en cinco proyectos.
 - **Búsqueda fija.** Tres consultas cortas en todos los pipelines, FAST incluido: lecciones y trampas del proyecto, y trampas globales. El work-item lleva la línea `Busquedas:` y el hook no acepta un "Ninguna" sin ella. Las consultas largas devolvían vacío y el agente escribía "Ninguna" con lecciones que aplicaban.
 - **Equipo.** Con `memory_share: git`, la memoria del proyecto viaja en `.engram/chunks/` con los PRs (`engram sync`), solo en repos privados. Por defecto queda en la máquina de cada persona.
+- **Trampas en el plugin.** Las trampas globales aprobadas también viven en `references/trampas_globales.md`, que el analista y Dev leen con o sin Engram: `engram sync` no exporta el ámbito global, y así llegan a cualquier máquina.
+- **Respaldo.** `scripts/nexus_brain.py respaldar` exporta toda la memoria (global incluida) a un repo git propio (`~/nexus-brain`), y `restaurar` la carga en otra máquina sin duplicar. DONE lo corre si el repo existe. El remoto lo agrega la persona: el script empuja solo si `gh` confirma que es un repo privado de GitHub. No pisa el respaldo desde una máquina sin restaurar y solo escribe en su propio repo.
+- **Siembra.** `scripts/nexus_seed.py` junta las candidatas a lección que un proyecto ya escribió en `doc/sdd/` (auto-blindaje y lecciones de los reportes), para aprobarlas al conectar la memoria.
+- **Aviso.** Al abrir una sesión en un proyecto con NexusAgil y Engram pero sin `memory_project` (o sin `.engram/config.json`), el hook lo dice.
 
 Lo que hizo la memoria en 12 HUs reales: `docs/medicion-memoria.md`.
 

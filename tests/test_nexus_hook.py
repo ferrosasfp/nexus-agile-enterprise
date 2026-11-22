@@ -708,6 +708,10 @@ class AlTerminar(HookCase):
     RECETA = [{"query": "leccion", "project": "p", "match_mode": "any"}, {"query": "trampa", "project": "p", "match_mode": "any"},
               {"query": "trampa", "all_projects": True, "scope": "global"}]
 
+    def test_memoria_receta_con_la_global_de_trampas_y_lecciones(self):
+        calls = self.RECETA[:2] + [{"query": "trampa leccion", "all_projects": True, "scope": "global", "match_mode": "any"}]
+        self.assertEqual(self.memory_stop(calls, '## MEMORIA CONSULTADA\nNinguna\nBusquedas: "leccion" 0, "trampa" 0, global 0\n'), "")
+
     def test_memoria_receta_completa(self):
         self.assertEqual(self.memory_stop(self.RECETA, '## MEMORIA CONSULTADA\nNinguna\nBusquedas: "leccion" 0, "trampa" 0, global "trampa" 0\n'), "")
 
@@ -789,6 +793,83 @@ class AlTerminar(HookCase):
         self.write("work-item.md")
         self.spawn("F1", "nexus-analyst")
         self.assertIn("001-demo", self.run_hook("session").stdout)
+
+    def with_engram(self, installed=True):
+        """PATH con un engram falso (o sin engram), para no depender de la maquina."""
+        bin_dir = self.tmp / "bin"
+        bin_dir.mkdir(exist_ok=True)
+        if installed:
+            fake = bin_dir / "engram"
+            fake.write_text("#!/bin/sh\nexit 0\n")
+            fake.chmod(0o755)
+        self.env["PATH"] = f"{bin_dir}:/usr/bin:/bin"
+
+    def test_memoria_aviso_sin_memory_project(self):
+        self.with_engram()
+        (self.repo / "project-context.md").write_text("| **Nombre** | demo |\n")
+        out = self.run_hook("session", source="startup").stdout
+        self.assertIn("no declara memory_project", out)
+
+    def test_memoria_aviso_sin_config_de_engram(self):
+        self.with_engram()
+        (self.repo / "project-context.md").write_text("| **memory_project** | demo |\n")
+        out = self.run_hook("session", source="startup").stdout
+        self.assertIn("falta .engram/config.json", out)
+        self.assertIn("engram init demo", out)
+
+    def test_memoria_nombre_sin_punto_final_y_code_root_aparte(self):
+        # Casos reales: "| **memory_project** | <nombre>. Fijado..." y artefactos en un repo, codigo en otro.
+        self.with_engram()
+        (self.repo / "project-context.md").write_text("| **memory_project** | demo. Fijado con engram init |\n")
+        self.assertIn("engram init demo;", self.run_hook("session", source="startup").stdout)
+        other = self.tmp / "codigo"
+        other.mkdir()
+        (self.repo / "project-context.md").write_text(f"| **memory_project** | demo |\n| **CODE_ROOT** | `{other}` |\n")
+        self.assertEqual(self.run_hook("session", source="startup").stdout, "")
+
+    def test_memoria_fila_code_root_de_la_plantilla_no_apaga_el_aviso(self):
+        self.with_engram()
+        for row in ("| **CODE_ROOT** | [raiz git del codigo; default: el repo del directorio actual] |",
+                    f"| **CODE_ROOT** | `{self.repo}` |", "| **CODE_ROOT** | /no/existe |"):
+            (self.repo / "project-context.md").write_text(f"| **memory_project** | MiApp |\n{row}\n")
+            self.assertIn("engram init MiApp", self.run_hook("session", source="startup").stdout, row)
+
+    def test_memoria_fila_sin_completar_de_la_plantilla(self):
+        self.with_engram()
+        (self.repo / "project-context.md").write_text(
+            "| **memory_project** | nombre del proyecto en Engram; uno por cliente |\n")
+        self.assertIn("no declara memory_project", self.run_hook("session", source="startup").stdout)
+
+    def test_memoria_solo_al_abrir_y_desde_un_subdirectorio(self):
+        self.with_engram()
+        (self.repo / "project-context.md").write_text("| **Nombre** | demo |\n")
+        self.assertNotIn("memory_project", self.run_hook("session", source="compact").stdout)
+        sub = self.repo / "src"
+        sub.mkdir()
+        self.assertIn("no declara memory_project", self.run_hook("session", source="startup", cwd=str(sub)).stdout)
+
+    def test_memoria_un_error_no_tapa_la_hu_activa(self):
+        self.write("work-item.md")
+        self.spawn("F1", "nexus-analyst")
+        self.with_engram()
+        result = self.run_hook("session", source="startup", cwd="/root/no-accesible")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("001-demo", result.stdout)
+
+    def test_memoria_sin_aviso_si_esta_conectado(self):
+        self.with_engram()
+        (self.repo / "project-context.md").write_text("| **memory_project** | demo |\n")
+        (self.repo / ".engram").mkdir()
+        (self.repo / ".engram/config.json").write_text('{"project_name": "demo"}\n')
+        self.assertEqual(self.run_hook("session", source="startup").stdout, "")
+
+    def test_memoria_sin_aviso_sin_engram_ni_nexus(self):
+        self.with_engram(installed=False)
+        (self.repo / "project-context.md").write_text("| **Nombre** | demo |\n")
+        self.assertEqual(self.run_hook("session", source="startup").stdout, "")
+        self.with_engram()
+        (self.repo / "project-context.md").unlink()
+        self.assertEqual(self.run_hook("session", source="startup").stdout, "")
 
 
 class PorDestino(HookCase):

@@ -162,9 +162,11 @@ Si tenés `mem_search`, antes de escribir el work-item corré la **receta de bú
 
 1. `mem_search(query: "leccion", project: <memory_project>, match_mode: "any")`
 2. `mem_search(query: "trampa", project: <memory_project>, match_mode: "any")`
-3. `mem_search(query: "trampa", all_projects: true, scope: "global")`: trampas del entorno que valen en cualquier proyecto
+3. `mem_search(query: "trampa leccion", all_projects: true, scope: "global", match_mode: "any")`: trampas del entorno que valen en cualquier proyecto
 4. `mem_search(query: "decision", project: <memory_project>, match_mode: "any")`: lo que la persona ya decidió no se vuelve a preguntar
 5. Una más, de una o dos palabras, por los archivos o módulos que vas a tocar (`reader.py`, `conftest`).
+
+Con o sin Engram, leé también `$SKILL_DIR/references/trampas_globales.md`: son las trampas del entorno que viajan con el plugin (`engram sync` no exporta las globales). Las que apliquen a esta HU van a la tabla de `## MEMORIA CONSULTADA` con id `TG-T1`, `TG-T2`, etc.
 
 Las consultas largas no encuentran nada: Engram exige por defecto todas las palabras. **Como máximo 5 búsquedas**, y `mem_get_observation` solo para las que vas a usar (máximo 3): la memoria tiene que ahorrar lecturas, no sumarlas. Con `memory_share: git`, antes corré `engram sync --import`.
 

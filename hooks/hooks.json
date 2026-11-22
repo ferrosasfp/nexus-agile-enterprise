@@ -14,7 +14,7 @@
       { "matcher": ".*nexus-.*", "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py stop", "onFailure": "block", "timeout": 30 }] }
     ],
     "SessionStart": [
-      { "matcher": "compact|resume", "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py session", "timeout": 10 }] }
+      { "matcher": "startup|compact|resume", "hooks": [{ "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/nexus_hook.py session", "timeout": 10 }] }
     ]
   }
 }

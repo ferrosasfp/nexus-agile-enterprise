@@ -1,5 +1,22 @@
 # Changelog — NexusAgil
 
+## 2.4.0 — El cerebro en cualquier máquina y en todos los proyectos
+
+### Agregado
+- **Trampas globales en el plugin** (`references/trampas_globales.md`): rtk reescribe la salida, los artefactos solo con Write o Edit, Write y Edit decodifican escapes Unicode. Cada una con su `Verify:`. Suma cuatro de la siembra (T4 a T7: restaurar mutantes con git, vitest no chequea tipos, variables en zsh, cuándo cuenta un mutante). El analista las lee en F0 y Dev antes de la primera wave, con o sin Engram. Por qué: `engram sync` no exporta el ámbito global, así que una trampa global guardada en una máquina no llegaba a otra.
+- **Respaldo de la memoria** (`scripts/nexus_brain.py`): `respaldar` exporta toda la memoria con `engram export --all` (todos los proyectos y ámbitos, global incluido) a `memoria.json` en un repo git propio (`~/nexus-brain` o `$NEXUS_BRAIN_DIR`), normalizada para que cada commit muestre solo lo que cambió; `restaurar` la importa en otra máquina. Probado con Engram 3.7.2: el import no duplica. El remoto lo agrega la persona; si existe, empuja solo cuando `gh` confirma que el remoto de push es un repo privado de GitHub. No pisa el respaldo si a la base local le faltan memorias que el respaldo tiene (máquina nueva sin restaurar; `--forzar` para un borrado a propósito), solo escribe en un repo de respaldo (marca `.nexus-brain`) y no respalda lo borrado. DONE, FAST, FAST+AR y AUTO lo corren al cerrar si el repo existe.
+- **Siembra retroactiva** (`scripts/nexus_seed.py`): junta las candidatas a lección de `doc/sdd/` (cada entrada de `auto-blindaje.md` con su "Aplicar en", y los puntos de las secciones "Lecciones"), con `HU/archivo:línea`, y agrupa las casi idénticas (la agrupación por significado la hace quien cura la lista). Solo lee: la persona aprueba antes de guardar. En un proyecto real de 122 HUs: 578 candidatas, curadas a 25, que nunca habían entrado a la memoria.
+- **Aviso al abrir** (hook `SessionStart`, ahora también en `startup`): si el proyecto tiene `project-context.md`, Engram está instalado y falta `memory_project` (o falta `.engram/config.json`), lo dice antes de la primera HU. Con `CODE_ROOT` declarado (artefactos y código en repos distintos), no exige `.engram` en el repo de artefactos.
+
+### Cambiado
+- **Receta de búsqueda**: la consulta global pasa a `"trampa leccion"` con `match_mode: "any"`, para traer también las lecciones globales; con solo `"trampa"`, las 6 lecciones globales de la siembra no se veían desde otros proyectos.
+- `references/engram_protocol.md`: secciones "Respaldo: no depender de una máquina" y "Siembra retroactiva", y las trampas del plugin en "Proyecto y ámbito".
+- Check de consistencia: bloque "El cerebro en cualquier máquina (2.4.0)".
+- `docs/plan-cerebro.md`: tercera etapa (pasos 18 a 29), con la etapa A hecha.
+
+### Revisión
+- Un revisor adversario independiente atacó el cambio antes del commit: 1 BLOQUEANTE, 6 MAYOR y 5 MENOR, corregidos con test. El bloqueante: `respaldar` en una máquina nueva sin restaurar commiteaba un respaldo vacío encima del bueno. Los mayores: un `--dir` apuntando a otro repo commiteaba su trabajo (`git add -A`); el freno de remotos públicos dejaba pasar cuando no podía decidir y miraba la URL de fetch en vez de la de push; un error leyendo el proyecto tumbaba el `SessionStart` y tapaba el recordatorio de la HU activa; la fila `CODE_ROOT` de la plantilla apagaba el aviso de `.engram`; la siembra duplicaba secciones anidadas, tomaba spinoffs como lecciones, perdía lecciones en negrita y reglas de varias líneas; y la documentación nombraba proyectos de clientes en este repo público. Los menores: el nombre con mayúscula o la fila sin completar de la plantilla, el aviso repetido en cada compactación y sin mirar la raíz del repo, lo borrado que viajaba al respaldo, y los números de línea de las lecciones.
+
 ## 2.3.0 — La memoria en todos los proyectos
 
 ### Agregado

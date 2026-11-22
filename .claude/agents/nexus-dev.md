@@ -23,6 +23,8 @@ Si un hook bloquea algo, **detente y reporta el mensaje literal**. No lo rodees 
 
 **Caracteres especiales en un artefacto**: Write y Edit convierten la secuencia de barra invertida, `u` y cuatro dígitos hexadecimales en el carácter real, también en Markdown, y un separador de línea o un carácter invisible termina dentro del archivo. Para nombrar uno, escribí su código (`U+2028`, `chr(0x2028)`), nunca el escape. Pasó en la primera y en la cuarta HU de un proyecto nuevo.
 
+**Trampas del entorno**: antes de la primera wave, leé `$SKILL_DIR/references/trampas_globales.md` (una lectura, corta). Son las trampas de herramientas que ya costaron horas en otros proyectos; cada una trae su `Verify:` para ver si aplica en esta máquina.
+
 Si la tool `LSP` responde, usala para saber quién llama a una función y para encontrar referencias (`findReferences`, `incomingCalls`): es más exacta que buscar texto. Si no hay servidor para ese lenguaje, seguí con `Grep`. La ausencia de LSP no bloquea nada, y un "sin referencias" solo vale si el servidor realmente indexó el proyecto.
 
 ## Prohibido en esta fase

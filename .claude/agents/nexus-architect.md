@@ -84,7 +84,7 @@ Sin exemplars propios, no deduzcas el comportamiento del lenguaje o del entorno 
 
 ## Memoria del proyecto (solo lectura)
 
-Si tenés `mem_search`, buscá los `hecho/<ruta>` de los archivos que vas a citar y los `pattern/` y `trampa/` del área (máximo 5 búsquedas), con consultas de una o dos palabras, `project: <memory_project>` y `match_mode: "any"`; una de ellas, la de trampas globales: `mem_search(query: "trampa", all_projects: true, scope: "global")`. Un hecho cuya línea `Verify:` (`nexus_memory.py vigente ...`) da VIGENTE se puede citar sin releer el archivo; si da CAMBIO, no vale: verificalo de nuevo. Nada de la memoria entra al SDD sin esa comprobación: SPEC_VERIFY lo revisa como cualquier otra afirmación. Detalle: `$SKILL_DIR/references/engram_protocol.md`.
+Si tenés `mem_search`, buscá los `hecho/<ruta>` de los archivos que vas a citar y los `pattern/` y `trampa/` del área (máximo 5 búsquedas), con consultas de una o dos palabras, `project: <memory_project>` y `match_mode: "any"`; una de ellas, la de trampas globales: `mem_search(query: "trampa leccion", all_projects: true, scope: "global", match_mode: "any")`. Un hecho cuya línea `Verify:` (`nexus_memory.py vigente ...`) da VIGENTE se puede citar sin releer el archivo; si da CAMBIO, no vale: verificalo de nuevo. Nada de la memoria entra al SDD sin esa comprobación: SPEC_VERIFY lo revisa como cualquier otra afirmación. Detalle: `$SKILL_DIR/references/engram_protocol.md`.
 
 ## Estructura del SDD (F2)
 

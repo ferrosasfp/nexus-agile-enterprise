@@ -1448,8 +1448,71 @@ def invisible_chars(hu_dir, since):
     return found
 
 
+MEMORY_PROJECT = re.compile(r"memory_project\**\s*[:|]\s*`?([A-Za-z0-9][\w.-]*?)`?[.]?(?=\s*(?:\||$)|\.\s)", re.M)
+
+
+def memory_roots(data):
+    """La carpeta de la sesion y, si esta dentro de un repo, su raiz: una sesion abierta en un subdirectorio tambien avisa."""
+    cwd = Path(data.get("cwd") or os.getcwd())
+    roots = [cwd]
+    for parent in [cwd, *cwd.parents]:
+        if (parent / ".git").exists():
+            if parent != cwd:
+                roots.append(parent)
+            break
+    return roots
+
+
+def separate_code_root(text, root):
+    """True si project-context declara un CODE_ROOT que es otro repo existente (artefactos y codigo separados).
+    La fila de la plantilla ([raiz git del codigo; default: ...]) o un CODE_ROOT que es este mismo repo no cuentan."""
+    row = re.search(r"\bCODE_ROOT\b\W{0,6}\|([^\n]*)", text)
+    if not row:
+        return False
+    for raw in re.findall(r"(?<![\w`])[`]?((?:/|~/)[^\s`|)]+)", row.group(1)):
+        path = Path(os.path.expanduser(raw.rstrip(".,;")))
+        if path.is_dir() and os.path.realpath(path) != os.path.realpath(root):
+            return True
+    return False
+
+
+def memory_warning(data):
+    """Un proyecto con NexusAgil y Engram instalado, pero sin memory_project o sin .engram/config.json: en la 2.3.0
+    habia 8 proyectos asi, y la memoria caia en el proyecto que Engram dedujera de la carpeta, o no se usaba."""
+    if not shutil.which("engram"):
+        return None
+    for root in memory_roots(data):
+        for sub in (".", ".nexus", "docs"):
+            path = root / sub / "project-context.md"
+            if not path.is_file():
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            found = MEMORY_PROJECT.search(text)
+            if found is None:
+                return (f"NexusAgil: {path} no declara memory_project, asi que este proyecto no usa la memoria de Engram. "
+                        "Antes de la proxima HU, decile a la persona: agregar la fila memory_project (nombre del proyecto en "
+                        "Engram, uno por cliente) y correr engram init <nombre> en la raiz del repo (references/engram_protocol.md)")
+            name = found.group(1)
+            if not (root / ".engram" / "config.json").is_file() and not separate_code_root(text, root):
+                return (f"NexusAgil: memory_project es {name}, pero falta .engram/config.json en {root}. "
+                        f"F0 corre engram init {name}; si el repo es de otro, va en .git/info/exclude")
+            return None
+    return None
+
+
 def cmd_session(data):
-    """Despues de compactar o retomar: recordar la HU activa, porque el chat ya no es confiable."""
+    """Al abrir, compactar o retomar: avisar si el proyecto no tiene memoria, y recordar la HU activa,
+    porque el chat ya no es confiable."""
+    # Solo al abrir: repetirlo en cada compactacion es ruido. Un error leyendo el proyecto (permisos, carpeta que no
+    # existe) no puede tumbar el arranque ni tapar el recordatorio de la HU activa.
+    if data.get("source", "startup") == "startup":
+        try:
+            warning = memory_warning(data)
+        except (OSError, ValueError) as error:
+            warning = None
+            print(f"NexusAgil: no se pudo revisar la memoria del proyecto ({type(error).__name__})", file=sys.stderr)
+        if warning:
+            print(warning)
     session = load_session(data)
     if not session.get("hu_dir"):
         return

@@ -67,6 +67,45 @@
 - Compartir el ambito global entre personas: `engram sync` no lo exporta; las trampas de la metodologia siguen yendo al repo de NexusAgil.
 - Un experimento controlado de tokens con y sin memoria: las HUs reales no son comparables entre si.
 
+## Tercera etapa: un cerebro que aprende solo, en cualquier maquina (2.4 a 2.6)
+
+> Objetivo: cubrir lo que la 2.3.0 no hace. Que aprenda solo sin perder el control, que cubra todos los proyectos, que recuerde el codigo, que no dependa de una maquina, que lo lean los agentes que lo necesitan y que se mida solo. Aprobado por la persona el 21-nov-2026.
+
+### Lo que faltaba (21-nov-2026)
+
+| Hueco | Evidencia |
+|-------|-----------|
+| Proyectos sin memoria | 8 proyectos propios con NexusAgil sin `memory_project`; el mayor, con 205 carpetas de HU |
+| Experiencia escrita que nunca entro a la memoria | El mayor de esos proyectos: 509 entradas de auto-blindaje y 18 reportes con lecciones |
+| Las trampas globales no viajan | `engram sync` exporta solo el ambito `project` (probado) |
+| Todo vive en una maquina | `~/.engram` sin respaldo |
+| Aprende poco | 2 hechos con hash en 12 HUs de Nexus Control; las lecciones dependen de que Docs las proponga |
+| Solo el analista y el arquitecto leen | Dev, AR y QA repiten trampas que ya estaban guardadas |
+| La medicion es a mano | `docs/medicion-memoria.md` se armo leyendo 12 work-items |
+
+### Lo que no se hace
+
+Guardar lecciones de criterio sin aprobacion humana. Una memoria falsa guardada una vez se vuelve "verdad" para las HUs que siguen (MINJA, 2025: 98 % de insercion). Lo automatico se limita a lo que se puede comprobar con un comando; lo demas se aprueba, con menos friccion.
+
+### Pasos
+
+| # | Etapa | Paso | Como se comprueba | Estado |
+|---|-------|------|-------------------|--------|
+| 18 | A (2.4.0) | **Conectar los proyectos**: fila `memory_project` y `memory_share: none` en `project-context.md`, y `engram init` | `.engram/config.json` en cada repo; el aviso del paso 19 no sale | Hecho en los 8, local: entra con la proxima HU de cada repo |
+| 19 | A | **Aviso al abrir**: el hook avisa en `SessionStart` si falta `memory_project` o `.engram/config.json` | Tests del hook; corrida contra los proyectos reales | Hecho |
+| 20 | A | **Trampas globales en el plugin**: `references/trampas_globales.md`, leido por el analista y Dev | Check de consistencia | Hecho, con las 3 globales |
+| 21 | A | **Respaldo**: `nexus_brain.py respaldar/restaurar` en un repo git propio; DONE lo corre | Tests con un engram falso; ida y vuelta real en una base aislada | Hecho: `~/nexus-brain` con remoto privado en GitHub |
+| 22 | A | **Siembra retroactiva**: `nexus_seed.py` junta candidatas; se curan y la persona las aprueba | Tests; corrida sobre el proyecto mayor | Hecho: 578 candidatas curadas a 25, aprobadas por la persona y guardadas (11 del proyecto, 14 globales; 4 de ellas tambien en `trampas_globales.md`) |
+| 23 | B (2.5) | **Candidatas automaticas**: el hook junta, de cada HU, bloqueos del hook, hallazgos del AR, auto-blindaje y violaciones, y arma `candidatas.md`; la persona aprueba en una sola pregunta por HU o por lote | Tests del hook | Pendiente |
+| 24 | B | **Automatico lo verificable**: hechos con hash y trampas con `Verify:` se guardan sin preguntar; si el archivo cambia o el `Verify:` deja de fallar, se invalidan solos | Tests; eval `memoria-hecho-desactualizado` | Pendiente |
+| 25 | B | **Hechos desde SPEC_VERIFY**: las afirmaciones VERDADERAS con `archivo:linea` pasan a hechos con hash al cerrar | Una HU QUALITY real deja hechos; la siguiente los cita VIGENTE | Pendiente |
+| 26 | B | **Renovacion**: una memoria usada y vigente renueva su fecha de revision; la que nadie usa en meses se marca para revisar | Tests | Pendiente |
+| 27 | C (2.6) | **Mas agentes leen**: Dev (trampas del entorno), AR y QA (lecciones de tests), con 1 o 2 busquedas | Check de consistencia; hook | Pendiente |
+| 28 | C | **Medicion automatica**: un script lee `## MEMORIA CONSULTADA` de cada HU y regenera `docs/medicion-memoria.md` | Tests; corrida sobre Nexus Control da los numeros del 21-nov | Pendiente |
+| 29 | C | **Comparar**: despues de 5 HUs con la 2.4, repetir la medicion | La tabla de `docs/medicion-memoria.md`, "Como volver a medir" | Pendiente |
+
+Cada etapa es una version del plugin con su PR, tests y revision adversaria. El eval con modelo se corre solo si la persona lo pide.
+
 ## Riesgos y como se cubren
 
 | Riesgo | Cobertura |
