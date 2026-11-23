@@ -1077,6 +1077,17 @@ class Supervision(HookCase):
         self.assertAllowed(self.spawn("SUPERVISION", "nexus-supervisor"))
         return self.run_hook("stop", agent_type="nexus-agile:nexus-supervisor", agent_transcript_path=str(transcript))
 
+    def test_un_lanzamiento_viejo_de_otra_hu_no_se_lleva_el_veredicto(self):
+        # GH-35 de Nexus Control: en una sesion retomada quedaba colgado un lanzamiento del supervisor de la HU 31, y el
+        # CONTINUAR de la 35 se escribio en doc/sdd/031-.../.gates.jsonl. La 35 quedo sin veredicto y el hook freno F2.
+        old = self.repo / "doc/sdd/000-vieja"
+        old.mkdir(parents=True)
+        prompt = f"RUTAS: CODE_ROOT={self.repo} · SKILL_DIR=[usa la que exista]\nFASE: SUPERVISION\nHU_DIR: {old}\nPunto de parada: viejo\nhaz"
+        self.assertAllowed(self.run_hook("gate", tool_name="Agent", tool_input={"subagent_type": "nexus-supervisor", "prompt": prompt}))
+        self.consult("VEREDICTO: CONTINUAR\n\n**Qué comprobé**\n- todo")
+        self.assertEqual(self.entries()[-1]["verdict"], "CONTINUAR")
+        self.assertFalse((old / ".gates.jsonl").exists() and "CONTINUAR" in (old / ".gates.jsonl").read_text())
+
     def test_el_veredicto_queda_en_gates(self):
         # HU-4 de Nexus Control: para contar los veredictos hubo que leerlos de los transcripts.
         self.consult("VEREDICTO: ESCALAR\n\n**Qué comprobé**\n- todo")

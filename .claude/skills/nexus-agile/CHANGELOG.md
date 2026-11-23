@@ -1,5 +1,10 @@
 # Changelog — NexusAgil
 
+## 2.5.8 — El veredicto del supervisor va a la HU que lo pidió
+
+### Corregido
+- **El veredicto del supervisor quedaba en la carpeta de otra HU.** En la GH-35 de Nexus Control, una sesión retomada tenía colgado un lanzamiento del supervisor de la HU 31, con la misma fase. Al terminar el supervisor de la 35, el hook tomó el primer lanzamiento con esa fase y escribió el CONTINUAR en `doc/sdd/031-.../.gates.jsonl`: la 35 quedó sin veredicto y el hook frenó F2. Ahora, al cerrar un agente, el hook elige el lanzamiento por fase, por la `HU_DIR` de su prompt (y la `UNIDAD`, si la hay), y se queda con el más reciente.
+
 ## 2.5.7 — Scripts de la versión activa, y los gates juzgados por su destino
 
 ### Corregido
