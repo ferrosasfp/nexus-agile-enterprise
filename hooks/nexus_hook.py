@@ -23,7 +23,10 @@ import time
 import unicodedata
 from pathlib import Path
 
-GATES = ("HU_APPROVED", "SPEC_APPROVED", "RELEASE_APPROVED", "SCOPE_APPROVED")
+# Dispositivos que descartan lo que se les escribe: no modifican nada. /dev/full devuelve ENOSPC, y es la forma de probar
+# un disco lleno (en la GH-35 de Nexus Control, el AR y el CR se frenaron con "no escribe archivos por Bash (/dev/full)").
+DISCARD = ("/dev/null", "/dev/full")
+GATES =("HU_APPROVED", "SPEC_APPROVED", "RELEASE_APPROVED", "SCOPE_APPROVED")
 GATE_DOC = {"HU_APPROVED": "work-item.md", "SPEC_APPROVED": "sdd.md", "SCOPE_APPROVED": "pr-context.md"}
 READ_ONLY_BASH = {"nexus-adversary", "nexus-qa", "nexus-analyst", "nexus-architect", "nexus-docs", "nexus-supervisor", "nexus-security"}
 INLINE_CMD = re.compile(r"\b(python[0-9.]*\s+-c|node\s+(-e|--eval)|perl\s+-[a-zA-Z]*e|ruby\s+-e)\b")
@@ -828,7 +831,7 @@ def mutations_disposable(command, visible, data):
         paths = re.findall(r"(?:^|(?<=[\s='\"(]))(/[^\s;&|'\")]+)", command)
         if not name or relative_mktemp or not (any(writable(w, data) for w in paths) or "TMPDIR" in command):
             return False
-    return bool(targets) and all(t == "/dev/null" or writable(t, data) for t in known)
+    return bool(targets) and all(t in DISCARD or writable(t, data) for t in known)
 
 
 def leading_cd(command):
@@ -963,7 +966,7 @@ def check_bash(agent, command, data):
         deny(f"{agent} no escribe con un interprete en linea. Si necesita un cambio, usa Write o Edit donde su rol lo permite, o reportalo")
     base = leading_cd(command)
     for target, position in redirect_targets_at(command):
-        if not (target == "/dev/null" or writable(resolve_at(command, target, position, data), data)
+        if not (target in DISCARD or writable(resolve_at(command, target, position, data), data)
                 or target.startswith(("$TMPDIR", "${TMPDIR"))):
             hint = ("Un artefacto de la HU se escribe con Write o Edit" if "doc/sdd/" in resolve_at(command, target, position, data)
                     else "Usa una ruta absoluta en /tmp, escrita en el mismo comando")
@@ -975,7 +978,7 @@ def check_bash(agent, command, data):
         cut = separator.end() if separator else len(visible)
         rest, rest_visible = command[cut:], visible[cut:]
         paths = [w.strip("'\"") for w in rest.split() if w.strip("'\"").startswith("/")]
-        safe = disposable(base + "/", data) and ".." not in rest_visible and all(disposable(p, data) or p == "/dev/null" for p in paths)
+        safe = disposable(base + "/", data) and ".." not in rest_visible and all(disposable(p, data) or p in DISCARD for p in paths)
     else:
         # Sin cd, cada archivo que se toca se juzga por su ruta (mutations_disposable). Antes alcanzaba con que
         # alguna palabra del comando estuviera en /tmp: `rm src/a.py /tmp/x` pasaba.
@@ -1067,7 +1070,7 @@ def check_bash_into_hu_dir(agent, command, data):
     expanded = expand_vars(command)
     base = leading_cd(expanded) or str(data.get("cwd") or os.getcwd())
     for target in redirect_targets(expanded):
-        if target == "/dev/null" or target.startswith("$"):
+        if target in DISCARD or target.startswith("$"):
             continue
         resolved = os.path.realpath(os.path.join(base, os.path.expanduser(target)))
         if resolved.startswith(root):
@@ -1084,7 +1087,7 @@ def check_bash_into_hu_dir(agent, command, data):
     rule = WRITE_RULES.get(agent)
     if rule:
         targets = [os.path.realpath(os.path.join(base, os.path.expanduser(t))) for t in redirect_targets(expanded)
-                   if t != "/dev/null" and not t.startswith("$")]
+                   if t not in DISCARD and not t.startswith("$")]
         targets += [os.path.realpath(t) for t in mutation_targets(expanded, masked(expanded), data) if not t.startswith("$")]
         for path in targets:
             if "/doc/sdd/" in path and not re.search(rule, path) and not writable(path, data):  # fixtures en /tmp, si
@@ -1111,7 +1114,7 @@ def check_orchestrator_gated_docs(command, data):
     expanded = expand_vars(command)
     base = leading_cd(expanded) or str(data.get("cwd") or os.getcwd())
     targets = [os.path.realpath(os.path.join(base, os.path.expanduser(t))) for t in redirect_targets(expanded)
-               if t != "/dev/null" and not t.startswith("$")]
+               if t not in DISCARD and not t.startswith("$")]
     targets += [os.path.realpath(os.path.join(base, os.path.expanduser(t)))
                 for t in mutation_targets(expanded, masked(expanded), data) if not t.startswith("$")]
     if SCRIPT_WRITES.search(command):
