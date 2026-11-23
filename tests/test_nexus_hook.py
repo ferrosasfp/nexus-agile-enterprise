@@ -1403,6 +1403,68 @@ class OrquestadorDocumentosConGate(HookCase):
         self.assertAllowed(self.bash(f"echo x > {self.hu}/notas-sdd.md"))
 
 
+class VersionDelPlugin(HookCase):
+    """GH-30 a GH-32 de Nexus Control: con el plugin actualizado en 2.5.6, el orquestador corrio nexus_memory.py desde la
+    carpeta de la 2.5.2 en la cache. Esa version no tiene las reglas nuevas del script y el hook no lo freno."""
+
+    CACHE = "/home/x/.claude/plugins/cache/nexus-agile/nexus-agile"
+
+    def setUp(self):
+        super().setUp()
+        self.env["CLAUDE_PLUGIN_ROOT"] = f"{self.CACHE}/2.5.6"
+
+    def bash(self, command, agent=""):
+        return self.run_hook("gate", agent_type=agent, tool_name="Bash", tool_input={"command": command})
+
+    def test_script_de_otra_version_bloquea(self):
+        script = ".claude/skills/nexus-agile/scripts/nexus_memory.py"
+        for command in (f"python3 {self.CACHE}/2.5.2/{script} usadas --hu-dir doc/sdd/001",
+                        f"cd /tmp && /usr/bin/python3 -I '{self.CACHE}/2.5.2/{script}' usadas",
+                        f"S={self.CACHE}/2.4.0/.claude/skills/nexus-agile; python3 $S/scripts/nexus_metrics.py --json",
+                        f"bash {self.CACHE}/2.5.2/.claude/skills/nexus-agile/scripts/check_consistency.sh"):
+            with self.subTest(command=command):
+                result = self.bash(command)
+                self.assertBlocked(result, "otra version del plugin")
+                self.assertIn(f"{self.CACHE}/2.5.6/", result.stderr)
+        self.assertBlocked(self.bash(f"python3 {self.CACHE}/2.5.2/{script} usadas", agent="nexus-docs"), "otra version")
+
+    def test_la_version_activa_y_las_lecturas_pasan(self):
+        script = ".claude/skills/nexus-agile/scripts/nexus_memory.py"
+        for command in (f"python3 {self.CACHE}/2.5.6/{script} usadas --hu-dir doc/sdd/001",
+                        f"python3 ${{CLAUDE_PLUGIN_ROOT}}/{script} usadas",
+                        f"diff -q {self.CACHE}/2.5.2/{script} {self.CACHE}/2.5.6/{script}",
+                        f"grep -n source {self.CACHE}/2.5.2/{script}",
+                        f"ls {self.CACHE}/"):
+            with self.subTest(command=command):
+                self.assertAllowed(self.bash(command))
+
+    def test_sin_plugin_no_se_mira(self):
+        del self.env["CLAUDE_PLUGIN_ROOT"]
+        self.assertAllowed(self.bash(f"python3 {self.CACHE}/2.5.2/.claude/skills/nexus-agile/scripts/nexus_memory.py usadas"))
+
+
+class GatesPorDestinoReal(HookCase):
+    """Auditoria de GH-32: fuera de un repo NexusAgil, un comando con un sed -i sobre otro archivo y un heredoc que nombraba
+    .gates.jsonl se freno con "los gates solo los registra el hook". Lo que decide es a donde escribe, no lo que nombra."""
+
+    def bash(self, command):
+        return self.run_hook("gate", tool_name="Bash", tool_input={"command": command})
+
+    def test_sed_en_otro_archivo_y_nota_que_nombra_los_gates_pasa(self):
+        command = ("sed -i 's/pendiente/hecho/' llm-local/auditoria.md && cat >> PROGRESS.md <<'EOF'\n"
+                   "- el hook registra los gates en doc/sdd/032/.gates.jsonl\nEOF")
+        self.assertAllowed(self.bash(command))
+        self.assertAllowed(self.bash("cp a.md b.md; echo 'ver doc/sdd/001/.gates.jsonl' >> notas.md"))
+
+    def test_escribir_los_gates_sigue_bloqueado(self):
+        for command in ("sed -i 's/a/b/' otro.md && echo x >> doc/sdd/001/.gates.jsonl",
+                        "cp otro.md doc/sdd/001/.gates.jsonl",
+                        "sed -i 's/a/b/' otro.md; tee -a doc/sdd/001/.gates.jsonl < x",
+                        "rm -f doc/sdd/001/.gates.jsonl"):
+            with self.subTest(command=command):
+                self.assertBlocked(self.bash(command), "gates")
+
+
 class SupervisorPorTamano(HookCase):
     """El tamano lo decide el analista en F1, despues de lanzada la HU. Si es QUALITY o security_review: required,
     el hook activa el supervisor solo; la persona lo apaga con --sin-supervisor."""
