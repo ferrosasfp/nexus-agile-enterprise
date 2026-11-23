@@ -4,7 +4,7 @@
 
 NexusAgil es una metodología de desarrollo con agentes para Claude Code. Procesa una Historia de Usuario (HU) por vez, por fases, con agentes especializados, gates que da una persona y un hook que hace cumplir las reglas que no deben depender de la memoria del modelo.
 
-Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.5.3**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
+Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.5.4**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
 
 **Estado:** release candidate. El supervisor de AUTO es experimental. Las mediciones están en [Evaluación](#evaluación).
 
@@ -375,7 +375,7 @@ DONE es solo cierre documental: `nexus-docs` no hace push ni merge.
 | Rondas de corrección entre SPEC_VERIFY y SECURITY | 2 por HU. Lo que quede va a `Límites conocidos` del SDD y lo decide la persona en el gate | `/nexus-p2-f2` paso 4c |
 | Corrección de una falsa | arregla la frase; no agrega afirmaciones nuevas sobre el código | `/nexus-p2-f2` paso 4 |
 | Fix-packs después de AR/CR | 3. Después se escala | `/nexus-auto` §6 regla #2 y §9 regla 9 |
-| Costo (regla #11) | si el costo acumulado de la HU pasa del doble de lo que costó la implementación (F3), se escala antes del siguiente fix-pack, con el costo y las opciones. Lo ya gastado no es motivo para seguir | `/nexus-auto` §6 regla #11; supervisor punto 8 |
+| Costo (regla #11) | si el costo acumulado de la HU pasa del doble de lo que costó la implementación (F3), se escala antes del siguiente fix-pack, con el costo y las opciones. Si lo que falta es solo cerrar (F4 sin fix-pack, o DONE), no se pregunta: la cifra va como nota. Lo ya gastado no es motivo para seguir | `/nexus-auto` §6 regla #11; supervisor punto 8 |
 | `PEDIR_EVIDENCIA` seguidos | 2 vueltas; después se escala | `/nexus-auto` §4.3c |
 | `SubagentStop` | insiste una vez por agente | hook |
 

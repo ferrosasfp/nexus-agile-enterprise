@@ -1,6 +1,6 @@
 # Supervisor de AUTO (experimental)
 
-> Estado: experimental, con una corrida real en AUTO (15 de 15 paradas reales coinciden con la persona). Existe el agente `nexus-supervisor` y `/nexus-auto --supervisor` lo usa. Por defecto, AUTO sigue con el checklist hasta que gane la evaluacion de abajo.
+> Estado: experimental, medido en 7 HUs reales en AUTO (34 paradas, 0 aprobaciones indebidas probadas, 2 dudosas; ver "Medicion sobre 7 HUs reales"). Existe el agente `nexus-supervisor` y `/nexus-auto --supervisor` lo usa. Por defecto, AUTO sigue con el checklist hasta que gane la evaluacion de abajo.
 
 ## Problema
 
@@ -70,6 +70,21 @@ Una HU de 1 punto en QUALITY, con el supervisor en cada punto de parada y la per
 | Costo del supervisor | 1,2 M tokens procesados, 2,6 % del total de la HU |
 
 Sumado a la sombra, el supervisor coincide con la persona en 15 de 15 paradas reales. Es una sola HU en AUTO: alcanza para usarlo, no para hacerlo el default. El criterio de adopcion sigue siendo el de arriba, con mas corridas.
+
+## Medicion sobre 7 HUs reales (23 de noviembre de 2026)
+
+Las HUs supervisadas de Nexus Control (GH-9, 10, 12, 17, 18, 21 y 23), contra las decisiones de la persona. Fuente: las lineas `SUPERVISION` y `DECISION` de cada `.gates.jsonl` y los `cierre.md`. Las 55 lineas `SUPERVISION` son 34 paradas distintas: las demas son entradas provisorias en `null` o segundas vueltas.
+
+| Medida | Resultado |
+|--------|-----------|
+| Paradas con veredicto | 29: 9 `CONTINUAR`, 12 `ESCALAR` obligatorios (push y merge), 8 `ESCALAR` por criterio. 3 `PEDIR_EVIDENCIA` intermedios, resueltos en la vuelta siguiente |
+| Sin veredicto | 5, por defectos del hook en GH-9 y GH-10, ya corregidos |
+| Escalados | En los 20 la persona decidio. En 7 de los 8 por criterio eligio la opcion que el supervisor dejo recomendada; en GH-18, una enmienda del AC |
+| Tope de costo | 5 escalados en el punto donde solo faltaba cerrar; la persona respondio "seguir" los 5. Desde la 2.5.4 eso va como nota |
+| Aprobaciones indebidas | 0 probadas. 2 dudosas, las dos `CONTINUAR` en HU_APPROVED sobre un work-item con defecto: un AC que pedia un comentario falso (lo encontro el AR) y un AC-1 que contradecia "no tocar los tests existentes" (lo freno el Dev en F3). Nada llego a main. Desde la 2.5.4 el supervisor revisa la coherencia del work-item |
+| Costo | 175 K a 460 K tokens procesados y 1 a 1,5 minutos por consulta (una llego a 7 minutos) |
+
+Sigue sin alcanzar para el modo por defecto: no hay brazo del checklist sobre las mismas paradas, y las HUs sin supervisor son otras HUs. Para cerrarlo hace falta correr el checklist en sombra sobre paradas reales, o reconstruir esas paradas como casos.
 
 ## Limites conocidos
 
