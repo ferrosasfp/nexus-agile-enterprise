@@ -1,5 +1,11 @@
 # Changelog — NexusAgil
 
+## 2.5.5 — security_review con motivo, y cuándo usar el supervisor
+
+### Cambiado
+- **`security_review: no` lleva su motivo.** El analista escribe en la misma línea qué de la lista no toca y por qué. Un `no` solo es FAIL en el checklist de AUTO y `PEDIR_EVIDENCIA` del supervisor. En Nexus Control, 2 de 11 HUs sin revisión de seguridad decían `no` sin justificar.
+- **Cuándo usar `--supervisor`.** AUTO, el README y `references/supervisor.md` lo recomiendan en HUs QUALITY o con `security_review: required`; en una FAST chica aporta poco, porque el push y el merge se preguntan igual. Si la HU lo amerita y la sesión no lo tiene, el orquestador lo dice en una línea de su primer reporte, sin frenar.
+
 ## 2.5.4 — El supervisor, medido en 7 HUs reales
 
 ### Cambiado

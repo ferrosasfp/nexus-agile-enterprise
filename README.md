@@ -4,7 +4,7 @@
 
 NexusAgil es una metodología de desarrollo con agentes para Claude Code. Procesa una Historia de Usuario (HU) por vez, por fases, con agentes especializados, gates que da una persona y un hook que hace cumplir las reglas que no deben depender de la memoria del modelo.
 
-Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.5.4**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
+Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.5.5**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
 
 **Estado:** release candidate. El supervisor de AUTO es experimental. Las mediciones están en [Evaluación](#evaluación).
 
@@ -305,7 +305,7 @@ Fuera del repo, el hook guarda su estado por sesión en `$CLAUDE_PLUGIN_DATA` (o
 1. Los analistas corren en paralelo, uno por HU. El sizing propone FAST, FAST+AR o QUALITY. El orquestador puede subir el pipeline, nunca bajarlo.
 2. En `HU_APPROVED` y `SPEC_APPROVED`, el gate se revisa en lugar de preguntarse:
    - **Por defecto, checklist** de 7 criterios que corre el propio orquestador. Todo PASS: sigue y el gate queda como `claude-delegated`. Un FAIL: pregunta a la persona.
-   - **Con `--supervisor` (experimental):** en cada punto de parada, un agente aparte de solo lectura (`nexus-supervisor`) recibe el reporte del orquestador, los artefactos y los transcripts, nunca su razonamiento.
+   - **Con `--supervisor` (experimental):** en cada punto de parada, un agente aparte de solo lectura (`nexus-supervisor`) recibe el reporte del orquestador, los artefactos y los transcripts, nunca su razonamiento. Conviene en HUs QUALITY o con `security_review: required`; en una FAST chica aporta poco. Medido en 7 HUs reales: `references/supervisor.md`.
 3. F3 corre en serie por defecto. Las HUs con Scope IN superpuesto se ordenan; la dependiente espera el merge de la otra antes de F3.
 4. El lote cierra con un reporte de cierre (`references/auto_completion_report.md`).
 

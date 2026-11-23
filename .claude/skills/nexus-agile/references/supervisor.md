@@ -84,6 +84,8 @@ Las HUs supervisadas de Nexus Control (GH-9, 10, 12, 17, 18, 21 y 23), contra la
 | Aprobaciones indebidas | 0 probadas. 2 dudosas, las dos `CONTINUAR` en HU_APPROVED sobre un work-item con defecto: un AC que pedia un comentario falso (lo encontro el AR) y un AC-1 que contradecia "no tocar los tests existentes" (lo freno el Dev en F3). Nada llego a main. Desde la 2.5.4 el supervisor revisa la coherencia del work-item |
 | Costo | 175 K a 460 K tokens procesados y 1 a 1,5 minutos por consulta (una llego a 7 minutos) |
 
+**Uso recomendado** (desde la 2.5.5): `--supervisor` en HUs QUALITY o con `security_review: required`; en FAST chicas aporta poco, porque el push y el merge se preguntan igual. AUTO lo sugiere en una linea cuando la HU lo amerita y no esta activo.
+
 Sigue sin alcanzar para el modo por defecto: no hay brazo del checklist sobre las mismas paradas, y las HUs sin supervisor son otras HUs. Para cerrarlo hace falta correr el checklist en sombra sobre paradas reales, o reconstruir esas paradas como casos.
 
 ## Limites conocidos

@@ -15,6 +15,8 @@ si todos los criterios pasan. Si alguno falla, escala al humano con detalle.
 
 Con `--supervisor`, en cada punto de parada un agente aparte (`nexus-supervisor`) revisa la evidencia y decide si se sigue, pide más evidencia o escala a la persona (§4.3c). El push, el PR y el merge los autoriza siempre la persona.
 
+**Cuándo usar `--supervisor`:** en HUs QUALITY, o que tocan seguridad, datos o producción (`security_review: required`), donde una aprobación indebida cuesta caro. En una HU FAST chica aporta poco: el push y el merge se le preguntan igual a la persona. Si la HU sale QUALITY o con `security_review: required` y la sesión no tiene `--supervisor`, decíselo a la persona en una línea de tu primer reporte, sin frenar: se activa al lanzar la HU.
+
 **Cuándo usar AUTO:**
 - Batch de HUs donde el humano confía en el proceso y quiere resultados end-to-end
 - Sesiones donde el humano no estará disponible para aprobar gates interactivamente
@@ -116,7 +118,7 @@ Clinical review:
 - EARS format: [PASS/FAIL] — N/N ACs valid EARS (sin "debería"/"quizás"/"podría")
 - Codebase grounding: [PASS/FAIL] — analyst leyó project-context.md, refs mapeadas a archivos reales
 - Edge cases: [PASS/FAIL] — sin [NEEDS CLARIFICATION] bloqueantes sin resolver
-- Security: [PASS/FAIL] — categorías de riesgo documentadas (obligatorio si FAST+AR/QUALITY)
+- Security: [PASS/FAIL] — categorías de riesgo documentadas (obligatorio si FAST+AR/QUALITY); `security_review:` con su motivo en la misma línea (un `no` sin motivo es FAIL)
 - Zero regression: [PASS/FAIL] — Scope OUT explícito, sin conflictos con otras HUs del batch
 - Constraint Directives: [PASS/FAIL] — ≥2 CDs presentes en el work-item
 Notes: [observaciones si las hay]
