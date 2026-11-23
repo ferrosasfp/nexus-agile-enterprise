@@ -1,5 +1,11 @@
 # Changelog — NexusAgil
 
+## 2.5.7 — Scripts de la versión activa, y los gates juzgados por su destino
+
+### Corregido
+- **Una sesión larga corría scripts de una versión vieja del plugin.** En la GH-30 a GH-32 de Nexus Control, con la 2.5.6 cargada, el orquestador corrió `nexus_memory.py` desde la carpeta de la 2.5.2, que seguía en la caché (`~/.claude/plugins/cache/`) sin las reglas nuevas del script. Ahora el hook frena, para la sesión principal y para los agentes, un Bash que corre un script de otra versión de la caché, con la ruta de la versión activa y el aviso de abrir una sesión nueva si el plugin se actualizó a mitad de sesión. Leer o comparar otra versión (`cat`, `diff`, `grep`) sigue permitido.
+- **Falso "los gates solo los registra el hook" fuera de un repo NexusAgil.** Un comando con un `sed -i` sobre otro archivo y una nota en un heredoc que nombraba `.gates.jsonl` se frenaba: el hook juntaba la mención con la mutación, aunque fueran de archivos distintos. Ahora decide el destino real de cada escritura (redirección, `sed -i`, `cp`, `tee`, `rm`…). Un script en línea que escribe y nombra los gates sigue frenado.
+
 ## 2.5.6 — El orquestador tampoco escribe por Bash un documento con gate
 
 ### Corregido

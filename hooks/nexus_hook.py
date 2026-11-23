@@ -432,6 +432,29 @@ def check_skill_dir(prompt):
         deny(f"SKILL_DIR={value} esta fuera del plugin y correria otra version. Usa {expected}")
 
 
+# Un script corrido desde la cache de plugins: con o sin interprete, al principio de un comando.
+PLUGIN_CACHE_RUN = re.compile(r"(?:^|[;&|(\n`]|\$\()\s*(?:\w+=\S*\s+)*(?:\S*/)?(?:(?:python[0-9.]*|bash|sh|node)(?:\s+-\S+)*\s+)?"
+                              r"['\"]?(/[^\s'\";&|]*/\.claude/plugins/cache/[^/\s'\"]+/nexus-agile/([^/\s'\"]+)/([^\s'\";&|)]*))")
+
+
+def check_plugin_version(command):
+    """Un script del plugin se corre desde la version activa. En la GH-30 a GH-32 de Nexus Control, con la 2.5.6 cargada,
+    el orquestador corrio nexus_memory.py desde la carpeta de la 2.5.2, que seguia en la cache y no tenia las reglas nuevas.
+    Leer o comparar otra version (cat, diff, grep) no se frena: solo correrla."""
+    root = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if not root:
+        return
+    home = os.path.expanduser("~")
+    text = expand_vars(command).replace("${CLAUDE_PLUGIN_ROOT}", root).replace("$CLAUDE_PLUGIN_ROOT", root)
+    text = re.sub(r"\$\{HOME\}|\$HOME\b|(?<![\w/])~(?=/)", home, text)
+    for match in PLUGIN_CACHE_RUN.finditer(text):
+        real = os.path.realpath(match.group(1))
+        if real == os.path.realpath(root) or real.startswith(os.path.realpath(root) + os.sep):
+            continue
+        deny(f"{match.group(1)} es de otra version del plugin ({match.group(2)}); esta sesion usa {root}. "
+             f"Corre {root.rstrip('/')}/{match.group(3)}. Si el plugin se actualizo durante la sesion, abre una sesion nueva")
+
+
 def check_phase(data, session):
     tool_input = data.get("tool_input") or {}
     prompt = tool_input.get("prompt") or ""
@@ -913,8 +936,12 @@ def check_bash(agent, command, data):
     if any(t.endswith(".blocks.jsonl") and not disposable(resolve_at(expanded, t, 0, data), data)
            for t in redirect_targets(expanded)):
         deny("los bloqueos solo los registra el hook")
-    if outside and (any(t.endswith(".gates.jsonl") for t in redirect_targets(expanded))
-                    or FILE_MUTATION.search(masked(expanded)) or INLINE_REAL_WRITE.search(command)):
+    # Decide el destino real de cada escritura (redireccion, sed -i, cp, tee, rm...), no que el comando nombre los gates:
+    # en la auditoria de la GH-32, un sed -i sobre otro archivo mas una nota en un heredoc que nombraba .gates.jsonl se freno.
+    written = [resolve_at(expanded, t, pos, data) for t, pos in redirect_targets_at(expanded)]
+    written += mutation_targets(expanded, masked(expanded), data)
+    if any(str(t).endswith(".gates.jsonl") and not disposable(t, data) for t in written) or \
+            (outside and INLINE_REAL_WRITE.search(command)):
         # Leer con open() no es escribir: en una corrida real, un python3 -c que solo listaba los gates se freno.
         # Los heredocs no se miran: un script que edita otro archivo puede nombrar .gates.jsonl en su texto (28 falsos
         # bloqueos al rejugar); si alguno escribiera los gates, lo ve la comparacion posterior.
@@ -986,6 +1013,7 @@ def cmd_gate(data):
         with (state_dir() / "writes.log").open("a", encoding="utf-8") as handle:
             handle.write(json.dumps({"path": path, "ts": time.time()}) + "\n")
     elif tool == "Bash":
+        check_plugin_version(tool_input.get("command") or "")
         check_bash(agent, tool_input.get("command") or "", data)
         if agent.startswith("nexus-"):
             check_bash_into_hu_dir(agent, tool_input.get("command") or "", data)
