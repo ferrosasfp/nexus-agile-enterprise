@@ -1445,9 +1445,19 @@ def cmd_stop(data):
     transcript = data.get("agent_transcript_path")
     finished = session.setdefault("finished", [])
     if mine:
-        found_phase = re.search(r"FASE:\s*([A-Z0-9.]+)", transcript_prompt(transcript))
+        launched = transcript_prompt(transcript)
+        found_phase = re.search(r"FASE:\s*([A-Z0-9.]+)", launched)
         phase_found = found_phase.group(1) if found_phase else None
-        spawn = next((s for s in mine if s["phase"] == phase_found), mine[0])
+        found_hu = re.search(r"HU_DIR:\s*([^\s\"\\]+)", launched)
+        hu_found = Path(found_hu.group(1).rstrip("/")).name if found_hu else None
+        # Por fase y por HU, el mas reciente. En la GH-35 de Nexus Control, una sesion retomada tenia colgado un
+        # lanzamiento del supervisor de la HU 31 con la misma fase, y el veredicto de la 35 se escribio en la carpeta de la 31.
+        same_phase = [s for s in mine if s["phase"] == phase_found]
+        same_hu = [s for s in same_phase if hu_found and Path(s.get("hu_dir") or "").name == hu_found]
+        found_unit = re.search(r"UNIDAD:\s*([^\s\"\\]+)", launched)
+        if found_unit and any(s.get("unit") == found_unit.group(1) for s in same_hu):
+            same_hu = [s for s in same_hu if s.get("unit") == found_unit.group(1)]
+        spawn = (same_hu or same_phase or mine)[-1 if same_hu or same_phase else 0]
         session["spawns"].remove(spawn)
         spawn["transcript"] = transcript
         finished.append(spawn)
