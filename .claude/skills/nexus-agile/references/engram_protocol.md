@@ -137,6 +137,8 @@ Corre la receta de busqueda (las cuatro consultas fijas y una por los archivos o
 |---------|----------|--------|
 | `#id` o `_LECCIONES.md:linea` | resumen | VERIFICADA (`archivo:linea`) / VIGENTE (hecho con el mismo hash) / DESCARTADA (contradice `archivo:linea` o cambio el hash) / SIN VERIFICAR (no aplica a esta HU) |
 
+DESCARTADA quiere decir que la memoria esta mal, y Docs la corrige. Si solo no aplica a esta HU (una decision de otra HU, un modulo que no se toca), es SIN VERIFICAR. `nexus_memory.py usadas` saca aparte, como DESCARTADA SIN EVIDENCIA, las que no citan `archivo:linea` ni un cambio de hash: en una corrida real, dos decisiones vigentes de otra HU salieron para corregir por eso.
+
 Sin resultados: la seccion dice "Ninguna", con la linea `Busquedas:` que lo prueba. Sin Engram: dice "sin Engram".
 
 ### F2 — Arquitecto (lee)

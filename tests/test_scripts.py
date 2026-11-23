@@ -260,7 +260,7 @@ class NexusMemory(unittest.TestCase):
                       "| M-6 (#900) | vieja | DESCARTADA: el archivo cambio |\n"
                       "| TG-T1 | rtk | Aplica: CD-6 |\n\n## PREGUNTAS\n\n| #999 | no es de la seccion | VERIFICADA |\n")
         other = self.tmp / "cierre.md"
-        other.write_text("## MEMORIA CONSULTADA\n\n| id | q | e |\n|---|---|---|\n| (#887) | x | DESCARTADA: ya no |\n| (#861) | x | VERIFICADA |\n")
+        other.write_text("## MEMORIA CONSULTADA\n\n| id | q | e |\n|---|---|---|\n| (#887) | x | DESCARTADA: `a.py:3` ya no |\n| (#861) | x | VERIFICADA |\n")
         out = run("nexus_memory.py", "usadas", "--file", wi)
         self.assertEqual(out.returncode, 0, out.stderr)
         self.assertIn("RENOVAR (mem_review mark_reviewed): #867 #868 #887", out.stdout)
@@ -273,6 +273,22 @@ class NexusMemory(unittest.TestCase):
         none = self.tmp / "sin.md"
         none.write_text("# nada\n")
         self.assertEqual(run("nexus_memory.py", "usadas", "--file", none).returncode, 1)
+
+    def test_usadas_descartada_sin_evidencia_no_se_corrige(self):
+        # GH-28: dos decisiones de otra HU marcadas "DESCARTADA: otra HU, sin relacion" salian como CORREGIR.
+        wi = self.tmp / "work-item.md"
+        wi.write_text("## MEMORIA CONSULTADA\n\n| id | q | estado |\n|---|---|---|\n"
+                      "| #1007 / #1008 | decisiones | DESCARTADA: otra HU (transcripts), sin relacion con el STATUS |\n"
+                      "| #900 | vieja | DESCARTADA: contradice `src/cli.py:120` |\n"
+                      "| #901 | hecho | DESCARTADA: cambio el hash |\n")
+        out = run("nexus_memory.py", "usadas", "--file", wi).stdout
+        self.assertIn("CORREGIR (mismo topic_key): #900 #901\n", out)
+        self.assertIn("DESCARTADA SIN EVIDENCIA", out)
+        self.assertIn("#1007 #1008", out.split("DESCARTADA SIN EVIDENCIA")[1])
+        other = self.tmp / "otro.md"
+        other.write_text("## MEMORIA CONSULTADA\n\n| id | q | e |\n|---|---|---|\n| (#1007) | x | VERIFICADA |\n")
+        both = run("nexus_memory.py", "usadas", "--file", wi, "--file", other).stdout
+        self.assertIn("RENOVAR (mem_review mark_reviewed): #1007\n", both)  # verificada en otro lado gana
 
     def commit_base(self):
         git = lambda *a: subprocess.run(["git", "-C", str(self.tmp), *a], check=True, capture_output=True)

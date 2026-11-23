@@ -14,7 +14,8 @@ Uso:
       toca, o el archivo no existia en la base, se descarta. Con varios informes, el ultimo manda.
   nexus_memory.py usadas --file work-item.md [--file otro.md]
       Lee la tabla de "## MEMORIA CONSULTADA" y dice que memorias renovar (VERIFICADA o VIGENTE: la HU las uso
-      y siguen siendo ciertas), cuales corregir (DESCARTADA) y cuales no se comprobaron (SIN VERIFICAR).
+      y siguen siendo ciertas), cuales corregir (DESCARTADA con archivo:linea o hash) y cuales no se comprobaron
+      (SIN VERIFICAR). Una DESCARTADA sin esa evidencia sale aparte: suele ser "no aplica a esta HU".
 
 El blob SHA es el que calcula `git hash-object`: no depende de rtk ni de la herramienta que lea el archivo,
 y es el mismo que git guarda. Un hecho que depende de varios archivos lleva un par por archivo.
@@ -150,10 +151,14 @@ def moved_range(repo, base, path, start, end):
 
 
 STATES = (("VERIFICADA", "renovar"), ("VIGENTE", "renovar"), ("DESCARTADA", "corregir"), ("SIN VERIFICAR", "sin_verificar"))
+# DESCARTADA es "el codigo la contradice": lleva la cita (archivo:linea) o dice que cambio el hash o el archivo. Sin eso
+# suele ser "no aplica a esta HU", que es SIN VERIFICAR: en una corrida real dos decisiones vigentes de otra HU salieron
+# como CORREGIR por eso.
+DISCARD_EVIDENCE = re.compile(r"[\w./-]+\.\w+:\d+|\bhash\b|cambi|contradic", re.I)
 
 
 def cmd_usadas(args):
-    groups = {"renovar": {}, "corregir": {}, "sin_verificar": {}, "sin_clasificar": {}}
+    groups = {"renovar": {}, "corregir": {}, "revisar": {}, "sin_verificar": {}, "sin_clasificar": {}}
     sections = 0
     for name in args.file:
         rows = section_table(Path(name).read_text(encoding="utf-8", errors="replace"), MEMORY_SECTION)
@@ -167,10 +172,12 @@ def cmd_usadas(args):
                 continue
             state = re.sub(r"^[^A-Z]+", "", cells[-1].upper().replace("`", "").replace("*", ""))
             kind = next((k for word, k in STATES if state.startswith(word)), "sin_clasificar")
+            if kind == "corregir" and not DISCARD_EVIDENCE.search(cells[-1]):
+                kind = "revisar"
             for number in ids:
                 # En dos archivos: DESCARTADA gana siempre; VERIFICADA en otro lado gana sobre SIN VERIFICAR.
                 current = next((k for k, v in groups.items() if number in v), None)
-                rank = {"corregir": 3, "renovar": 2, "sin_verificar": 1, "sin_clasificar": 0}
+                rank = {"corregir": 4, "renovar": 3, "revisar": 2, "sin_verificar": 1, "sin_clasificar": 0}
                 if current and rank[current] >= rank[kind]:
                     continue
                 if current:
@@ -178,10 +185,11 @@ def cmd_usadas(args):
                 groups[kind][number] = Path(name).name
     print(f"MEMORIA CONSULTADA: {sections} seccion(es)")
     labels = {"renovar": "RENOVAR (mem_review mark_reviewed)", "corregir": "CORREGIR (mismo topic_key)",
+              "revisar": "DESCARTADA SIN EVIDENCIA (sin archivo:linea ni hash: si solo no aplica a la HU, no se toca)",
               "sin_verificar": "SIN VERIFICAR (no se renuevan)", "sin_clasificar": "SIN CLASIFICAR (estado no reconocido: revisarlas)"}
     for kind, label in labels.items():
         ids = sorted(groups[kind], key=int)
-        if ids or kind != "sin_clasificar":
+        if ids or kind not in ("sin_clasificar", "revisar"):
             print(f"{label}: {' '.join('#' + i for i in ids) if ids else 'ninguna'}")
     return 0 if sections else 1
 
