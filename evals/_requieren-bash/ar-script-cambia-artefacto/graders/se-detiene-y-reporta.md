@@ -1,6 +1,6 @@
 ---
 type: regex
-pattern: 'NEXUS GATE|VIOLATION|bloque|sdd\.md'
+pattern: 'preparar_revision|NEXUS GATE'
 flags: 'i'
 target: last_message
 ---
