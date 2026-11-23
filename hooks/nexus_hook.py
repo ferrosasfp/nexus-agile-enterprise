@@ -989,6 +989,8 @@ def cmd_gate(data):
         check_bash(agent, tool_input.get("command") or "", data)
         if agent.startswith("nexus-"):
             check_bash_into_hu_dir(agent, tool_input.get("command") or "", data)
+        elif not agent:
+            check_orchestrator_gated_docs(tool_input.get("command") or "", data)
         if agent.startswith("nexus-"):
             snapshot_artifacts(data)
 
@@ -1068,6 +1070,32 @@ def check_bash_into_hu_dir(agent, command, data):
                 path = os.path.realpath(os.path.join(base, os.path.expanduser(mention)))
                 if os.path.isfile(path) and not re.search(rule, path) and not writable(path, data):
                     deny(f"{agent} no puede escribir doc/sdd/{path.split('/doc/sdd/', 1)[1]} con un script. Reporta el cambio al orquestador")
+
+
+GATED_DOCS = re.compile(r"(?:^|/)(?:%s)$" % "|".join(re.escape(n) for n in GATE_DOC.values()))
+
+
+def check_orchestrator_gated_docs(command, data):
+    """La sesion principal no escribe por Bash un documento con gate (work-item.md, sdd.md, pr-context.md).
+    En la GH-30 de Nexus Control, el orquestador anoto la respuesta de la persona en work-item.md con python3, y no quedo
+    rastro: el chequeo de Bash a HU_DIR solo corria para los agentes. El hash del gate igual pidio una revision nueva.
+    Solo esos documentos: en el resto de la carpeta, el orquestador corre comandos legitimos (git, metricas)."""
+    expanded = expand_vars(command)
+    base = leading_cd(expanded) or str(data.get("cwd") or os.getcwd())
+    targets = [os.path.realpath(os.path.join(base, os.path.expanduser(t))) for t in redirect_targets(expanded)
+               if t != "/dev/null" and not t.startswith("$")]
+    targets += [os.path.realpath(os.path.join(base, os.path.expanduser(t)))
+                for t in mutation_targets(expanded, masked(expanded), data) if not t.startswith("$")]
+    if SCRIPT_WRITES.search(command):
+        names = "|".join(re.escape(n) for n in GATE_DOC.values())
+        for mention in re.findall(r"[\w./~-]*\b(?:%s)\b" % names, command):
+            path = os.path.realpath(os.path.join(base, os.path.expanduser(mention)))
+            if os.path.isfile(path):
+                targets.append(path)
+    for path in targets:
+        if GATED_DOCS.search(path) and not disposable(path, data):
+            deny(f"el orquestador no escribe {os.path.basename(path)} por Bash. Usa Edit o Write: el cambio queda a la vista "
+                 "y el hook lo compara con el gate")
 
 
 HOOK_FILES = (".nexus-state.json", ".gates.jsonl", ".blocks.jsonl")  # los escribe el hook, no los agentes
