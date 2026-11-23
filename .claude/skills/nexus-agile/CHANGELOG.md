@@ -1,5 +1,14 @@
 # Changelog — NexusAgil
 
+## 2.5.4 — El supervisor, medido en 7 HUs reales
+
+### Cambiado
+- **El tope de costo ya no pregunta cuando solo falta cerrar.** Si el costo pasa del doble de F3 y lo que queda es F4 sin fix-pack o DONE, la cifra va como nota en el reporte y en `cierre.md`. Se sigue preguntando antes de gastar en algo que no es cerrar (fix-pack, re-AR/CR, otra ronda). En 5 HUs supervisadas de Nexus Control, el supervisor escaló por el tope en ese punto y la persona respondió "seguir" las 5 veces. Vale para el supervisor (punto 8) y para la regla 11 de AUTO.
+- **El supervisor revisa la coherencia del work-item en HU_APPROVED.** Cada AC contra las restricciones, lo fuera de alcance y los otros ACs; una contradicción, o un AC que pide afirmar algo no comprobado, es `ESCALAR` con las dos líneas. Dos work-items pasaron con `CONTINUAR` y un defecto así: lo frenaron después el AR y el Dev.
+
+### Documentado
+- `references/supervisor.md`: la medición sobre 7 HUs reales (34 paradas): 0 aprobaciones indebidas probadas, 2 dudosas, y por qué todavía no alcanza para hacerlo el modo por defecto (falta el brazo del checklist sobre las mismas paradas).
+
 ## 2.5.3 — DESCARTADA quiere decir que la memoria está mal
 
 ### Corregido
