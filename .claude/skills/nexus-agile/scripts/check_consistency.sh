@@ -257,6 +257,8 @@ done
 grep -q 'desde-verificacion' "$C/nexus-p8-done.md" || fail "nexus-p8-done: el pedido de Docs no guarda los hechos de SPEC_VERIFY"
 grep -q 'nexus_memory.py usadas' "$C/nexus-p8-done.md" || fail "nexus-p8-done: el pedido de Docs no renueva las memorias usadas"
 grep -q 'Memoria de Docs' "$C/nexus-p8-done.md" || fail "nexus-p8-done: el orquestador no revisa la linea Memoria: de Docs"
+grep -q 'DISCARD_EVIDENCE' "$ROOT/.claude/skills/nexus-agile/scripts/nexus_memory.py" || fail "usadas corrige las DESCARTADA sin evidencia"
+grep -q 'si solo no aplica a esta HU, es SIN VERIFICAR' $A/nexus-analyst.md || fail "nexus-analyst no distingue DESCARTADA de no aplica"
 
 echo
 if [ "$fails" -eq 0 ]; then echo "RESULTADO: sin fallas"; exit 0; fi

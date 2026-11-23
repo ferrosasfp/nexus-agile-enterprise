@@ -1,5 +1,11 @@
 # Changelog — NexusAgil
 
+## 2.5.3 — DESCARTADA quiere decir que la memoria está mal
+
+### Corregido
+- **Memorias vigentes que salían para corregir.** El analista marcó DESCARTADA dos decisiones de otra HU porque no aplicaban, y `nexus_memory.py usadas` las dio como CORREGIR. Ahora una DESCARTADA sin `archivo:línea` ni cambio de hash sale aparte, como DESCARTADA SIN EVIDENCIA, y Docs la mira antes de tocarla. El analista y el protocolo aclaran que "no aplica a esta HU" es SIN VERIFICAR.
+- **Globales que no se pueden renovar.** Engram solo renueva una memoria desde la sesión de su proyecto, y una global vive en el proyecto donde se guardó. Cuando la renovación falla, Docs anota en `cierre.md` en qué proyecto está.
+
 ## 2.5.2 — La memoria también en el cierre QUALITY
 
 ### Corregido
