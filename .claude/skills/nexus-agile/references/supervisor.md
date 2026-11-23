@@ -1,6 +1,6 @@
 # Supervisor de AUTO (experimental)
 
-> Estado: experimental, medido en 7 HUs reales en AUTO (34 paradas, 0 aprobaciones indebidas probadas, 2 dudosas; ver "Medicion sobre 7 HUs reales"). Existe el agente `nexus-supervisor` y `/nexus-auto --supervisor` lo usa. Por defecto, AUTO sigue con el checklist hasta que gane la evaluacion de abajo.
+> Estado: se activa solo en HUs QUALITY o con `security_review: required` (2.5.5); medido en 7 HUs reales en AUTO (34 paradas, 0 aprobaciones indebidas probadas, 2 dudosas; ver "Medicion sobre 7 HUs reales"). Existe el agente `nexus-supervisor` y `/nexus-auto --supervisor` lo usa. Por defecto, AUTO sigue con el checklist hasta que gane la evaluacion de abajo.
 
 ## Problema
 
@@ -83,6 +83,8 @@ Las HUs supervisadas de Nexus Control (GH-9, 10, 12, 17, 18, 21 y 23), contra la
 | Tope de costo | 5 escalados en el punto donde solo faltaba cerrar; la persona respondio "seguir" los 5. Desde la 2.5.4 eso va como nota |
 | Aprobaciones indebidas | 0 probadas. 2 dudosas, las dos `CONTINUAR` en HU_APPROVED sobre un work-item con defecto: un AC que pedia un comentario falso (lo encontro el AR) y un AC-1 que contradecia "no tocar los tests existentes" (lo freno el Dev en F3). Nada llego a main. Desde la 2.5.4 el supervisor revisa la coherencia del work-item |
 | Costo | 175 K a 460 K tokens procesados y 1 a 1,5 minutos por consulta (una llego a 7 minutos) |
+
+**Uso** (desde la 2.5.5): en HUs QUALITY o con `security_review: required`; en FAST chicas aporta poco, porque el push y el merge se preguntan igual. Como el tamano lo decide el analista en F1, despues de lanzada la HU, el hook lo activa solo cuando `work-item.md` lo dice; la persona lo apaga con `--sin-supervisor`. En Nexus Control, la unica HU QUALITY de la 025 a la 029 corrio sin supervisor porque nadie lo pidio.
 
 Sigue sin alcanzar para el modo por defecto: no hay brazo del checklist sobre las mismas paradas, y las HUs sin supervisor son otras HUs. Para cerrarlo hace falta correr el checklist en sombra sobre paradas reales, o reconstruir esas paradas como casos.
 

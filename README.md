@@ -4,7 +4,7 @@
 
 NexusAgil es una metodología de desarrollo con agentes para Claude Code. Procesa una Historia de Usuario (HU) por vez, por fases, con agentes especializados, gates que da una persona y un hook que hace cumplir las reglas que no deben depender de la memoria del modelo.
 
-Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.5.4**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
+Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.5.5**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
 
 **Estado:** release candidate. El supervisor de AUTO es experimental. Las mediciones están en [Evaluación](#evaluación).
 
@@ -158,7 +158,7 @@ Cómo cuenta un gate:
 - El hook guarda en `.gates.jsonl` quién lo dio (`human` o `claude-delegated`), el sha256 del documento y la hora, y copia el documento a `.versions/`.
 - Si el documento cambia después del gate, la fase siguiente se bloquea hasta que una persona lo vuelva a escribir. En AUTO pasa lo mismo: el hook no vuelve a registrar solo un gate que ya existe.
 
-**Cómo registra el hook un gate delegado.** En una sesión delegada, cuando se lanza una fase que necesita `HU_APPROVED` o `SPEC_APPROVED` y el gate no está, el hook lo registra como `claude-delegated` en ese momento. Con `--supervisor`, antes de registrarlo exige un veredicto del supervisor sobre la versión actual del documento: `CONTINUAR`, o `ESCALAR` seguido de la respuesta de la persona, que queda en `.gates.jsonl` como `DECISION`. En el modo checklist no lo comprueba, porque el checklist lo corre el propio orquestador.
+**Cómo registra el hook un gate delegado.** En una sesión delegada, cuando se lanza una fase que necesita `HU_APPROVED` o `SPEC_APPROVED` y el gate no está, el hook lo registra como `claude-delegated` en ese momento. Con `--supervisor` (o con el supervisor que el hook activa solo en una HU QUALITY o con `security_review: required`), antes de registrarlo exige un veredicto del supervisor sobre la versión actual del documento: `CONTINUAR`, o `ESCALAR` seguido de la respuesta de la persona, que queda en `.gates.jsonl` como `DECISION`. En el modo checklist no lo comprueba, porque el checklist lo corre el propio orquestador.
 
 **Falsos positivos.** La persona escribe `NEXUS_OVERRIDE <motivo>`. Deja pasar el próximo bloqueo de lanzamiento de fase y lo registra como `OVERRIDE` en `.gates.jsonl`. No sirve para los bloqueos de Write, Edit o Bash, ni para la falta de `FASE:`, `HU_DIR:`, prefijo del plugin, `SKILL_DIR` o `CODE_ROOT`: esos bloquean siempre.
 
@@ -305,7 +305,7 @@ Fuera del repo, el hook guarda su estado por sesión en `$CLAUDE_PLUGIN_DATA` (o
 1. Los analistas corren en paralelo, uno por HU. El sizing propone FAST, FAST+AR o QUALITY. El orquestador puede subir el pipeline, nunca bajarlo.
 2. En `HU_APPROVED` y `SPEC_APPROVED`, el gate se revisa en lugar de preguntarse:
    - **Por defecto, checklist** de 7 criterios que corre el propio orquestador. Todo PASS: sigue y el gate queda como `claude-delegated`. Un FAIL: pregunta a la persona.
-   - **Con `--supervisor` (experimental):** en cada punto de parada, un agente aparte de solo lectura (`nexus-supervisor`) recibe el reporte del orquestador, los artefactos y los transcripts, nunca su razonamiento.
+   - **Con `--supervisor` (experimental):** en cada punto de parada, un agente aparte de solo lectura (`nexus-supervisor`) recibe el reporte del orquestador, los artefactos y los transcripts, nunca su razonamiento. Se activa solo cuando el `work-item.md` dice `Pipeline: QUALITY` o `security_review: required` (el tamaño lo decide el analista, después de lanzada la HU); la persona lo apaga con `--sin-supervisor`. En una FAST chica aporta poco. Medido en 7 HUs reales: `references/supervisor.md`.
 3. F3 corre en serie por defecto. Las HUs con Scope IN superpuesto se ordenan; la dependiente espera el merge de la otra antes de F3.
 4. El lote cierra con un reporte de cierre (`references/auto_completion_report.md`).
 

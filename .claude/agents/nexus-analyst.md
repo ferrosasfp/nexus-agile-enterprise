@@ -121,7 +121,7 @@ Sigue el template de `$SKILL_DIR/references/quality_pipeline.md` (sección F1). 
 - SDD_MODE: full / mini / bugfix
 - Estimación: S / M / L
 - contract_mode: classic / unified (ver regla abajo)
-- security_review: required / no (ver regla abajo)
+- security_review: required (motivo y alcance) / no (motivo) (ver regla abajo)
 - Branch sugerido: feat/NNN-titulo
 
 ## Acceptance Criteria (EARS)
@@ -180,7 +180,7 @@ Por defecto `unified`: el contrato del Dev es una sección del SDD y no hay F2.5
 
 ## security_review
 
-Marcá `security_review: required` si la HU toca autenticación, roles, permisos o módulos, RLS o aislamiento entre organizaciones, datos personales o secretos, pagos, o una entrada desde afuera (endpoint público, webhook, ingesta, parámetros que eligen un recurso). Si no toca nada de eso: `security_review: no`. Si dudás: `required`. Con `required`, antes de `SPEC_APPROVED` el agente `nexus-security` revisa la seguridad del diseño.
+Marcá `security_review: required` si la HU toca autenticación, roles, permisos o módulos, RLS o aislamiento entre organizaciones, datos personales o secretos, pagos, o una entrada desde afuera (endpoint público, webhook, ingesta, parámetros que eligen un recurso). Si no toca nada de eso: `security_review: no`, **con el motivo en la misma línea**: qué de la lista no toca y por qué, por ejemplo `no (solo lectura de un archivo ya revisado; sin auth, permisos, secretos ni entrada nueva)`. Un `no` sin motivo no vale: el checklist de AUTO y el supervisor lo devuelven. Si dudás: `required`. Con `required`, antes de `SPEC_APPROVED` el agente `nexus-security` revisa la seguridad del diseño.
 
 ## EARS Format (obligatorio para ACs)
 

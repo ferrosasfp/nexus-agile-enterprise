@@ -212,6 +212,21 @@ def pipeline_of(hu_dir):
     return found.group(1).upper() if found else "QUALITY"
 
 
+def supervision_reason(hu_dir):
+    """Por que esta HU pide supervisor: QUALITY o security_review: required, escritos en work-item.md (no el default).
+    El tamano lo decide el analista en F1, despues de lanzada la HU: si dependia del --supervisor de la persona,
+    llegaba tarde. En Nexus Control, la HU QUALITY GH-29 corrio sin supervisor porque nadie lo pidio."""
+    item = hu_dir / "work-item.md"
+    text = item.read_text(encoding="utf-8") if item.is_file() else ""
+    reasons = []
+    found = re.search(r"pipeline\W{0,6}(FAST\+AR|FAST|LAUNCH|QUALITY)", text, re.I)
+    if found and found.group(1).upper() == "QUALITY":
+        reasons.append("pipeline QUALITY")
+    if re.search(r"security_review\W{0,6}required", text, re.I):
+        reasons.append("security_review: required")
+    return " y ".join(reasons)
+
+
 def questions_section(hu_dir):
     item = hu_dir / "work-item.md"
     if not item.is_file():
@@ -473,6 +488,17 @@ def check_phase(data, session):
     classic = hu_dir.is_dir() and any(
         (hu_dir / n).exists() and re.search(r"contract_mode\W{0,6}classic", (hu_dir / n).read_text(encoding="utf-8"))
         for n in ("work-item.md", "sdd.md"))
+
+    if (phase in ("F2", "SPEC_VERIFY", "SECURITY", "F2.5", "F3") and hu_dir.is_dir() and session.get("delegated")
+            and not session.get("supervised") and not session.get("supervision_off")):
+        reason = supervision_reason(hu_dir)
+        if reason:
+            session["supervised"] = True
+            session["supervised_by"] = reason
+            save_session(data, session)
+            deny(f"supervisor activado por el work-item ({reason}): desde ahora segui /nexus-auto §4.3c en cada punto de parada. "
+                 f"Consulta al supervisor (FASE: SUPERVISION) sobre el gate pendiente antes de lanzar {phase}. "
+                 f"Para correr esta HU sin supervisor, la persona escribe /nexus-agile:nexus-auto <HU> --sin-supervisor al inicio de una linea")
 
     if phase in ("F2", "F3") and hu_dir.is_dir():
         pending = open_questions(hu_dir)
@@ -1162,6 +1188,7 @@ def cmd_prompt(data):
     if re.search(r"^\s*(?:[-*]\s*)?(?:(?:lanza|lanz[aá]|corre|corr[eé]|usa|us[aá]|run)\s+)?/(nexus-agile:)?nexus-(auto|review-pr)\b", prompt, re.M | re.I):
         session["delegated"] = True
         session["supervised"] = bool(re.search(r"--supervisor\b", prompt))
+        session["supervision_off"] = bool(re.search(r"--sin-supervisor\b", prompt))
         save_session(data, session)
         print("NexusAgil: sesion delegada (AUTO). HU_APPROVED, SPEC_APPROVED y SCOPE_APPROVED los registra Claude tras la revision clinica; "
               "RELEASE_APPROVED sigue siendo humano.")

@@ -15,6 +15,8 @@ si todos los criterios pasan. Si alguno falla, escala al humano con detalle.
 
 Con `--supervisor`, en cada punto de parada un agente aparte (`nexus-supervisor`) revisa la evidencia y decide si se sigue, pide más evidencia o escala a la persona (§4.3c). El push, el PR y el merge los autoriza siempre la persona.
 
+**Cuándo usar `--supervisor`:** en HUs QUALITY, o que tocan seguridad, datos o producción (`security_review: required`), donde una aprobación indebida cuesta caro. En una HU FAST chica aporta poco: el push y el merge se le preguntan igual a la persona. Como el tamaño lo decide el analista en F1, después de lanzada la HU, **el hook lo activa solo**: si `work-item.md` dice `Pipeline: QUALITY` o `security_review: required` y la sesión no tiene supervisor, al lanzar la primera fase después de F1 te frena una vez con "supervisor activado por el work-item". Desde ahí seguí §4.3c en cada punto de parada, empezando por el gate pendiente. La persona lo apaga para una HU con `/nexus-agile:nexus-auto <HU> --sin-supervisor`.
+
 **Cuándo usar AUTO:**
 - Batch de HUs donde el humano confía en el proceso y quiere resultados end-to-end
 - Sesiones donde el humano no estará disponible para aprobar gates interactivamente
@@ -36,6 +38,7 @@ Con `--supervisor`, en cada punto de parada un agente aparte (`nexus-supervisor`
 /nexus-auto WKH-XX WKH-YY WKH-ZZ           # Batch de N HUs
 /nexus-auto WKH-XX --user=Fernando          # Atribución explícita
 /nexus-auto WKH-XX --supervisor             # Con supervisor en cada punto de parada
+/nexus-auto WKH-XX --sin-supervisor         # Sin supervisor aunque la HU sea QUALITY o security_review: required
 ```
 
 **Argumentos:**
@@ -116,7 +119,7 @@ Clinical review:
 - EARS format: [PASS/FAIL] — N/N ACs valid EARS (sin "debería"/"quizás"/"podría")
 - Codebase grounding: [PASS/FAIL] — analyst leyó project-context.md, refs mapeadas a archivos reales
 - Edge cases: [PASS/FAIL] — sin [NEEDS CLARIFICATION] bloqueantes sin resolver
-- Security: [PASS/FAIL] — categorías de riesgo documentadas (obligatorio si FAST+AR/QUALITY)
+- Security: [PASS/FAIL] — categorías de riesgo documentadas (obligatorio si FAST+AR/QUALITY); `security_review:` con su motivo en la misma línea (un `no` sin motivo es FAIL)
 - Zero regression: [PASS/FAIL] — Scope OUT explícito, sin conflictos con otras HUs del batch
 - Constraint Directives: [PASS/FAIL] — ≥2 CDs presentes en el work-item
 Notes: [observaciones si las hay]
@@ -156,7 +159,7 @@ y `/nexus-p7-f4`). No requieren clinical review adicional en AUTO mode.
 
 Aunque todos los criterios den PASS, escala a la persona cuando la decisión cambia lo que ve o puede hacer un usuario, el alcance o los ACs aprobados; toca seguridad, permisos, datos, producción o migraciones; es una prioridad de negocio; o el costo es desproporcionado frente al tamaño de la HU. En la primera corrida real supervisada, casi la mitad de los puntos de decisión fueron de este tipo, y el checklist no los distingue.
 
-### §4.3c Supervisor (experimental, `--supervisor`)
+### §4.3c Supervisor (`--supervisor`, o activado por el work-item)
 
 Con `--supervisor`, en cada punto de parada lanza `nexus-agile:nexus-supervisor` con `FASE: SUPERVISION`, `HU_DIR:`, `RUTAS:`, una línea `Punto de parada: <qué se decide>` (el hook la guarda en `.gates.jsonl` junto al veredicto), tu reporte de ese punto y las rutas de los transcripts. No le pases tu razonamiento. Actúa según su primera línea:
 

@@ -1,5 +1,11 @@
 # Changelog — NexusAgil
 
+## 2.5.5 — security_review con motivo, y supervisor automático en HUs QUALITY
+
+### Cambiado
+- **`security_review: no` lleva su motivo.** El analista escribe en la misma línea qué de la lista no toca y por qué. Un `no` solo es FAIL en el checklist de AUTO y `PEDIR_EVIDENCIA` del supervisor. En Nexus Control, 2 de 11 HUs sin revisión de seguridad decían `no` sin justificar.
+- **El supervisor se activa solo en HUs QUALITY o con `security_review: required`.** El tamaño lo decide el analista en F1, después de lanzada la HU, así que depender del `--supervisor` de la persona llegaba tarde: en Nexus Control, la única HU QUALITY de la 025 a la 029 corrió sin supervisor. Ahora, si el `work-item.md` lo dice y la sesión delegada no lo tiene, el hook lo activa al lanzar la primera fase después de F1 y frena una vez con "supervisor activado por el work-item". La persona lo apaga con `--sin-supervisor`. En una FAST chica sigue siendo opcional: aporta poco, porque el push y el merge se preguntan igual.
+
 ## 2.5.4 — El supervisor, medido en 7 HUs reales
 
 ### Cambiado
