@@ -1365,6 +1365,52 @@ class GateDelegadoRevisado(HookCase):
         self.assertNotIn("DECISION", (self.hu / ".gates.jsonl").read_text())
 
 
+class SupervisorPorTamano(HookCase):
+    """El tamano lo decide el analista en F1, despues de lanzada la HU. Si es QUALITY o security_review: required,
+    el hook activa el supervisor solo; la persona lo apaga con --sin-supervisor."""
+
+    def start(self, work_item, command="/nexus-agile:nexus-auto X-1"):
+        self.write("work-item.md", work_item)
+        now = time.time()
+        os.utime(self.hu / "work-item.md", (now - 60, now - 60))
+        self.run_hook("prompt", prompt=command)
+        self.assertAllowed(self.spawn("F1", "nexus-analyst"))
+
+    def review(self, verdict):
+        with (self.hu / ".gates.jsonl").open("a") as handle:
+            handle.write(json.dumps({"gate": "SUPERVISION", "by": "nexus-supervisor", "verdict": verdict, "ts": int(time.time()) - 30}) + "\n")
+
+    def test_quality_activa_el_supervisor(self):
+        self.start("## Sizing\n- Pipeline: QUALITY. Justificacion: logica nueva\n- security_review: no (sin entradas)\n")
+        self.assertBlocked(self.spawn("F2"), "supervisor activado por el work-item (pipeline QUALITY)")
+        # Activado: el gate delegado ahora pide el veredicto, y con CONTINUAR pasa.
+        self.assertBlocked(self.spawn("F2"), "veredicto del supervisor")
+        self.review("CONTINUAR")
+        self.assertAllowed(self.spawn("F2"))
+
+    def test_security_required_en_fast_lo_activa(self):
+        self.start("- Pipeline: **FAST+AR**\n- security_review: required (parametro que elige un archivo)\n")
+        self.assertBlocked(self.spawn("F3", "nexus-dev"), "security_review: required")
+
+    def test_fast_sin_riesgo_no_lo_activa(self):
+        self.start("- Pipeline: FAST\n- security_review: no (solo un texto del README)\n")
+        self.assertAllowed(self.spawn("F3", "nexus-dev"))
+        self.assertIn("claude-delegated", (self.hu / ".gates.jsonl").read_text())
+
+    def test_sin_linea_de_pipeline_no_lo_activa(self):
+        # pipeline_of da QUALITY por defecto; el supervisor solo se activa si el analista lo escribio.
+        self.start("x\n")
+        self.assertAllowed(self.spawn("F2"))
+
+    def test_sin_supervisor_lo_apaga(self):
+        self.start("- Pipeline: QUALITY\n", command="/nexus-agile:nexus-auto X-1 --sin-supervisor")
+        self.assertAllowed(self.spawn("F2"))
+
+    def test_sin_delegar_no_hace_nada(self):
+        self.write("work-item.md", "- Pipeline: QUALITY\n")
+        self.assertBlocked(self.spawn("F2"), "escrito por una persona")
+
+
 class Concurrencia(HookCase):
     def test_hooks_en_paralelo_no_corrompen_el_estado(self):
         # HU-2 de Nexus Control: con AR y CR en paralelo, el hook leyo el estado vacio y freno un mensaje.

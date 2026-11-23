@@ -183,6 +183,8 @@ grep -q 'security_review' $A/nexus-analyst.md || fail "el analista no marca secu
 grep -q 'con el motivo en la misma línea' $A/nexus-analyst.md || fail "el analista acepta security_review: no sin motivo"
 grep -q "sin motivo es FAIL" $C/nexus-auto.md || fail "el checklist de AUTO no exige el motivo de security_review"
 grep -q "Cuándo usar .--supervisor" $C/nexus-auto.md || fail "AUTO sin la recomendacion de uso del supervisor"
+grep -q "def supervision_reason" "$ROOT/hooks/nexus_hook.py" || fail "el hook no activa el supervisor por el tamano de la HU"
+grep -q -- "--sin-supervisor" $C/nexus-auto.md || fail "AUTO no documenta --sin-supervisor"
 grep -q 'nexus-security' $C/nexus-p2-f2.md || fail "F2 no lanza la revision de seguridad"
 grep -q 'VEREDICTO: ESCALAR' $A/nexus-supervisor.md || fail "supervisor sin formato de veredicto"
 grep -q 'Coherencia del work-item' $A/nexus-supervisor.md || fail "supervisor sin revision de coherencia del work-item en HU_APPROVED"
