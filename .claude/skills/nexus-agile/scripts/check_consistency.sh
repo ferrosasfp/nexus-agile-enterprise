@@ -187,6 +187,7 @@ grep -q "def supervision_reason" "$ROOT/hooks/nexus_hook.py" || fail "el hook no
 grep -q "def check_orchestrator_gated_docs" "$ROOT/hooks/nexus_hook.py" || fail "el hook deja al orquestador escribir por Bash un documento con gate"
 grep -q "def check_plugin_version" "$ROOT/hooks/nexus_hook.py" || fail "el hook deja correr un script de otra version del plugin en la cache"
 grep -q "same_hu = " "$ROOT/hooks/nexus_hook.py" || fail "el hook atribuye el cierre de un agente a un lanzamiento viejo de otra HU"
+grep -q "DISCARD = (\"/dev/null\", \"/dev/full\")" "$ROOT/hooks/nexus_hook.py" || fail "el hook trata /dev/full como un archivo del repo"
 grep -q "written = \[resolve_at" "$ROOT/hooks/nexus_hook.py" || fail "el hook juzga la escritura de los gates por lo que el comando nombra, no por su destino"
 grep -q -- "--sin-supervisor" $C/nexus-auto.md || fail "AUTO no documenta --sin-supervisor"
 grep -q 'nexus-security' $C/nexus-p2-f2.md || fail "F2 no lanza la revision de seguridad"

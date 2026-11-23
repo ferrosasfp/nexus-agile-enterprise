@@ -486,6 +486,16 @@ class Escritura(HookCase):
             with self.subTest(command=command):
                 self.assertAllowed(self.bash_as("nexus-adversary", command))
 
+    def test_dev_full_no_es_un_archivo(self):
+        # GH-35 de Nexus Control: el AR y el CR quisieron probar la CLI con el disco lleno (> /dev/full) y el hook los freno
+        # con "no escribe archivos por Bash (/dev/full)". Escribir ahi no modifica nada: solo devuelve ENOSPC.
+        for agent in ("nexus-adversary", "nexus-qa"):
+            for command in (".venv/bin/nexus-control /tmp/fx > /dev/full; echo rc=$?", "python3 -I -m nexus_control . >/dev/full 2>&1",
+                            "cd /home/x/repo && .venv/bin/nexus-control . 1>/dev/full"):
+                with self.subTest(agent=agent, command=command):
+                    self.assertAllowed(self.bash_as(agent, command))
+        self.assertBlocked(self.bash_as("nexus-adversary", "echo x > /dev/fullx"))
+
     def test_bash_a_copia_desechable(self):
         result = self.run_hook("gate", agent_type="nexus-qa", tool_name="Bash", cwd="/home/x/repo", tool_input={"command": "npm test > /tmp/salida.txt"})
         self.assertAllowed(result)

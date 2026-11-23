@@ -1,5 +1,10 @@
 # Changelog — NexusAgil
 
+## 2.5.9 — /dev/full no es un archivo
+
+### Corregido
+- **Falso "no escribe archivos por Bash (/dev/full)".** En la GH-35 de Nexus Control, el AR y el CR quisieron probar la CLI con el disco lleno (`> /dev/full`) y el hook los frenó: solo eximía `/dev/null`. Escribir en `/dev/full` no modifica nada (devuelve ENOSPC). Ahora los dos dispositivos se tratan igual en todos los chequeos de escritura por Bash.
+
 ## 2.5.8 — El veredicto del supervisor va a la HU que lo pidió
 
 ### Corregido
