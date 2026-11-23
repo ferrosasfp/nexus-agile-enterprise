@@ -1,5 +1,10 @@
 # Changelog — NexusAgil
 
+## 2.5.6 — El orquestador tampoco escribe por Bash un documento con gate
+
+### Corregido
+- **Una edición del orquestador por Bash no dejaba rastro.** En la GH-30 de Nexus Control, el orquestador anotó la respuesta de la persona en `work-item.md` con python3. El hash del gate pidió una revisión nueva, así que nada pasó sin revisar, pero el hook no lo frenó ni lo registró: el chequeo de Bash sobre `HU_DIR` solo corría para los agentes. Ahora la sesión principal no puede escribir por Bash (redirección, `sed -i`, `cp`, `tee`, script en línea) `work-item.md`, `sdd.md` ni `pr-context.md`, y el bloqueo queda en `.blocks.jsonl`. Solo esos documentos: en el resto de la carpeta, el orquestador corre comandos legítimos (git, métricas).
+
 ## 2.5.5 — security_review con motivo, y supervisor automático en HUs QUALITY
 
 ### Cambiado

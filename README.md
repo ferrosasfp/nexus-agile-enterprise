@@ -4,7 +4,7 @@
 
 NexusAgil es una metodología de desarrollo con agentes para Claude Code. Procesa una Historia de Usuario (HU) por vez, por fases, con agentes especializados, gates que da una persona y un hook que hace cumplir las reglas que no deben depender de la memoria del modelo.
 
-Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.5.5**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
+Se distribuye como plugin de Claude Code (`.claude-plugin/plugin.json`, versión **2.5.6**). Es independiente del stack: F0 lee el proyecto real y genera `project-context.md`.
 
 **Estado:** release candidate. El supervisor de AUTO es experimental. Las mediciones están en [Evaluación](#evaluación).
 
@@ -169,7 +169,7 @@ Cómo cuenta un gate:
 | `UserPromptSubmit` | Registra los gates escritos por la persona. Marca la sesión como delegada cuando la persona escribe `/nexus-auto` (o `/nexus-agile:nexus-auto`) al inicio de una línea. Recibe `NEXUS_OVERRIDE` |
 | `PreToolUse(Agent, Task)` | Al lanzar un agente `nexus-*`: exige `FASE:` y `HU_DIR:`, el prefijo `nexus-agile:` cuando corre el plugin, `SKILL_DIR` dentro del plugin, `CODE_ROOT` resuelto y repo git (salvo F0F1, F1 y SUPERVISION), y el artefacto y el gate de la fase |
 | `PreToolUse(Write, Edit)` | Nadie escribe `.gates.jsonl`. Cada agente de especificación o revisión escribe solo sus artefactos |
-| `PreToolUse(Bash)` | Para todos, incluida la sesión principal: nada de `--no-verify`, ni comandos de `forbidden_commands`, ni escribir `.gates.jsonl`. Para los agentes que no implementan: Bash de solo lectura. Antes de cada Bash de un agente, toma una foto de los artefactos de `HU_DIR` |
+| `PreToolUse(Bash)` | Para todos, incluida la sesión principal: nada de `--no-verify`, ni comandos de `forbidden_commands`, ni escribir `.gates.jsonl`. La sesión principal tampoco escribe por Bash (redirección, `sed -i`, `cp`, script) un documento con gate (`work-item.md`, `sdd.md`, `pr-context.md`): va con Edit o Write. Para los agentes que no implementan: Bash de solo lectura. Antes de cada Bash de un agente, toma una foto de los artefactos de `HU_DIR` |
 | `PostToolUse(Bash)` | Compara los artefactos con la foto. Si un Bash cambió alguno que no se escribió con Write o Edit, restaura la versión anterior, guarda la modificada en `.violations/`, registra un `VIOLATION` y frena al agente |
 | `PostToolUse(AskUserQuestion)` | Registra el gate si se eligió la opción con su nombre |
 | `SubagentStop` | Al terminar un agente: exige su artefacto y su línea `STATUS:`, revisa el árbol de git si el agente no implementa, busca caracteres invisibles y guarda la versión entregada en `.versions/`. Insiste una sola vez |
@@ -240,7 +240,7 @@ El hook restauro la version anterior y guardo la modificada en .violations/. Que
 | QA (`nexus-qa`) | `validation.md` (con sufijo `-N`) | solo lectura |
 | docs (`nexus-docs`) | `cierre.md`, `_INDEX.md`, `lecciones.md`, `_LECCIONES.md` | solo lectura |
 | supervisor (`nexus-supervisor`) | nada (tampoco tiene Write ni Edit) | solo lectura |
-| sesión principal | todo salvo `.gates.jsonl` | sin límite de rol; sí `--no-verify` y `forbidden_commands` |
+| sesión principal | todo salvo `.gates.jsonl`; los documentos con gate, solo con Edit o Write | sin límite de rol; sí `--no-verify`, `forbidden_commands` y escribir por Bash un documento con gate |
 
 "Solo lectura" quiere decir, para el hook:
 

@@ -1033,11 +1033,12 @@ class PorDestino(HookCase):
             self.assertAllowed(self.run_hook("gate", tool_input={"command": fine}, **dev))
 
     def test_sesion_principal_no_se_vigila(self):
-        self.write("sdd.md", "v1\n")
+        # Un artefacto sin gate: la sesion principal no se restaura. work-item.md y sdd.md se frenan antes (OrquestadorDocumentosConGate).
+        self.write("cierre.md", "v1\n")
         self.assertAllowed(self.spawn("F1", "nexus-analyst"))
-        data = dict(tool_name="Bash", tool_use_id="m1", tool_input={"command": "cp /tmp/x sdd.md"})
+        data = dict(tool_name="Bash", tool_use_id="m1", tool_input={"command": "cp /tmp/x cierre.md"})
         self.assertAllowed(self.run_hook("gate", **data))
-        self.write("sdd.md", "v2\n")
+        self.write("cierre.md", "v2\n")
         self.assertAllowed(self.run_hook("after-bash", **data))
 
 
@@ -1363,6 +1364,43 @@ class GateDelegadoRevisado(HookCase):
         self.review("CONTINUAR")
         self.run_hook("prompt", prompt="como va?")
         self.assertNotIn("DECISION", (self.hu / ".gates.jsonl").read_text())
+
+
+class OrquestadorDocumentosConGate(HookCase):
+    """GH-30: el orquestador edito work-item.md con python3 y no quedo rastro. Los documentos con gate van con Edit."""
+
+    def setUp(self):
+        super().setUp()
+        self.write("work-item.md")
+        self.write("sdd.md")
+        self.write("cierre.md")
+
+    def bash(self, command):
+        return self.run_hook("gate", tool_name="Bash", tool_input={"command": command})
+
+    def test_script_que_escribe_el_work_item(self):
+        cmd = f"python3 - <<'EOF'\np='{self.hu}/work-item.md'\nopen(p,'w').write('x')\nEOF"
+        self.assertBlocked(self.bash(cmd), "no escribe work-item.md por Bash")
+
+    def test_redireccion_al_sdd(self):
+        self.assertBlocked(self.bash(f"echo hola >> {self.hu}/sdd.md"), "sdd.md")
+
+    def test_sed_i_relativo_tras_cd(self):
+        self.assertBlocked(self.bash(f"cd {self.hu} && sed -i 's/a/b/' work-item.md"), "work-item.md")
+
+    def test_leer_y_copiar_a_tmp_pasa(self):
+        self.assertAllowed(self.bash(f"cat {self.hu}/work-item.md; cp {self.hu}/sdd.md /tmp/copia-sdd.md"))
+
+    def test_otros_artefactos_de_la_hu_pasan(self):
+        self.assertAllowed(self.bash(f"echo nota >> {self.hu}/cierre.md"))
+        self.assertAllowed(self.bash(f"git -C {self.repo} add {self.hu}/work-item.md"))
+
+    def test_script_que_solo_lee_pasa(self):
+        cmd = f"python3 -c \"print(open('{self.hu}/work-item.md').read())\""
+        self.assertAllowed(self.bash(cmd))
+
+    def test_nombre_parecido_no_es_el_documento(self):
+        self.assertAllowed(self.bash(f"echo x > {self.hu}/notas-sdd.md"))
 
 
 class SupervisorPorTamano(HookCase):
