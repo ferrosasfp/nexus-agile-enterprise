@@ -1194,7 +1194,8 @@ class DecisionCompleta(HookCase):
         self.run_hook("prompt", prompt="/nexus-agile:nexus-auto X-1 --supervisor")
         self.assertAllowed(self.spawn("F1", "nexus-analyst"))
         with (self.hu / ".gates.jsonl").open("a") as handle:
-            handle.write(json.dumps({"gate": "SUPERVISION", "verdict": "ESCALAR", "ts": int(time.time())}) + "\n")
+            # Hace 30 s: la decision tiene que quedar despues aunque el reloj retroceda (ver GateDelegadoRevisado).
+            handle.write(json.dumps({"gate": "SUPERVISION", "verdict": "ESCALAR", "ts": int(time.time()) - 30}) + "\n")
         question = "¿Hago push? " + "contexto " * 60
         self.run_hook("answer", tool_name="AskUserQuestion", tool_response={"questions": [{"question": question}], "answers": {question: "SÍ"}})
         last = [json.loads(l) for l in (self.hu / ".gates.jsonl").read_text().splitlines()][-1]
@@ -1317,12 +1318,16 @@ class GateDelegadoRevisado(HookCase):
     def setUp(self):
         super().setUp()
         self.write("work-item.md")
+        # Margenes en vez del segundo exacto: bajo carga, el reloj de WSL2 retrocedio 1,3 s y el veredicto quedo
+        # anterior al work-item (1 de cada 40 corridas). El documento es de hace 60 s y el veredicto de hace 30.
+        now = time.time()
+        os.utime(self.hu / "work-item.md", (now - 60, now - 60))
         self.run_hook("prompt", prompt="/nexus-agile:nexus-auto X-1 --supervisor")
         self.assertAllowed(self.spawn("F1", "nexus-analyst"))  # deja la HU en la sesion
 
     def review(self, verdict, ago=0):
         with (self.hu / ".gates.jsonl").open("a") as handle:
-            handle.write(json.dumps({"gate": "SUPERVISION", "by": "nexus-supervisor", "verdict": verdict, "ts": int(time.time()) - ago}) + "\n")
+            handle.write(json.dumps({"gate": "SUPERVISION", "by": "nexus-supervisor", "verdict": verdict, "ts": int(time.time()) - 30 - ago}) + "\n")
 
     def test_sin_revision_no_pasa(self):
         self.assertBlocked(self.spawn("F2"), "veredicto del supervisor")
