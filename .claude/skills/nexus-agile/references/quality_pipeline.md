@@ -110,6 +110,7 @@ Si hay ambiguedades criticas: preguntar al humano (max 3 preguntas) antes de con
 | **Acceptance Criteria** | Formato EARS (ver abajo) |
 | **Scope IN** | Que SI incluye |
 | **Scope OUT** | Que NO incluye |
+| **Llamadores** | Quién usa cada función que cambia, IN / OUT con motivo |
 | **Missing Inputs** | Recursos pendientes |
 ```
 

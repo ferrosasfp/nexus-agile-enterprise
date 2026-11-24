@@ -233,6 +233,7 @@ for f in nexus-p8-done nexus-fast-pipeline nexus-fast-plus-ar nexus-auto; do
   grep -q 'nexus_brain.py respaldar' "$C/$f.md" || fail "$f no respalda la memoria al cerrar"
 done
 grep -q 'startup' "$ROOT/hooks/hooks.json" || fail "el hook no avisa al abrir un proyecto sin memory_project"
+grep -q '^## Llamadores antes del Scope OUT' $A/nexus-analyst.md || fail "el analista no lista los llamadores antes del Scope OUT"
 pass "cerebro en cualquier maquina revisado"
 
 # --- Ajustes de la primera HU real (etapa B)

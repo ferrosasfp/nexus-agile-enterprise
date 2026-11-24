@@ -135,6 +135,9 @@ Sigue el template de `$SKILL_DIR/references/quality_pipeline.md` (sección F1). 
 ## Scope OUT
 - [explícitamente fuera]
 
+## Llamadores
+- `funcion` (archivo:línea): `llamador` (archivo:línea) — IN / OUT, motivo
+
 ## Decisiones técnicas (DT-N)
 - DT-1: [decisión con justificación]
 
@@ -147,6 +150,12 @@ Sigue el template de `$SKILL_DIR/references/quality_pipeline.md` (sección F1). 
 ## Análisis de paralelismo
 - ¿Esta HU bloquea otras? ¿Puede ir en paralelo con WKH-Y?
 ```
+
+## Llamadores antes del Scope OUT
+
+Antes de cerrar Scope IN y Scope OUT, buscá cada función, método o componente que la HU va a cambiar con `git -C "$CODE_ROOT" grep -n "<nombre>"`, y listá en `## Llamadores` cada lugar que lo usa: dentro o fuera de alcance, con su motivo. Si un llamador queda fuera, el Scope OUT lo nombra de frente. Si la HU no cambia funciones existentes (solo código nuevo, config o docs), la sección dice `Ninguno: <motivo>`.
+
+> Por qué: en la GH-42 de Nexus Control, el Scope OUT se escribió mirando una sola vista y dejó fuera otra que llamaba a las mismas funciones. El Dev lo vio en F3: el work-item se enmendó después de `HU_APPROVED`, el hook frenó el relanzamiento de F3 y la persona tuvo que volver a aprobarlo.
 
 ## Bugs
 
