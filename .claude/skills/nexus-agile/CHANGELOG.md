@@ -1,5 +1,10 @@
 # Changelog — NexusAgil
 
+## 2.5.10 — El analista lista los llamadores antes del Scope OUT
+
+### Mejorado
+- **Un Scope OUT que dejaba fuera a un llamador.** En la GH-42 de Nexus Control, el work-item cambiaba dos funciones mirando solo la tabla de revisiones, y el tablero también las llamaba. El Dev lo vio en F3, el work-item se enmendó después de `HU_APPROVED` y la persona tuvo que volver a aprobarlo. Ahora el analista busca en F1 cada función que la HU cambia (`git grep`) y lista en `## Llamadores` cada lugar que la usa, dentro o fuera de alcance, con su motivo.
+
 ## 2.5.9 — /dev/full no es un archivo
 
 ### Corregido
